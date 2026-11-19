@@ -11,8 +11,23 @@ import yfinance as yf
 import requests
 from openai import OpenAI
 
+# ================= LOAD LOCAL .ENV IF PRESENT =================
+def load_local_env():
+    if os.path.exists(".env"):
+        try:
+            with open(".env", "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+        except Exception:
+            pass
+
+load_local_env()
+
 # ================= CONFIGURATION =================
-THAILLM_API_KEY = os.getenv("THAILLM_API_KEY", "YOUR_THAILLM_API_KEY")
+THAILLM_API_KEY = os.getenv("THAILLM_API_KEY", "").strip()
 NTFY_TOPIC = "pansakorn888"
 IS_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 THAI_TZ = timezone(timedelta(hours=7))
@@ -24,81 +39,127 @@ MODEL_CHIEF_STRATEGIST = "thalle-0.2-thaillm-8b-fa"
 
 llm_client = OpenAI(
     base_url="https://thaillm.or.th/api/v1",
-    api_key=THAILLM_API_KEY
+    api_key=THAILLM_API_KEY if THAILLM_API_KEY else "MISSING_KEY"
 )
 
-# ================= 0. KNOWLEDGE BASE & JOURNAL SELF-LEARNING =================
+# ================= 0. KNOWLEDGE BASE & CLOSED-LOOP SELF-LEARNING =================
 DEFAULT_KB_FILES = {
     "01_market_maker_liquidity.md": (
         "# Market Maker, Asian Range & Liquidity Sweep Rules\n"
         "- สภาพคล่อง (Liquidity Pools) สะสมอยู่เหนือ Previous 24H High (PDH) และใต้ Previous 24H Low (PDL)\n"
         "- London Breakout Setup: จับจังหวะราคาเบรกกรอบ Asian Session Range (07:00 - 12:45 น. เวลาไทย) ช่วงเปิดตลาดลอนดอน (13:00 - 16:30 น.) ตามเทรนด์ H1/M15\n"
         "- Liquidity Sweep Setup: เมื่อราคาพุ่งทะลุ PDH หรือ PDL เพื่อกวาด Stop Loss แต่แท่งเทียน M15 ปิดกลับเข้ามาในกรอบเดิมพร้อมไส้เทียนปฏิเสธราคา\n"
-        "- RSI Exhaustion Guard: ห้ามไล่ Breakout ฝั่ง Short เมื่อ RSI14 < 28 และห้ามไล่ฝั่ง Long เมื่อ RSI14 > 72 เพื่อหลีกเลี่ยงกับดัก False Breakout\n"
+        "- RSI Exhaustion Guard: ห้ามไล่ Breakout ฝั่ง Short เมื่อ RSI14 < 28 และห้ามไล่ฝั่ง Long เมื่อ RSI14 > 72\n"
     ),
     "02_factorbench_investability.md": (
-        "# FactorBench R-Multiple, Institutional Risk & Monte Carlo Rules\n"
-        "- วัดผลและคัดเลือกพารามิเตอร์ด้วย R-Multiple (Net R, R-Profit Factor, Sharpe, Sortino, Calmar) ให้สอดคล้องกับ % Risk ต่อไม้จริง\n"
-        "- แบ่งทดสอบ Walk-Forward: 67% แรก (In-Sample) เพื่อคัดเลือกพารามิเตอร์และปิด Factor ที่ทำค่า Net R <= 0 (Auto-Mute) และ 33% หลัง (Out-of-Sample)\n"
-        "- Smart Breakeven & Trailing Lock: เลื่อน Stop Loss มาบังทุน (+0.15 ATR) เมื่อกำไรแตะ +1.0R และล็อกกำไร +1.0R เมื่อราคาวิ่งถึง +1.8R\n"
-        "- หักต้นทุน Spread และ Slippage จริง $0.60/oz ในทุกไม้ที่ทดสอบ\n"
+        "# Institutional R-Multiple, Daily Sharpe & Risk Rules\n"
+        "- วัดผล Sharpe, Sortino และ Calmar จากผลตอบแทนรายวันจริง (Daily Calendar Aggregation, sqrt(252)) ไม่ใช้ per-trade inflation\n"
+        "- Pessimistic Intrabar Execution: หากแท่งเทียน M15 เดียวกันแตะทั้ง SL และ TP ให้ถือว่าโดน SL ก่อนเสมอ\n"
+        "- Walk-Forward 67% Train / 33% Out-of-Sample (OOS) พร้อมหัก Spread + Commission จริง ($0.60/oz Trend, $0.45/oz Scalp)\n"
     ),
     "03_macro_gold_regime.md": (
         "# Macro Gold (XAU/USD) & Multi-Timeframe Regime Rules\n"
-        "- เมื่อ ADX(14) <= ADX Threshold ตลาดแกว่งออกข้าง ใช้กลยุทธ์ VALUE_AREA_FADE บริเวณขอบ VAH/VAL ร่วมกับ RSI\n"
-        "- เมื่อ ADX(14) > ADX Threshold ตลาดมีเทรนด์แข็งแกร่ง ให้เน้น LONDON_BREAKOUT, MOMENTUM_BREAKOUT หรือ HTF_TREND_PULLBACK ที่ไม่ติด RSI Exhaustion\n"
-        "- ดัชนี DXY และ US10Y Yield ที่ปรับตัวขึ้นมักกดดันราคาทองคำ ต้องระวังความผันผวนช่วงข่าว USD สำคัญ\n"
+        "- เมื่อ ADX(14) <= ADX Threshold ตลาดแกว่งออกข้าง ใช้กลยุทธ์ VALUE_AREA_FADE บริเวณขอบ VAH/VAL\n"
+        "- เมื่อ ADX(14) > ADX Threshold ตลาดมีเทรนด์แข็งแกร่ง เน้น LONDON_BREAKOUT, MOMENTUM_BREAKOUT หรือ HTF_TREND_PULLBACK\n"
+        "- ดัชนี DXY และ US10Y Yield ที่ปรับตัวขึ้นกดดันราคาทองคำ ต้องระวังความผันผวนช่วงข่าว USD สำคัญ\n"
     ),
     "04_vp_anatomy_scalp_500pt.md": (
         "# 4 กายวิภาค Volume Profile (VPAnatomies_EA) สำหรับ Scalp 500 จุด ($5.00)\n"
-        "- 1. D-SHAPED (POC 34%-66%): ตลาดสมดุล ดัก BUY ที่แนวรับ VAL และดัก SELL ที่แนวต้าน VAH เป้าหมายเข้าหา POC\n"
-        "- 2. B-SHAPED (POC < 34%): โวลุ่มกองโซนล่าง เปิด SELL เมื่อโมเมนตัมลงและราคากดใต้ POC หรือเปิด BUY เมื่อเบรกทะลุ VAH ขึ้นไป\n"
-        "- 3. P-SHAPED (POC > 66%): โวลุ่มกองโซนบน เปิด BUY ตามแนวโน้มเมื่อราคายืนเหนือ/ย่อรับที่ POC/VAL และเปิด SELL หากหลุดกรอบล่าง VAL\n"
+        "- 1. D-SHAPED (POC 34%-66%): ตลาดสมดุล ดัก BUY ที่ VAL และดัก SELL ที่ VAH เป้าหมายเข้าหา POC\n"
+        "- 2. B-SHAPED (POC < 34%): โวลุ่มกองโซนล่าง เปิด SELL เมื่อกดใต้ POC หรือเปิด BUY เมื่อเบรกทะลุ VAH\n"
+        "- 3. P-SHAPED (POC > 66%): โวลุ่มกองโซนบน เปิด BUY ตามแนวโน้มเมื่อย่อรับที่ POC/VAL หรือ SELL หากหลุด VAL\n"
         "- 4. DOUBLE ZONE (2nd Peak >= 60% ของ POC + มี Valley คั่น): ดัก BUY ที่ Lower Peak และดัก SELL ที่ Upper Peak\n"
-        "- กฎ Auto-Mute: ห้ามยิงสัญญาณ Scalp ในรูปทรง Volume Profile ที่ถูก MUTE จากผลทดสอบ Walk-Forward\n"
     )
 }
 
-def update_journal_lessons_kb():
+def evaluate_live_self_learning():
+    """Closed-Loop Self-Learning: วิเคราะห์ผลแพ้/ชนะจริงจาก Live Journals เพื่อปรับสิทธิ์การใช้งานอัตโนมัติ"""
+    os.makedirs("data", exist_ok=True)
     lesson_path = "knowledge_base/05_live_journal_lessons.md"
+    weights_path = "data/learning_weights.json"
+
     all_closed = []
-    for j_file, mode_lbl in [("data/trade_journal.json", "TREND"), ("data/scalp_journal.json", "SCALP_500PT")]:
+    for j_file, mode_lbl, risk_unit in [
+        ("data/trade_journal.json", "TREND", 10.0),
+        ("data/scalp_journal.json", "SCALP_500PT", 5.0)
+    ]:
         if os.path.exists(j_file):
             try:
                 with open(j_file, "r", encoding="utf-8") as f:
                     items = json.load(f)
                 for t in items:
                     if t.get("status") in ("WIN", "LOSS"):
-                        t_copy = dict(t)
-                        t_copy["mode"] = mode_lbl
-                        all_closed.append(t_copy)
+                        tc = dict(t)
+                        tc["mode"] = mode_lbl
+                        tc["est_r"] = round(float(t.get("pnl", 0)) / max(abs(float(t.get("entry", 0)) - float(t.get("sl", 0))), risk_unit), 2)
+                        all_closed.append(tc)
             except Exception:
                 pass
-    if not all_closed:
-        return
-    try:
-        wins = [t for t in all_closed if t["status"] == "WIN"]
-        wr = round((len(wins) / len(all_closed)) * 100.0, 1)
-        net_pnl = round(sum(float(t.get("pnl", 0)) for t in all_closed), 2)
-        lines = [
-            "# Live Signal Journal Post-Mortem (Self-Learning Memory)",
-            f"- สถิติสัญญาณจริงสะสมทั้งหมด {len(all_closed)} ไม้: Win-Rate = {wr}% | Net PnL = ${net_pnl}/oz"
-        ]
-        by_factor = {}
-        for t in all_closed:
-            key = f"{t['mode']}:{t.get('factor', 'SETUP')}"
-            by_factor.setdefault(key, {"w": 0, "l": 0, "pnl": 0.0})
-            if t["status"] == "WIN":
-                by_factor[key]["w"] += 1
+
+    muted_trend_factors = []
+    muted_scalp_shapes = []
+    stats_by_key = {}
+
+    for t in all_closed:
+        key = f"{t['mode']}:{t.get('factor', 'SETUP')}"
+        st = stats_by_key.setdefault(key, {"mode": t["mode"], "name": t.get("factor", "SETUP"), "w": 0, "l": 0, "pnl": 0.0, "net_r": 0.0, "recent": []})
+        if t["status"] == "WIN":
+            st["w"] += 1
+        else:
+            st["l"] += 1
+        st["pnl"] = round(st["pnl"] + float(t.get("pnl", 0)), 2)
+        st["net_r"] = round(st["net_r"] + float(t.get("est_r", 0)), 2)
+        st["recent"].append(t["status"])
+
+    for k, st in stats_by_key.items():
+        tot = st["w"] + st["l"]
+        consec_losses = 0
+        for res in st["recent"]:
+            if res == "LOSS":
+                consec_losses += 1
             else:
-                by_factor[key]["l"] += 1
-            by_factor[key]["pnl"] += float(t.get("pnl", 0))
-        for k, st in by_factor.items():
-            lines.append(f"- `{k}`: ชนะ {st['w']} / แพ้ {st['l']} (รวม ${round(st['pnl'], 2)}/oz)")
-        with open(lesson_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines) + "\n")
-    except Exception as e:
-        print(f"[KB] Journal post-mortem skipped: {e}")
+                break
+        st["consec_losses"] = consec_losses
+        st["wr"] = round((st["w"] / tot) * 100.0, 1) if tot > 0 else 0.0
+
+        # กฎ Self-Learning Guard: หากแพ้ติดกัน >= 2 ไม้ หรือขาดทุนสะสมเกิน -1.5R จาก >= 3 ไม้ -> สั่ง Mute ชั่วคราว
+        if consec_losses >= 2 or (tot >= 3 and st["net_r"] <= -1.5):
+            st["auto_muted"] = True
+            if st["mode"] == "TREND":
+                muted_trend_factors.append(st["name"])
+            else:
+                muted_scalp_shapes.append(st["name"])
+        else:
+            st["auto_muted"] = False
+
+    learning_state = {
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "total_closed": len(all_closed),
+        "overall_wins": len([t for t in all_closed if t["status"] == "WIN"]),
+        "overall_losses": len([t for t in all_closed if t["status"] == "LOSS"]),
+        "overall_pnl": round(sum(float(t.get("pnl", 0)) for t in all_closed), 2),
+        "muted_trend_factors": muted_trend_factors,
+        "muted_scalp_shapes": muted_scalp_shapes,
+        "breakdown": list(stats_by_key.values())
+    }
+
+    with open(weights_path, "w", encoding="utf-8") as f:
+        json.dump(learning_state, f, ensure_ascii=False, indent=2)
+
+    lines = ["# Live Signal Journal Post-Mortem (Closed-Loop Self-Learning Memory)"]
+    if not all_closed:
+        lines.append("- ยังไม่มีออเดอร์จริงที่ปิดสถานะ ระบบพร้อมบันทึกบทเรียนอัตโนมัติทันทีเมื่อชน TP หรือ SL")
+    else:
+        wr_all = round((learning_state["overall_wins"] / len(all_closed)) * 100.0, 1)
+        lines.append(f"- สถิติสัญญาณจริงสะสม {len(all_closed)} ไม้: Win-Rate = {wr_all}% | Net PnL = ${learning_state['overall_pnl']}/oz")
+        for st in stats_by_key.values():
+            flag = " [LIVE AUTO-MUTED: แพ้ต่อเนื่อง]" if st["auto_muted"] else " [ACTIVE]"
+            lines.append(f"- `{st['mode']}:{st['name']}`: {st['w']}W/{st['l']}L (WR {st['wr']}%, {st['net_r']}R){flag}")
+
+    with open(lesson_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+    return learning_state
 
 def ensure_and_load_knowledge_base():
     kb_dir = "knowledge_base"
@@ -109,7 +170,7 @@ def ensure_and_load_knowledge_base():
             with open(fpath, "w", encoding="utf-8") as f:
                 f.write(content)
 
-    update_journal_lessons_kb()
+    learning_state = evaluate_live_self_learning()
 
     loaded_texts = []
     loaded_names = []
@@ -120,14 +181,17 @@ def ensure_and_load_knowledge_base():
                 loaded_texts.append(f.read().strip())
                 loaded_names.append(fname)
 
-    return "\n\n".join(loaded_texts), loaded_names
+    return "\n\n".join(loaded_texts), loaded_names, learning_state
 
 def clean_yf_df(df):
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
     return df.dropna()
 
-def call_thaillm_agent(model_name, prompt, temperature=0.1):
+def call_thaillm_agent(model_name, prompt, fallback_text="", temperature=0.1):
+    if not THAILLM_API_KEY or THAILLM_API_KEY in ("YOUR_THAILLM_API_KEY", "MISSING_KEY"):
+        return fallback_text, "quant-local-engine"
+
     models_to_try = [model_name]
     if model_name != MODEL_CHIEF_STRATEGIST:
         models_to_try.append(MODEL_CHIEF_STRATEGIST)
@@ -145,48 +209,67 @@ def call_thaillm_agent(model_name, prompt, temperature=0.1):
             return cleaned, m
         except Exception as e:
             print(f"[AI] Model '{m}' error: {e} -> trying fallback...")
-    return "ไม่สามารถเชื่อมต่อ ThaiLLM ได้ชั่วคราว (ใช้ผลคำนวณ Quant เชิงปริมาณเป็นหลัก)", "offline"
+    return fallback_text, "quant-fallback"
 
-def fetch_spot_and_paxg_prices():
+# ================= 1. INSTITUTIONAL REAL-TIME XAU/USD FEED =================
+def fetch_true_realtime_spot():
+    """ดึงราคา Spot XAU/USD ระดับสถาบันแบบอัตโนมัติ (Binance XAUUSDT TradFi + Swissquote BBO + Gold-API)"""
     spot_mid, spot_bid, spot_ask = None, None, None
-    paxg_mid = None
+    feed_source = "Swissquote Institutional BBO"
+    xau_perp_mid = None
 
+    # 1. Binance Futures TradFi XAUUSDT BookTicker (Real-Time LBMA/Spot Index Contract)
     try:
-        res = requests.get(
-            "https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD",
-            timeout=8
+        res_bn = requests.get(
+            "https://fapi.binance.com/fapi/v1/ticker/bookTicker?symbol=XAUUSDT",
+            timeout=6
         ).json()
-        prices = res[0]["spreadProfilePrices"][0]
-        spot_bid = round(float(prices["bid"]), 2)
-        spot_ask = round(float(prices["ask"]), 2)
-        spot_mid = round((spot_bid + spot_ask) / 2, 2)
+        if "bidPrice" in res_bn and "askPrice" in res_bn:
+            b_bid = round(float(res_bn["bidPrice"]), 2)
+            b_ask = round(float(res_bn["askPrice"]), 2)
+            xau_perp_mid = round((b_bid + b_ask) / 2.0, 2)
+            spot_bid, spot_ask, spot_mid = b_bid, b_ask, xau_perp_mid
+            feed_source = "Binance XAUUSDT Institutional"
     except Exception:
         pass
 
+    # 2. Swissquote Institutional Spot XAU/USD BBO (Cross-check / Primary OTC Spot)
+    try:
+        res_sq = requests.get(
+            "https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD",
+            timeout=6
+        ).json()
+        prices = res_sq[0]["spreadProfilePrices"][0]
+        sq_bid = round(float(prices["bid"]), 2)
+        sq_ask = round(float(prices["ask"]), 2)
+        sq_mid = round((sq_bid + sq_ask) / 2.0, 2)
+        if spot_mid is None:
+            spot_bid, spot_ask, spot_mid = sq_bid, sq_ask, sq_mid
+            feed_source = "Swissquote XAU/USD Spot"
+        else:
+            # เฉลี่ยถ่วงน้ำหนักให้ตรงกับราคาตลาด Spot โบรกเกอร์มาตรฐาน
+            spot_mid = round((spot_mid + sq_mid) / 2.0, 2)
+            half_s = max(0.10, round((sq_ask - sq_bid) / 2.0, 2))
+            spot_bid = round(spot_mid - half_s, 2)
+            spot_ask = round(spot_mid + half_s, 2)
+            feed_source = "XAU/USD Institutional Composite"
+    except Exception:
+        pass
+
+    # 3. Gold-API Fallback
     if spot_mid is None:
         try:
-            res = requests.get("https://api.gold-api.com/price/XAU", timeout=8).json()
+            res = requests.get("https://api.gold-api.com/price/XAU", timeout=6).json()
             if "price" in res and res["price"]:
                 spot_mid = round(float(res["price"]), 2)
                 spot_bid = round(spot_mid - 0.12, 2)
                 spot_ask = round(spot_mid + 0.12, 2)
+                feed_source = "Gold-API Spot XAU"
         except Exception:
             pass
 
-    try:
-        res = requests.get(
-            "https://api.binance.com/api/v3/ticker/bookTicker?symbol=PAXGUSDT",
-            timeout=8
-        ).json()
-        p_bid = float(res["bidPrice"])
-        p_ask = float(res["askPrice"])
-        paxg_mid = round((p_bid + p_ask) / 2, 2)
-    except Exception:
-        pass
+    return spot_mid, spot_bid, spot_ask, feed_source
 
-    return spot_mid, spot_bid, spot_ask, paxg_mid
-
-# ================= 1. HYDRA DATA VAULT & MULTI-TIMEFRAME INDICATORS =================
 def sync_hydra_m15_vault(df_fresh):
     os.makedirs("data", exist_ok=True)
     vault_path = "data/gold_m15_vault.csv"
@@ -206,8 +289,7 @@ def sync_hydra_m15_vault(df_fresh):
                 df_old.index = df_old.index.tz_convert("UTC")
             df_merged = pd.concat([df_old, df_new])
             df_merged = df_merged[~df_merged.index.duplicated(keep='last')].sort_index()
-        except Exception as e:
-            print(f"[HYDRA VAULT] Read error ({e}), rebuilding vault...")
+        except Exception:
             df_merged = df_new.sort_index()
     else:
         df_merged = df_new.sort_index()
@@ -215,8 +297,8 @@ def sync_hydra_m15_vault(df_fresh):
     df_merged = df_merged.tail(18000)
     try:
         df_merged.to_csv(vault_path)
-    except Exception as e:
-        print(f"[HYDRA VAULT] Save skipped: {e}")
+    except Exception:
+        pass
 
     return df_merged
 
@@ -228,7 +310,7 @@ def fetch_market_data():
     df_dxy = clean_yf_df(yf.download("DX-Y.NYB", period="60d", interval="1d", progress=False))
     df_us10y = clean_yf_df(yf.download("^TNX", period="60d", interval="1d", progress=False))
     
-    spot_price, bid, ask, paxg_mid = fetch_spot_and_paxg_prices()
+    spot_price, bid, ask, feed_source = fetch_true_realtime_spot()
 
     try:
         gc_info = yf.Ticker("GC=F").info
@@ -236,7 +318,7 @@ def fetch_market_data():
     except Exception:
         open_interest = None
         
-    return df_intraday_vault, df_daily, df_dxy, df_us10y, spot_price, bid, ask, paxg_mid, open_interest
+    return df_intraday_vault, df_daily, df_dxy, df_us10y, spot_price, bid, ask, feed_source, open_interest
 
 def compute_mtf_indicators(df_intraday, spot_offset=0.0):
     df_s = pd.DataFrame({
@@ -299,18 +381,10 @@ def compute_mtf_indicators(df_intraday, spot_offset=0.0):
         asian_low = pdl
 
     return {
-        "ema21": ema21,
-        "ema50": ema50,
-        "ema200": ema200,
-        "h1_ema50": h1_ema50_m15,
-        "h1_ema200": h1_ema200_m15,
-        "atr14": atr14,
-        "rsi14": rsi14,
-        "adx14": adx14,
-        "pdh": pdh,
-        "pdl": pdl,
-        "asian_high": asian_high,
-        "asian_low": asian_low
+        "ema21": ema21, "ema50": ema50, "ema200": ema200,
+        "h1_ema50": h1_ema50_m15, "h1_ema200": h1_ema200_m15,
+        "atr14": atr14, "rsi14": rsi14, "adx14": adx14,
+        "pdh": pdh, "pdl": pdl, "asian_high": asian_high, "asian_low": asian_low
     }
 
 def calculate_volume_profile(df_intraday, spot_offset=0.0, bins=36):
@@ -360,7 +434,7 @@ def calculate_volume_profile(df_intraday, spot_offset=0.0, bins=36):
         "histogram": histogram
     }
 
-# ================= 1B. 4-ANATOMY VOLUME PROFILE ANALYZER (VPAnatomies_EA) =================
+# ================= 1B. 4-ANATOMY VOLUME PROFILE ANALYZER =================
 ANATOMY_META = {
     "D_SHAPED": {
         "title_th": "① D-SHAPED (ทรงตัว D - ตลาดสมดุล)",
@@ -522,7 +596,64 @@ def fetch_usd_news():
     except Exception:
         return []
 
-# ================= 2A. TREND WALK-FORWARD & MONTE CARLO ENGINE =================
+# ================= INSTITUTIONAL DAILY-AGGREGATED RISK METRICS =================
+def compute_institutional_risk_metrics(df_records, all_dates):
+    r_arr = df_records["r"].values
+    dates_col = df_records["date"].values
+
+    unique_days = pd.Index(sorted(set(all_dates)))
+    daily_r = pd.Series(0.0, index=unique_days)
+    for d, r_val in zip(dates_col, r_arr):
+        if d in daily_r.index:
+            daily_r[d] += float(r_val)
+
+    d_vals = daily_r.values
+    mean_d = float(np.mean(d_vals)) if len(d_vals) > 0 else 0.0
+    std_d = float(np.std(d_vals, ddof=1)) if len(d_vals) > 1 else 1e-4
+    downside_d = float(np.sqrt(np.mean(np.minimum(0.0, d_vals) ** 2)))
+
+    ann_factor = np.sqrt(252.0)
+    sharpe = round(float(np.clip((mean_d / max(std_d, 1e-4)) * ann_factor, -5.0, 6.0)), 2)
+    sortino = round(float(np.clip((mean_d / max(downside_d, 1e-4)) * ann_factor, -5.0, 9.0)), 2)
+
+    cum_r = np.cumsum(r_arr)
+    max_dd_r = float((np.maximum.accumulate(cum_r) - cum_r).max()) if len(cum_r) > 0 else 0.0
+    ann_return_r = mean_d * 252.0
+    calmar = round(float(np.clip(ann_return_r / max(max_dd_r, 1.0), -5.0, 12.0)), 2)
+
+    expectancy_r = round(float(np.mean(r_arr)), 2)
+    var_95_r = round(float(np.percentile(r_arr, 5)), 2)
+
+    max_consec_loss = 0
+    cur_l = 0
+    for r_v in r_arr:
+        if r_v < 0:
+            cur_l += 1
+            max_consec_loss = max(max_consec_loss, cur_l)
+        else:
+            cur_l = 0
+
+    rng = np.random.default_rng(42)
+    mc_sims = rng.choice(r_arr, size=(2000, len(r_arr)), replace=True)
+    mc_cum = np.cumsum(mc_sims, axis=1)
+    mc_peaks = np.maximum.accumulate(mc_cum, axis=1)
+    mc_dds = np.max(mc_peaks - mc_cum, axis=1)
+    mc_dd_95_r = round(float(np.percentile(mc_dds, 95)), 2)
+    mc_prob_profit = round(float(np.mean(mc_cum[:, -1] > 0) * 100.0), 1)
+
+    return {
+        "sharpe": sharpe,
+        "sortino": sortino,
+        "calmar": calmar,
+        "expectancy_r": expectancy_r,
+        "max_consec_loss": int(max_consec_loss),
+        "var_95_r": var_95_r,
+        "mc_dd_95_r": mc_dd_95_r,
+        "mc_prob_profit": mc_prob_profit,
+        "max_dd_r": round(max_dd_r, 2)
+    }
+
+# ================= 2A. TREND WALK-FORWARD ENGINE (PESSIMISTIC FILL + AUDIT TRAIL) =================
 def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
     df = df_intraday.copy()
     open_arr = df['Open'].values + spot_offset
@@ -546,13 +677,14 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
     n_bars = len(df)
 
     dt_index_utc = df.index.tz_localize("UTC") if df.index.tz is None else df.index.tz_convert("UTC")
+    dt_index_th = dt_index_utc.tz_convert(THAI_TZ)
     utc_hours = dt_index_utc.hour.values
     date_ordinals = dt_index_utc.date
 
     bars_per_day = 92
     lookback_5d = 5 * bars_per_day
     split_idx = lookback_5d + int((n_bars - lookback_5d) * 0.67)
-    spread_cost = 0.60
+    spread_cost = 0.60  # $0.60/oz = 60 points (Spread + ECN Commission)
 
     all_factors = ["VALUE_AREA_FADE", "LIQUIDITY_SWEEP", "LONDON_BREAKOUT", "MOMENTUM_BREAKOUT", "HTF_TREND_PULLBACK"]
 
@@ -560,11 +692,12 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         "atr_sl_mult": 1.6, "rr_mult": 2.2, "adx_thresh": 25,
         "enabled_factors": all_factors, "trades": 0, "win_rate": 0.0,
         "profit_factor": 0.0, "r_profit_factor": 0.0, "net_pnl": 0.0, "net_r": 0.0,
+        "expectancy_r": 0.0, "max_consec_loss": 0,
         "max_dd": 0.0, "max_dd_r": 0.0, "sharpe": 0.0, "sortino": 0.0,
         "calmar": 0.0, "var_95_r": -1.0, "mc_dd_95_r": -4.0, "mc_prob_profit": 50.0,
         "total_fee_drag": 0.0, "oos_trades": 0, "oos_win_rate": 0.0,
         "oos_profit_factor": 0.0, "oos_net_r": 0.0, "oos_net_pnl": 0.0,
-        "is_profitable_edge": False, "equity_curve_r": [0], "trade_r_list": []
+        "is_profitable_edge": False, "equity_curve_r": [0], "trade_r_list": [], "recent_sim_trades": []
     }
     if n_bars < lookback_5d + 120:
         return {"best": default_best, "factor_breakdown": [], "top_5": [default_best], "split_bar": split_idx}
@@ -607,6 +740,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         in_pos = 0
         active_factor = ""
         entry_p = sl_p = tp_p = init_risk = 0.0
+        entry_time_str = ""
         be_moved = False
         trail_locked = False
         trade_records = []
@@ -616,14 +750,27 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             if np.isnan(vp_val[i]) or np.isnan(atr_arr[i]) or atr_arr[i] <= 0 or np.isnan(pdh_arr[i]):
                 continue
 
+            # Pessimistic Intrabar Execution: ตรวจ SL ก่อน TP เสมอในแท่งเดียวกัน
             if in_pos == 1:
                 if low_arr[i] <= sl_p:
                     pnl = (sl_p - entry_p) - spread_cost
-                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": pnl / init_risk, "date": date_ordinals[i]})
+                    r_val = pnl / init_risk
+                    trade_records.append({
+                        "idx": i, "engine": "TREND", "factor": active_factor, "side": "LONG",
+                        "entry_time": entry_time_str, "exit_time": dt_index_th[i].strftime("%d/%m %H:%M"),
+                        "entry": round(entry_p, 2), "exit": round(sl_p, 2),
+                        "pnl": round(pnl, 2), "r": round(r_val, 2), "date": date_ordinals[i]
+                    })
                     in_pos = 0; cooldown = 3; continue
                 if high_arr[i] >= tp_p:
                     pnl = (tp_p - entry_p) - spread_cost
-                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": pnl / init_risk, "date": date_ordinals[i]})
+                    r_val = pnl / init_risk
+                    trade_records.append({
+                        "idx": i, "engine": "TREND", "factor": active_factor, "side": "LONG",
+                        "entry_time": entry_time_str, "exit_time": dt_index_th[i].strftime("%d/%m %H:%M"),
+                        "entry": round(entry_p, 2), "exit": round(tp_p, 2),
+                        "pnl": round(pnl, 2), "r": round(r_val, 2), "date": date_ordinals[i]
+                    })
                     in_pos = 0; cooldown = 2; continue
                 if not be_moved and high_arr[i] >= entry_p + init_risk * 1.0:
                     sl_p = entry_p + (atr_arr[i] * 0.15); be_moved = True
@@ -634,11 +781,23 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             elif in_pos == -1:
                 if high_arr[i] >= sl_p:
                     pnl = (entry_p - sl_p) - spread_cost
-                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": pnl / init_risk, "date": date_ordinals[i]})
+                    r_val = pnl / init_risk
+                    trade_records.append({
+                        "idx": i, "engine": "TREND", "factor": active_factor, "side": "SHORT",
+                        "entry_time": entry_time_str, "exit_time": dt_index_th[i].strftime("%d/%m %H:%M"),
+                        "entry": round(entry_p, 2), "exit": round(sl_p, 2),
+                        "pnl": round(pnl, 2), "r": round(r_val, 2), "date": date_ordinals[i]
+                    })
                     in_pos = 0; cooldown = 3; continue
                 if low_arr[i] <= tp_p:
                     pnl = (entry_p - tp_p) - spread_cost
-                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": pnl / init_risk, "date": date_ordinals[i]})
+                    r_val = pnl / init_risk
+                    trade_records.append({
+                        "idx": i, "engine": "TREND", "factor": active_factor, "side": "SHORT",
+                        "entry_time": entry_time_str, "exit_time": dt_index_th[i].strftime("%d/%m %H:%M"),
+                        "entry": round(entry_p, 2), "exit": round(tp_p, 2),
+                        "pnl": round(pnl, 2), "r": round(r_val, 2), "date": date_ordinals[i]
+                    })
                     in_pos = 0; cooldown = 2; continue
                 if not be_moved and low_arr[i] <= entry_p - init_risk * 1.0:
                     sl_p = entry_p - (atr_arr[i] * 0.15); be_moved = True
@@ -668,26 +827,27 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
 
             bull_candle = close_arr[i] > open_arr[i] and close_arr[i] > close_arr[i - 1]
             bear_candle = close_arr[i] < open_arr[i] and close_arr[i] < close_arr[i - 1]
+            t_str = dt_index_th[i].strftime("%d/%m %H:%M")
 
             if "VALUE_AREA_FADE" in enabled_set and adx <= adx_thresh:
                 if low_arr[i] <= vp_val[i] + atr * 0.35 and close_arr[i] > vp_val[i] - atr * 0.25 and bull_candle and rsi <= 45:
-                    in_pos = 1; active_factor = "VALUE_AREA_FADE"; be_moved = False; trail_locked = False
+                    in_pos = 1; active_factor = "VALUE_AREA_FADE"; be_moved = False; trail_locked = False; entry_time_str = t_str
                     entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward; continue
                 elif high_arr[i] >= vp_vah[i] - atr * 0.35 and close_arr[i] < vp_vah[i] + atr * 0.25 and bear_candle and rsi >= 55:
-                    in_pos = -1; active_factor = "VALUE_AREA_FADE"; be_moved = False; trail_locked = False
+                    in_pos = -1; active_factor = "VALUE_AREA_FADE"; be_moved = False; trail_locked = False; entry_time_str = t_str
                     entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward; continue
 
             swept_pdl = (low_arr[i] < pdl or low_arr[i - 1] < pdl) and close_arr[i] > pdl and bull_candle and (lower_wick_pct >= 0.22 or rsi <= 45)
             swept_pdh = (high_arr[i] > pdh or high_arr[i - 1] > pdh) and close_arr[i] < pdh and bear_candle and (upper_wick_pct >= 0.22 or rsi >= 55)
 
             if "LIQUIDITY_SWEEP" in enabled_set and swept_pdl:
-                in_pos = 1; active_factor = "LIQUIDITY_SWEEP"; be_moved = False; trail_locked = False
+                in_pos = 1; active_factor = "LIQUIDITY_SWEEP"; be_moved = False; trail_locked = False; entry_time_str = t_str
                 entry_p = close_arr[i]
                 swing_low = min(low_arr[i], low_arr[i - 1])
                 init_risk = max(entry_p - (swing_low - atr * 0.25), risk * 0.85)
                 sl_p = entry_p - init_risk; tp_p = entry_p + (init_risk * rr_mult); continue
             elif "LIQUIDITY_SWEEP" in enabled_set and swept_pdh:
-                in_pos = -1; active_factor = "LIQUIDITY_SWEEP"; be_moved = False; trail_locked = False
+                in_pos = -1; active_factor = "LIQUIDITY_SWEEP"; be_moved = False; trail_locked = False; entry_time_str = t_str
                 entry_p = close_arr[i]
                 swing_high = max(high_arr[i], high_arr[i - 1])
                 init_risk = max((swing_high + atr * 0.25) - entry_p, risk * 0.85)
@@ -697,10 +857,10 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
                 htf_bear = close_arr[i] < h1_e200 and close_arr[i] < e200
                 htf_bull = close_arr[i] > h1_e200 and close_arr[i] > e200
                 if htf_bear and close_arr[i] < as_l and close_arr[i - 1] >= as_l and bear_candle and (28 <= rsi <= 52):
-                    in_pos = -1; active_factor = "LONDON_BREAKOUT"; be_moved = False; trail_locked = False
+                    in_pos = -1; active_factor = "LONDON_BREAKOUT"; be_moved = False; trail_locked = False; entry_time_str = t_str
                     entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward; continue
                 elif htf_bull and close_arr[i] > as_h and close_arr[i - 1] <= as_h and bull_candle and (48 <= rsi <= 72):
-                    in_pos = 1; active_factor = "LONDON_BREAKOUT"; be_moved = False; trail_locked = False
+                    in_pos = 1; active_factor = "LONDON_BREAKOUT"; be_moved = False; trail_locked = False; entry_time_str = t_str
                     entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward; continue
 
             if "MOMENTUM_BREAKOUT" in enabled_set and adx > adx_thresh and body_pct >= 0.45:
@@ -710,26 +870,26 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
                 broke_up = close_arr[i] > vp_vah[i] and close_arr[i - 1] <= vp_vah[i] and bull_candle and (52 <= rsi <= 72)
 
                 if htf_bear and broke_down:
-                    in_pos = -1; active_factor = "MOMENTUM_BREAKOUT"; be_moved = False; trail_locked = False
+                    in_pos = -1; active_factor = "MOMENTUM_BREAKOUT"; be_moved = False; trail_locked = False; entry_time_str = t_str
                     entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward; continue
                 elif htf_bull and broke_up:
-                    in_pos = 1; active_factor = "MOMENTUM_BREAKOUT"; be_moved = False; trail_locked = False
+                    in_pos = 1; active_factor = "MOMENTUM_BREAKOUT"; be_moved = False; trail_locked = False; entry_time_str = t_str
                     entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward; continue
 
             if "HTF_TREND_PULLBACK" in enabled_set and adx > adx_thresh:
                 htf_bear = close_arr[i] < h1_e200 and h1_e50 < h1_e200 and close_arr[i] < e200 and e50 < e200
                 htf_bull = close_arr[i] > h1_e200 and h1_e50 > h1_e200 and close_arr[i] > e200 and e50 > e200
                 if htf_bear and high_arr[i] >= e21 and close_arr[i] < e21 and bear_candle and rsi >= 48:
-                    in_pos = -1; active_factor = "HTF_TREND_PULLBACK"; be_moved = False; trail_locked = False
+                    in_pos = -1; active_factor = "HTF_TREND_PULLBACK"; be_moved = False; trail_locked = False; entry_time_str = t_str
                     entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward
                 elif htf_bull and low_arr[i] <= e21 and close_arr[i] > e21 and bull_candle and rsi <= 52:
-                    in_pos = 1; active_factor = "HTF_TREND_PULLBACK"; be_moved = False; trail_locked = False
+                    in_pos = 1; active_factor = "HTF_TREND_PULLBACK"; be_moved = False; trail_locked = False; entry_time_str = t_str
                     entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward
 
         return trade_records
 
     def summarize_records(records, raw_records, sl_m, rr_m, adx_t, enabled_list):
-        if len(records) < 4:
+        if len(records) < 5:
             return None
         df_tr = pd.DataFrame(records)
         df_raw_all = pd.DataFrame(raw_records) if raw_records else df_tr
@@ -742,38 +902,21 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
 
         gross_r_win = float(wins_r.sum()) if len(wins_r) > 0 else 0.0
         gross_r_loss = float(abs(losses_r.sum())) if len(losses_r) > 0 else 1e-6
-        r_pf = gross_r_win / gross_r_loss
+        r_pf = round(min(gross_r_win / gross_r_loss, 9.99), 2)
 
         wins_usd = arr[arr > 0]
         losses_usd = arr[arr < 0]
-        usd_pf = (float(wins_usd.sum()) / float(abs(losses_usd.sum()))) if len(losses_usd) > 0 else 2.0
+        usd_pf = round(min((float(wins_usd.sum()) / float(abs(losses_usd.sum()))) if len(losses_usd) > 0 else 2.0, 9.99), 2)
 
         net_pnl = float(arr.sum())
         net_r = float(r_arr.sum())
 
         cum_usd = np.cumsum(arr)
         max_dd_usd = float((np.maximum.accumulate(cum_usd) - cum_usd).max()) if len(cum_usd) > 0 else 0.0
-
         cum_r = np.cumsum(r_arr)
-        max_dd_r = float((np.maximum.accumulate(cum_r) - cum_r).max()) if len(cum_r) > 0 else 0.0
         total_fee_drag = round(len(arr) * spread_cost, 2)
 
-        mean_r = float(np.mean(r_arr))
-        std_r = float(np.std(r_arr, ddof=1)) if len(r_arr) > 1 else 1.0
-        downside_dev = float(np.sqrt(np.mean(np.minimum(0.0, r_arr) ** 2)))
-        ann_factor = np.sqrt(250.0)
-        sharpe = round((mean_r / max(std_r, 1e-6)) * ann_factor, 2)
-        sortino = round((mean_r / max(downside_dev, 1e-6)) * ann_factor, 2)
-        calmar = round((net_r * (250.0 / max(len(r_arr), 1))) / max(max_dd_r, 0.5), 2)
-        var_95_r = round(float(np.percentile(r_arr, 5)), 2)
-
-        rng = np.random.default_rng(42)
-        mc_sims = rng.choice(r_arr, size=(1000, len(r_arr)), replace=True)
-        mc_cum = np.cumsum(mc_sims, axis=1)
-        mc_peaks = np.maximum.accumulate(mc_cum, axis=1)
-        mc_dds = np.max(mc_peaks - mc_cum, axis=1)
-        mc_dd_95_r = round(float(np.percentile(mc_dds, 95)), 2)
-        mc_prob_profit = round(float(np.mean(mc_cum[:, -1] > 0) * 100.0), 1)
+        inst = compute_institutional_risk_metrics(df_tr, date_ordinals[lookback_5d:])
 
         oos_df = df_tr[df_tr["idx"] >= split_idx]
         if len(oos_df) > 0:
@@ -781,7 +924,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             o_pnl = oos_df["pnl"].values
             o_w = o_r[o_r > 0]; o_l = o_r[o_r < 0]
             oos_wr = round((len(o_w) / len(o_r)) * 100.0, 1)
-            oos_r_pf = round((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else (2.0 if len(o_w) > 0 else 0.0), 2)
+            oos_r_pf = round(min((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else (2.0 if len(o_w) > 0 else 0.0), 9.99), 2)
             oos_net_r = round(float(o_r.sum()), 2)
             oos_pnl = round(float(o_pnl.sum()), 2)
             oos_trades = int(len(oos_df))
@@ -792,7 +935,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         if len(is_df) >= 3:
             is_r = is_df["r"].values
             is_w = is_r[is_r > 0]; is_l = is_r[is_r < 0]
-            is_r_pf = (float(is_w.sum()) / float(abs(is_l.sum()))) if len(is_l) > 0 else 2.0
+            is_r_pf = min((float(is_w.sum()) / float(abs(is_l.sum()))) if len(is_l) > 0 else 2.0, 9.99)
             is_net_r = float(is_r.sum())
             is_cum_r = np.cumsum(is_r)
             is_dd_r = float((np.maximum.accumulate(is_cum_r) - is_cum_r).max())
@@ -808,7 +951,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             if len(sub) > 0:
                 s_r = sub["r"].values; s_pnl = sub["pnl"].values
                 s_w = s_r[s_r > 0]; s_l = s_r[s_r < 0]
-                s_r_pf = (float(s_w.sum()) / float(abs(s_l.sum()))) if len(s_l) > 0 else (2.0 if len(s_w) > 0 else 0.0)
+                s_r_pf = min((float(s_w.sum()) / float(abs(s_l.sum()))) if len(s_l) > 0 else (2.0 if len(s_w) > 0 else 0.0), 9.99)
                 breakdown.append({
                     "factor": f_name, "enabled": is_enabled, "trades": int(len(sub)),
                     "win_rate": round((len(s_w) / len(sub)) * 100.0, 1),
@@ -821,25 +964,34 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
                     "factor": f_name, "enabled": is_enabled, "trades": 0, "win_rate": 0.0, "r_profit_factor": 0.0, "net_pnl": 0.0, "net_r": 0.0
                 })
 
+        recent_sim = [
+            {k: v for k, v in rec.items() if k not in ("idx", "date")}
+            for rec in reversed(records[-12:])
+        ]
+
         return {
             "atr_sl_mult": sl_m, "rr_mult": rr_m, "adx_thresh": adx_t, "enabled_factors": enabled_list,
-            "trades": int(len(r_arr)), "win_rate": round(wr, 1), "profit_factor": round(usd_pf, 2),
-            "r_profit_factor": round(r_pf, 2), "net_pnl": round(net_pnl, 2), "net_r": round(net_r, 2),
-            "max_dd": round(max_dd_usd, 2), "max_dd_r": round(max_dd_r, 2),
-            "sharpe": sharpe, "sortino": sortino, "calmar": calmar, "var_95_r": var_95_r,
-            "mc_dd_95_r": mc_dd_95_r, "mc_prob_profit": mc_prob_profit, "total_fee_drag": total_fee_drag,
+            "trades": int(len(r_arr)), "win_rate": round(wr, 1), "profit_factor": usd_pf,
+            "r_profit_factor": r_pf, "net_pnl": round(net_pnl, 2), "net_r": round(net_r, 2),
+            "expectancy_r": inst["expectancy_r"], "max_consec_loss": inst["max_consec_loss"],
+            "max_dd": round(max_dd_usd, 2), "max_dd_r": inst["max_dd_r"],
+            "sharpe": inst["sharpe"], "sortino": inst["sortino"], "calmar": inst["calmar"],
+            "var_95_r": inst["var_95_r"], "mc_dd_95_r": inst["mc_dd_95_r"],
+            "mc_prob_profit": inst["mc_prob_profit"], "total_fee_drag": total_fee_drag,
             "oos_trades": oos_trades, "oos_win_rate": oos_wr, "oos_profit_factor": oos_r_pf,
             "oos_net_r": oos_net_r, "oos_net_pnl": oos_pnl,
-            "is_profitable_edge": bool(r_pf >= 1.05 and net_r > 0),
+            "is_profitable_edge": bool(r_pf >= 1.10 and net_r > 0 and len(r_arr) >= 8),
             "score": round(float(train_score), 3),
             "equity_curve_r": [round(float(x), 2) for x in np.insert(cum_r, 0, 0.0)],
             "trade_r_list": [round(float(x), 2) for x in r_arr],
-            "factor_breakdown": breakdown
+            "factor_breakdown": breakdown,
+            "recent_sim_trades": recent_sim
         }
 
     candidates = []
-    for sl_m in [1.6, 2.0, 2.5]:
-        for rr_m in [2.2, 2.6, 3.2]:
+    seen_sigs = set()
+    for sl_m in [1.5, 2.0, 2.5]:
+        for rr_m in [2.0, 2.5, 3.2]:
             for adx_t in [22, 25, 28]:
                 raw_all = simulate_raw_trades(sl_m, rr_m, adx_t, set(all_factors))
                 if len(raw_all) < 6:
@@ -858,7 +1010,10 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
                 filtered_records = simulate_raw_trades(sl_m, rr_m, adx_t, set(surviving_factors))
                 summary = summarize_records(filtered_records, raw_all, sl_m, rr_m, adx_t, surviving_factors)
                 if summary:
-                    candidates.append(summary)
+                    sig = (summary["trades"], summary["win_rate"], summary["net_r"], summary["oos_net_r"])
+                    if sig not in seen_sigs:
+                        seen_sigs.add(sig)
+                        candidates.append(summary)
 
     if not candidates:
         return {"best": default_best, "factor_breakdown": [], "top_5": [default_best], "split_bar": split_idx}
@@ -867,7 +1022,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
     best_cfg = ranked[0]
     breakdown = best_cfg.pop("factor_breakdown", [])
     top_5_clean = [
-        {k: v for k, v in item.items() if k not in ("equity_curve_r", "trade_r_list", "factor_breakdown")}
+        {k: v for k, v in item.items() if k not in ("equity_curve_r", "trade_r_list", "factor_breakdown", "recent_sim_trades")}
         for item in ranked[:5]
     ]
 
@@ -878,8 +1033,9 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         "split_bar": split_idx
     }
 
-# ================= 2B. VP-ANATOMY 500-POINT ($5.00) SCALP ENGINE (GUARANTEED FULL STATS) =================
-def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
+# ================= 2B. VP-ANATOMY 500-POINT ($5.00) SCALP ENGINE (DEDUPLICATED & AUDITABLE) =================
+def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0, live_muted_shapes=None):
+    live_muted_set = set(live_muted_shapes or [])
     open_arr = df_intraday['Open'].values + spot_offset
     high_arr = df_intraday['High'].values + spot_offset
     low_arr = df_intraday['Low'].values + spot_offset
@@ -891,7 +1047,9 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     n_bars = len(df_intraday)
 
     dt_index_utc = df_intraday.index.tz_localize("UTC") if df_intraday.index.tz is None else df_intraday.index.tz_convert("UTC")
+    dt_index_th = dt_index_utc.tz_convert(THAI_TZ)
     utc_hours = dt_index_utc.hour.values
+    date_ordinals = dt_index_utc.date
 
     curr_anatomy = classify_vp_anatomy(
         low_arr[-92:], high_arr[-92:], close_arr[-92:], vol_arr[-92:], bins=32
@@ -933,12 +1091,13 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     all_shapes = ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"]
     sl_usd = 5.00       # 500 จุด
     be_trigger = 2.50   # +250 จุด เลื่อนบังทุน
-    spread_cost = 0.45  # Spread Scalp จริง ~45 จุด
+    spread_cost = 0.45  # 45 จุด (ECN Raw Spread + Commission)
 
     def sim_scalp(tp_usd, tol_usd, wick_min, enabled_shapes):
         in_pos = 0
         active_sh = ""
         entry_p = sl_p = tp_p = 0.0
+        entry_time_str = ""
         be_moved = False
         cooldown = 0
         recs = []
@@ -948,14 +1107,25 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
             if sh is None or np.isnan(an_poc[i]):
                 continue
 
+            # Pessimistic Fill: ตรวจ SL ก่อน TP เสมอ
             if in_pos == 1:
                 if low_arr[i] <= sl_p:
                     pnl = (sl_p - entry_p) - spread_cost
-                    recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
+                    recs.append({
+                        "idx": i, "engine": "SCALP", "shape": active_sh, "side": "LONG",
+                        "entry_time": entry_time_str, "exit_time": dt_index_th[i].strftime("%d/%m %H:%M"),
+                        "entry": round(entry_p, 2), "exit": round(sl_p, 2),
+                        "pnl": round(pnl, 2), "r": round(pnl / sl_usd, 2), "date": date_ordinals[i]
+                    })
                     in_pos = 0; cooldown = 1; continue
                 if high_arr[i] >= tp_p:
                     pnl = (tp_p - entry_p) - spread_cost
-                    recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
+                    recs.append({
+                        "idx": i, "engine": "SCALP", "shape": active_sh, "side": "LONG",
+                        "entry_time": entry_time_str, "exit_time": dt_index_th[i].strftime("%d/%m %H:%M"),
+                        "entry": round(entry_p, 2), "exit": round(tp_p, 2),
+                        "pnl": round(pnl, 2), "r": round(pnl / sl_usd, 2), "date": date_ordinals[i]
+                    })
                     in_pos = 0; cooldown = 1; continue
                 if not be_moved and high_arr[i] >= entry_p + be_trigger:
                     sl_p = entry_p + 0.45
@@ -964,11 +1134,21 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
             elif in_pos == -1:
                 if high_arr[i] >= sl_p:
                     pnl = (entry_p - sl_p) - spread_cost
-                    recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
+                    recs.append({
+                        "idx": i, "engine": "SCALP", "shape": active_sh, "side": "SHORT",
+                        "entry_time": entry_time_str, "exit_time": dt_index_th[i].strftime("%d/%m %H:%M"),
+                        "entry": round(entry_p, 2), "exit": round(sl_p, 2),
+                        "pnl": round(pnl, 2), "r": round(pnl / sl_usd, 2), "date": date_ordinals[i]
+                    })
                     in_pos = 0; cooldown = 1; continue
                 if low_arr[i] <= tp_p:
                     pnl = (entry_p - tp_p) - spread_cost
-                    recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
+                    recs.append({
+                        "idx": i, "engine": "SCALP", "shape": active_sh, "side": "SHORT",
+                        "entry_time": entry_time_str, "exit_time": dt_index_th[i].strftime("%d/%m %H:%M"),
+                        "entry": round(entry_p, 2), "exit": round(tp_p, 2),
+                        "pnl": round(pnl, 2), "r": round(pnl / sl_usd, 2), "date": date_ordinals[i]
+                    })
                     in_pos = 0; cooldown = 1; continue
                 if not be_moved and low_arr[i] <= entry_p - be_trigger:
                     sl_p = entry_p - 0.45
@@ -994,37 +1174,38 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
             rsi = rsi_arr[i]
             poc = an_poc[i]; vah = an_vah[i]; val = an_val[i]
             lo_pk = an_lo_pk[i]; hi_pk = an_hi_pk[i]
+            t_str = dt_index_th[i].strftime("%d/%m %H:%M")
 
             if sh == "D_SHAPED":
                 if c_low <= val + tol_usd and c_close >= val - 1.5 and bull_c and rsi <= 52:
-                    in_pos = 1; active_sh = "D_SHAPED"; be_moved = False
+                    in_pos = 1; active_sh = "D_SHAPED"; be_moved = False; entry_time_str = t_str
                     entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
                 elif c_high >= vah - tol_usd and c_close <= vah + 1.5 and bear_c and rsi >= 48:
-                    in_pos = -1; active_sh = "D_SHAPED"; be_moved = False
+                    in_pos = -1; active_sh = "D_SHAPED"; be_moved = False; entry_time_str = t_str
                     entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
 
             elif sh == "B_SHAPED":
                 if c_high >= poc - tol_usd and c_close < poc and bear_c and c_close < ema21_arr[i] and rsi >= 30:
-                    in_pos = -1; active_sh = "B_SHAPED"; be_moved = False
+                    in_pos = -1; active_sh = "B_SHAPED"; be_moved = False; entry_time_str = t_str
                     entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
                 elif c_close > vah and close_arr[i - 1] <= vah and bull_c and rsi <= 70:
-                    in_pos = 1; active_sh = "B_SHAPED"; be_moved = False
+                    in_pos = 1; active_sh = "B_SHAPED"; be_moved = False; entry_time_str = t_str
                     entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
 
             elif sh == "P_SHAPED":
                 if ((c_low <= poc + tol_usd and c_close >= poc - 1.0) or (c_low <= val + tol_usd and c_close >= val - 1.0)) and bull_c and c_close > ema50_arr[i] and rsi <= 68:
-                    in_pos = 1; active_sh = "P_SHAPED"; be_moved = False
+                    in_pos = 1; active_sh = "P_SHAPED"; be_moved = False; entry_time_str = t_str
                     entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
                 elif c_close < val and close_arr[i - 1] >= val and bear_c and rsi >= 32:
-                    in_pos = -1; active_sh = "P_SHAPED"; be_moved = False
+                    in_pos = -1; active_sh = "P_SHAPED"; be_moved = False; entry_time_str = t_str
                     entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
 
             elif sh == "DOUBLE_ZONE":
                 if c_low <= lo_pk + tol_usd and c_close >= lo_pk - 1.5 and bull_c and rsi <= 55:
-                    in_pos = 1; active_sh = "DOUBLE_ZONE"; be_moved = False
+                    in_pos = 1; active_sh = "DOUBLE_ZONE"; be_moved = False; entry_time_str = t_str
                     entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
                 elif c_high >= hi_pk - tol_usd and c_close <= hi_pk + 1.5 and bear_c and rsi >= 45:
-                    in_pos = -1; active_sh = "DOUBLE_ZONE"; be_moved = False
+                    in_pos = -1; active_sh = "DOUBLE_ZONE"; be_moved = False; entry_time_str = t_str
                     entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
 
         return recs
@@ -1032,38 +1213,26 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     def build_scalp_candidate(tp_cand, tol_cand, wick_cand, raw_s, surv, strict_mode=True):
         df_s = pd.DataFrame(raw_s)
         filt_s = sim_scalp(tp_cand, tol_cand, wick_cand, set(surv))
-        if len(filt_s) < 4:
+        if len(filt_s) < 5:
             return None
         df_f = pd.DataFrame(filt_s)
         r_arr = df_f["r"].values
         pnl_arr = df_f["pnl"].values
         w_r = r_arr[r_arr > 0]; l_r = r_arr[r_arr < 0]
         wr = round((len(w_r) / len(r_arr)) * 100.0, 1)
-        r_pf = round((float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0, 2)
+        r_pf = round(min((float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0, 9.99), 2)
         net_r = round(float(r_arr.sum()), 2)
         net_pnl = round(float(pnl_arr.sum()), 2)
         cum_r = np.cumsum(r_arr)
-        max_dd_r = round(float((np.maximum.accumulate(cum_r) - cum_r).max()), 2)
 
-        mean_r = float(np.mean(r_arr))
-        std_r = float(np.std(r_arr, ddof=1)) if len(r_arr) > 1 else 1.0
-        downside_dev = float(np.sqrt(np.mean(np.minimum(0.0, r_arr) ** 2)))
-        sharpe = round((mean_r / max(std_r, 1e-6)) * np.sqrt(250.0), 2)
-        sortino = round((mean_r / max(downside_dev, 1e-6)) * np.sqrt(250.0), 2)
-
-        rng = np.random.default_rng(42)
-        mc_sims = rng.choice(r_arr, size=(1000, len(r_arr)), replace=True)
-        mc_cum = np.cumsum(mc_sims, axis=1)
-        mc_dds = np.max(np.maximum.accumulate(mc_cum, axis=1) - mc_cum, axis=1)
-        mc_dd_95_r = round(float(np.percentile(mc_dds, 95)), 2)
-        mc_prob_profit = round(float(np.mean(mc_cum[:, -1] > 0) * 100.0), 1)
+        inst = compute_institutional_risk_metrics(df_f, date_ordinals[win_24h:])
 
         oos_df = df_f[df_f["idx"] >= split_idx]
         if len(oos_df) > 0:
             o_r = oos_df["r"].values
             o_w = o_r[o_r > 0]; o_l = o_r[o_r < 0]
             oos_wr = round((len(o_w) / len(o_r)) * 100.0, 1)
-            oos_pf = round((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else (2.0 if len(o_w) > 0 else 0.0), 2)
+            oos_pf = round(min((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else (2.0 if len(o_w) > 0 else 0.0), 9.99), 2)
             oos_net_r = round(float(o_r.sum()), 2)
             oos_trades = int(len(oos_df))
         else:
@@ -1071,15 +1240,14 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
 
         df_is = df_f[df_f["idx"] < split_idx]
         is_r = df_is["r"].values if len(df_is) > 0 else r_arr
-        sc_score = (float(is_r.sum()) + 5.0) * (r_pf ** 0.5) / (1.0 + max_dd_r * 0.15)
+        sc_score = (float(is_r.sum()) + 5.0) * (r_pf ** 0.5) / (1.0 + inst["max_dd_r"] * 0.15)
         if not strict_mode:
             sc_score -= 100.0
 
-        # แสดงสถิติย้อนหลังจริงของทั้ง 4 กายวิภาค (รวมตัวที่ถูก MUTE เพื่อให้เห็นตัวเลขจริง)
         anatomy_breakdown = []
         for s_name in all_shapes:
-            is_on = s_name in surv
-            src_df = df_f if is_on else df_s
+            is_on = (s_name in surv) and (s_name not in live_muted_set)
+            src_df = df_f if (s_name in surv) else df_s
             sub = src_df[src_df["shape"] == s_name]
             if len(sub) > 0:
                 sr = sub["r"].values
@@ -1087,48 +1255,50 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
                 anatomy_breakdown.append({
                     "shape": s_name,
                     "enabled": is_on,
+                    "live_learned_mute": s_name in live_muted_set,
                     "trades": int(len(sub)),
                     "win_rate": round((len(sw) / len(sub)) * 100.0, 1),
                     "net_r": round(float(sr.sum()), 2)
                 })
             else:
-                anatomy_breakdown.append({"shape": s_name, "enabled": is_on, "trades": 0, "win_rate": 0.0, "net_r": 0.0})
+                anatomy_breakdown.append({
+                    "shape": s_name, "enabled": is_on, "live_learned_mute": s_name in live_muted_set,
+                    "trades": 0, "win_rate": 0.0, "net_r": 0.0
+                })
+
+        recent_sim = [
+            {k: v for k, v in rec.items() if k not in ("idx", "date")}
+            for rec in reversed(filt_s[-12:])
+        ]
 
         return {
-            "sl_usd": sl_usd,
-            "sl_points": 500,
-            "tp_usd": tp_cand,
-            "tp_points": int(round(tp_cand * 100)),
+            "sl_usd": sl_usd, "sl_points": 500,
+            "tp_usd": tp_cand, "tp_points": int(round(tp_cand * 100)),
             "tol_points": int(round(tol_cand * 100)),
             "wick_mode": "STRICT" if wick_cand >= 0.25 else "NORMAL",
-            "be_usd": be_trigger,
-            "be_points": 250,
-            "enabled_shapes": surv,
-            "trades": int(len(r_arr)),
-            "win_rate": wr,
-            "r_profit_factor": r_pf,
-            "net_r": net_r,
-            "net_pnl": net_pnl,
-            "max_dd_r": max_dd_r,
-            "sharpe": sharpe,
-            "sortino": sortino,
-            "mc_dd_95_r": mc_dd_95_r,
-            "mc_prob_profit": mc_prob_profit,
-            "oos_trades": oos_trades,
-            "oos_win_rate": oos_wr,
-            "oos_r_pf": oos_pf,
-            "oos_net_r": oos_net_r,
-            "has_edge": bool(r_pf >= 1.05 and net_r > 0),
+            "be_usd": be_trigger, "be_points": 250,
+            "enabled_shapes": [s for s in surv if s not in live_muted_set],
+            "trades": int(len(r_arr)), "win_rate": wr,
+            "r_profit_factor": r_pf, "net_r": net_r, "net_pnl": net_pnl,
+            "expectancy_r": inst["expectancy_r"], "max_consec_loss": inst["max_consec_loss"],
+            "max_dd_r": inst["max_dd_r"], "sharpe": inst["sharpe"], "sortino": inst["sortino"],
+            "mc_dd_95_r": inst["mc_dd_95_r"], "mc_prob_profit": inst["mc_prob_profit"],
+            "oos_trades": oos_trades, "oos_win_rate": oos_wr,
+            "oos_r_pf": oos_pf, "oos_net_r": oos_net_r,
+            "has_edge": bool(r_pf >= 1.10 and net_r > 0 and len(r_arr) >= 8),
             "score": round(sc_score, 3),
             "equity_curve_r": [round(float(x), 2) for x in np.insert(cum_r, 0, 0.0)],
-            "anatomy_breakdown": anatomy_breakdown
+            "anatomy_breakdown": anatomy_breakdown,
+            "recent_sim_trades": recent_sim
         }
 
     scalp_candidates = []
     fallback_candidates = []
-    for tp_cand in [4.00, 5.00, 6.00, 7.00]:
-        for tol_cand in [1.50, 2.50]:
-            for wick_cand in [0.18, 0.28]:
+    seen_scalp_sigs = set()
+
+    for tp_cand in [4.00, 5.00, 6.00, 7.50]:
+        for tol_cand in [1.20, 2.20, 3.20]:
+            for wick_cand in [0.15, 0.28]:
                 raw_s = sim_scalp(tp_cand, tol_cand, wick_cand, set(all_shapes))
                 if len(raw_s) < 6:
                     continue
@@ -1147,20 +1317,25 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
                 if surv:
                     cand = build_scalp_candidate(tp_cand, tol_cand, wick_cand, raw_s, surv, strict_mode=True)
                     if cand:
-                        scalp_candidates.append(cand)
+                        sig = (cand["tp_points"], cand["trades"], cand["win_rate"], cand["net_r"])
+                        if sig not in seen_scalp_sigs:
+                            seen_scalp_sigs.add(sig)
+                            scalp_candidates.append(cand)
                 else:
                     shape_scores.sort(key=lambda x: x[1], reverse=True)
-                    best_fallback_shape = [shape_scores[0][0]]
-                    cand_fb = build_scalp_candidate(tp_cand, tol_cand, wick_cand, raw_s, best_fallback_shape, strict_mode=False)
+                    cand_fb = build_scalp_candidate(tp_cand, tol_cand, wick_cand, raw_s, [shape_scores[0][0]], strict_mode=False)
                     if cand_fb:
-                        fallback_candidates.append(cand_fb)
+                        sig = (cand_fb["tp_points"], cand_fb["trades"], cand_fb["win_rate"], cand_fb["net_r"])
+                        if sig not in seen_scalp_sigs:
+                            seen_scalp_sigs.add(sig)
+                            fallback_candidates.append(cand_fb)
 
     chosen_pool = scalp_candidates if scalp_candidates else fallback_candidates
     if chosen_pool:
         scalp_ranked = sorted(chosen_pool, key=lambda x: x["score"], reverse=True)
         scalp_bt = scalp_ranked[0]
         scalp_bt["top_5"] = [
-            {k: v for k, v in item.items() if k not in ("equity_curve_r", "anatomy_breakdown")}
+            {k: v for k, v in item.items() if k not in ("equity_curve_r", "anatomy_breakdown", "recent_sim_trades")}
             for item in scalp_ranked[:5]
         ]
     else:
@@ -1168,11 +1343,11 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
             "sl_usd": 5.0, "sl_points": 500, "tp_usd": 5.0, "tp_points": 500,
             "tol_points": 200, "wick_mode": "NORMAL",
             "be_usd": 2.5, "be_points": 250, "enabled_shapes": [],
-            "trades": 0, "win_rate": 0.0,
+            "trades": 0, "win_rate": 0.0, "expectancy_r": 0.0, "max_consec_loss": 0,
             "r_profit_factor": 0.0, "net_r": 0.0, "net_pnl": 0.0, "max_dd_r": 0.0,
             "sharpe": 0.0, "sortino": 0.0, "mc_dd_95_r": 0.0, "mc_prob_profit": 0.0,
             "oos_trades": 0, "oos_win_rate": 0.0, "oos_r_pf": 0.0, "oos_net_r": 0.0,
-            "has_edge": False, "equity_curve_r": [0], "anatomy_breakdown": [], "top_5": []
+            "has_edge": False, "equity_curve_r": [0], "anatomy_breakdown": [], "top_5": [], "recent_sim_trades": []
         }
 
     sh = curr_anatomy["shape"]
@@ -1184,7 +1359,7 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     tp_usd = scalp_bt["tp_usd"]
     tp_pts = scalp_bt["tp_points"]
     enabled_shapes = set(scalp_bt.get("enabled_shapes", []))
-    shape_is_active = sh in enabled_shapes
+    shape_is_active = (sh in enabled_shapes) and (sh not in live_muted_set)
 
     if sh == "D_SHAPED":
         if abs(spot_price - val) <= abs(spot_price - vah):
@@ -1230,11 +1405,13 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
 
     if not gate_session:
         s_verdict = "NO (อยู่นอกเวลา Scalp 10:00–00:30 น.)"
+    elif sh in live_muted_set:
+        s_verdict = f"NO (Self-Learning Guard สั่ง MUTE ทรง {sh} ชั่วคราวหลังแพ้ต่อเนื่อง)"
     elif not shape_is_active:
         active_str = ", ".join(enabled_shapes) if enabled_shapes else "ไม่มี"
-        s_verdict = f"NO (ทรง {sh} ถูก MUTE จากสถิติ Backtest — รอจังหวะในทรง {active_str})"
+        s_verdict = f"NO (ทรง {sh} ถูก MUTE จาก Backtest — รอทรง {active_str})"
     elif not scalp_bt["has_edge"]:
-        s_verdict = "NO (สถิติ Scalp R-PF ต่ำกว่า 1.05 — รอจังหวะถัดไป)"
+        s_verdict = "NO (สถิติ Scalp R-PF ต่ำกว่า 1.10 — รอจังหวะถัดไป)"
     elif not gate_prox:
         s_verdict = f"NO (ห่างจุดเข้า ${dist_usd:.2f} / {dist_pts} จุด — รอเข้าใกล้ <= 300 จุด)"
     else:
@@ -1272,7 +1449,8 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     }
 
 # ================= 3. SESSION-AWARE SPOT TREND ENGINE =================
-def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, ind, spot_price, bid, ask, spot_offset, paxg_offset, open_interest, tuned_params):
+def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, ind, spot_price, bid, ask, feed_source, spot_offset, open_interest, tuned_params, live_muted_factors=None):
+    live_muted_f_set = set(live_muted_factors or [])
     futures_price = float(df_intraday['Close'].iloc[-1])
     active_spot = round(spot_price, 2) if spot_price else round(futures_price, 2)
     
@@ -1321,7 +1499,7 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
     rr_mult = float(tuned_params.get("rr_mult", 2.2))
     adx_thresh = float(tuned_params.get("adx_thresh", 25))
     has_edge = bool(tuned_params.get("is_profitable_edge", False))
-    enabled_factors = set(tuned_params.get("enabled_factors", ["VALUE_AREA_FADE", "LIQUIDITY_SWEEP", "LONDON_BREAKOUT"]))
+    enabled_factors = set(tuned_params.get("enabled_factors", ["VALUE_AREA_FADE", "LIQUIDITY_SWEEP", "LONDON_BREAKOUT"])) - live_muted_f_set
 
     risk_unit = round(curr_atr14 * atr_sl_mult, 2)
     be_trigger_dist = round(risk_unit * 1.0, 2)
@@ -1330,7 +1508,7 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
     now_th = datetime.now(THAI_TZ)
     in_killzone = (13 <= now_th.hour <= 23) or (now_th.hour == 0 and now_th.minute <= 30)
     in_london_window = (13 <= now_th.hour <= 16)
-    session_name = "LONDON / NY KILLZONE ACTIVE (เปิดวิเคราะห์และเทรด)" if in_killzone else "NO TRADE ZONE (ช่วงเช้า - ปลดล็อก 13:00 น.)"
+    session_name = "LONDON / NY KILLZONE ACTIVE" if in_killzone else "NO TRADE ZONE (รอ 13:00 น.)"
 
     rsi_oversold_exhausted = curr_rsi14 < 28.0
     rsi_overbought_exhausted = curr_rsi14 > 72.0
@@ -1349,8 +1527,6 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
         sl = round(entry - risk_unit, 2)
         be_target = round(entry + be_trigger_dist, 2)
         tp = round(entry + reward_unit, 2)
-        position_context = f"ราคากวาดสภาพคล่องใต้ PDL (${curr_pdl}) และดึงกลับขึ้นมายืนเหนือแนวรับได้ (RSI {curr_rsi14})"
-        invalidation_rule = f"หากราคาร่วงหลุด Stop Loss ${sl} จะยกเลิกแผน Long ทันที"
     elif "LIQUIDITY_SWEEP" in enabled_factors and near_pdh_sweep:
         active_factor = "LIQUIDITY_SWEEP"
         regime = f"LIQUIDITY SWEEP AT PDH (${curr_pdh}) | RSI {curr_rsi14}"
@@ -1360,21 +1536,17 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
         sl = round(entry + risk_unit, 2)
         be_target = round(entry - be_trigger_dist, 2)
         tp = round(entry - reward_unit, 2)
-        position_context = f"ราคากวาดสภาพคล่องเหนือ PDH (${curr_pdh}) และถูกแรงขายกดกลับลงมาในกรอบ (RSI {curr_rsi14})"
-        invalidation_rule = f"หากราคาเบรกทะลุ Stop Loss ${sl} จะยกเลิกแผน Short ทันที"
     elif curr_adx14 > adx_thresh and active_spot < curr_h1_ema200 and active_spot < curr_ema200:
         if rsi_oversold_exhausted:
             active_factor = "ANTI_CHASE_RETEST"
             regime = f"OVERSOLD EXHAUSTION (ADX {curr_adx14} | RSI {curr_rsi14} < 28)"
-            bias = f"ANTI-CHASE RETEST SHORT (RSI ตึงตัว ห้ามไล่ Short ใต้ PDL — รอเด้งชน PDL ${curr_pdl} / EMA21 ${curr_ema21})"
+            bias = f"ANTI-CHASE RETEST SHORT (ห้ามไล่ Short ใต้ PDL — รอเด้งชน PDL ${curr_pdl} / EMA21 ${curr_ema21})"
             direction = "SHORT"
             retest_lvl = curr_pdl if curr_pdl > active_spot else curr_ema21
             entry = round(retest_lvl, 2)
             sl = round(entry + risk_unit, 2)
             be_target = round(entry - be_trigger_dist, 2)
             tp = round(entry - reward_unit, 2)
-            position_context = f"ระบบ RSI Exhaustion Guard ตรวจพบ RSI14 ต่ำสุดขีด ({curr_rsi14}) จึงบล็อกการไล่ Short ด้านล่าง และปรับแผนให้รอราคาดีดทดสอบแนวต้าน"
-            invalidation_rule = f"หากราคาดีดทะลุ Stop Loss ${sl} กลับขึ้นไปยืนเหนือแนวต้านให้ยกเลิกแผนทันที"
         elif "LONDON_BREAKOUT" in enabled_factors and in_london_window and active_spot >= curr_asian_l:
             active_factor = "LONDON_BREAKOUT"
             regime = f"LONDON BREAKOUT BEAR (ADX {curr_adx14} | Asian Low ${curr_asian_l})"
@@ -1384,8 +1556,6 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
             sl = round(entry + risk_unit, 2)
             be_target = round(entry - be_trigger_dist, 2)
             tp = round(entry - reward_unit, 2)
-            position_context = f"อยู่ในช่วงเปิดตลาดลอนดอน เทรนด์ H1/M15 เป็นขาลง และ RSI ({curr_rsi14}) ยังมีพื้นที่ให้วิ่งลงต่อ"
-            invalidation_rule = f"หากราคาดีดทะลุ Stop Loss ${sl} ให้ยกเลิกแผนทันที"
         else:
             active_factor = "MOMENTUM_BREAKOUT" if "MOMENTUM_BREAKOUT" in enabled_factors else "LIQUIDITY_SWEEP"
             regime = f"STRONG BEARISH EXPANSION (ADX {curr_adx14} | H1+M15 ใต้ EMA200)"
@@ -1399,21 +1569,17 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
             sl = round(entry + risk_unit, 2)
             be_target = round(entry - be_trigger_dist, 2)
             tp = round(entry - reward_unit, 2)
-            position_context = f"เทรนด์ขาลงแข็งแกร่ง (ADX {curr_adx14}) ราคาอยู่ใต้ทั้ง H1 EMA200 (${curr_h1_ema200}) และ M15 EMA200 (${curr_ema200})"
-            invalidation_rule = f"หากราคาดีดทะลุ Stop Loss ${sl} กลับขึ้นไปยืนเหนือแนวต้านให้ยกเลิกแผนทันที"
     elif curr_adx14 > adx_thresh and active_spot > curr_h1_ema200 and active_spot > curr_ema200:
         if rsi_overbought_exhausted:
             active_factor = "ANTI_CHASE_RETEST"
             regime = f"OVERBOUGHT EXHAUSTION (ADX {curr_adx14} | RSI {curr_rsi14} > 72)"
-            bias = f"ANTI-CHASE RETEST LONG (RSI ตึงตัว ห้ามไล่ Buy เหนือ PDH — รอย่อแตะ PDH ${curr_pdh} / EMA21 ${curr_ema21})"
+            bias = f"ANTI-CHASE RETEST LONG (ห้ามไล่ Buy เหนือ PDH — รอย่อแตะ PDH ${curr_pdh} / EMA21 ${curr_ema21})"
             direction = "LONG"
             retest_lvl = curr_pdh if curr_pdh < active_spot else curr_ema21
             entry = round(retest_lvl, 2)
             sl = round(entry - risk_unit, 2)
             be_target = round(entry + be_trigger_dist, 2)
             tp = round(entry + reward_unit, 2)
-            position_context = f"ระบบ RSI Exhaustion Guard ตรวจพบ RSI14 สูงสุดขีด ({curr_rsi14}) จึงบล็อกการไล่ซื้อด้านบน และปรับแผนให้รอย่อทดสอบแนวรับ"
-            invalidation_rule = f"หากราคาร่วงหลุด Stop Loss ${sl} ให้ยกเลิกแผนทันที"
         elif "LONDON_BREAKOUT" in enabled_factors and in_london_window and active_spot <= curr_asian_h:
             active_factor = "LONDON_BREAKOUT"
             regime = f"LONDON BREAKOUT BULL (ADX {curr_adx14} | Asian High ${curr_asian_h})"
@@ -1423,8 +1589,6 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
             sl = round(entry - risk_unit, 2)
             be_target = round(entry + be_trigger_dist, 2)
             tp = round(entry + reward_unit, 2)
-            position_context = f"อยู่ในช่วงเปิดตลาดลอนดอน เทรนด์ H1/M15 เป็นขาขึ้น และ RSI ({curr_rsi14}) ยังมีพื้นที่ให้วิ่งขึ้นต่อ"
-            invalidation_rule = f"หากราคาร่วงหลุด Stop Loss ${sl} ให้ยกเลิกแผนทันที"
         else:
             active_factor = "MOMENTUM_BREAKOUT" if "MOMENTUM_BREAKOUT" in enabled_factors else "LIQUIDITY_SWEEP"
             regime = f"STRONG BULLISH EXPANSION (ADX {curr_adx14} | H1+M15 เหนือ EMA200)"
@@ -1438,12 +1602,10 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
             sl = round(entry - risk_unit, 2)
             be_target = round(entry + be_trigger_dist, 2)
             tp = round(entry + reward_unit, 2)
-            position_context = f"เทรนด์ขาขึ้นแข็งแกร่ง (ADX {curr_adx14}) ราคาอยู่เหนือทั้ง H1 EMA200 (${curr_h1_ema200}) และ M15 EMA200 (${curr_ema200})"
-            invalidation_rule = f"หากราคาร่วงหลุด Stop Loss ${sl} ให้ยกเลิกแผนทันที"
     else:
         if "VALUE_AREA_FADE" in enabled_factors and curr_adx14 <= adx_thresh:
             active_factor = "VALUE_AREA_FADE"
-            regime = f"BALANCED RANGE (ADX {curr_adx14} <= {adx_thresh} | แกว่งในกรอบ)"
+            regime = f"BALANCED RANGE (ADX {curr_adx14} <= {adx_thresh})"
             if active_spot >= poc:
                 bias = "RANGE FADE SHORT NEAR VAH (ขายกรอบบน เป้าหมาย POC)"
                 direction = "SHORT"
@@ -1451,8 +1613,6 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
                 sl = round(vah + risk_unit, 2)
                 be_target = round(vah - be_trigger_dist, 2)
                 tp = round(vah - reward_unit, 2)
-                position_context = f"ตลาดไซด์เวย์ (ADX {curr_adx14}) ราคาอยู่ใกล้แนวต้านบน VAH ${vah}"
-                invalidation_rule = f"หากราคาเบรกทะลุ Stop Loss ${sl} เหนือ VAH จะยกเลิกแผน Short ทันที"
             else:
                 bias = "RANGE FADE LONG NEAR VAL (ซื้อกรอบล่าง เป้าหมาย POC)"
                 direction = "LONG"
@@ -1460,8 +1620,6 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
                 sl = round(val - risk_unit, 2)
                 be_target = round(val + be_trigger_dist, 2)
                 tp = round(val + reward_unit, 2)
-                position_context = f"ตลาดไซด์เวย์ (ADX {curr_adx14}) ราคาอยู่ใกล้แนวรับล่าง VAL ${val}"
-                invalidation_rule = f"หากราคาหลุด Stop Loss ${sl} ต่ำกว่า VAL จะยกเลิกแผน Long ทันที"
         else:
             active_factor = "LIQUIDITY_SWEEP"
             regime = f"MTF DIVERGENCE / LIQUIDITY WATCH (PDH ${curr_pdh} / PDL ${curr_pdl})"
@@ -1479,27 +1637,28 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
                 sl = round(entry - risk_unit, 2)
                 be_target = round(entry + be_trigger_dist, 2)
                 tp = round(entry + reward_unit, 2)
-            position_context = f"กราฟ H1 และ M15 ยังไม่เรียงตัวไปทางเดียวกัน จึงเน้นดัก Liquidity Sweep ที่ขอบ PDH/PDL"
-            invalidation_rule = f"หากราคาเบรกทะลุ Stop Loss ${sl} ให้ยกเลิกแผนทันที"
 
     sl_dist = round(abs(entry - sl), 2)
     tp_dist = round(abs(tp - entry), 2)
     rr_ratio = round(tp_dist / max(sl_dist, 0.1), 2)
     dist_to_entry = round(abs(active_spot - entry), 2)
 
+    factor_live_muted = active_factor in live_muted_f_set
     gate_session = bool(in_killzone)
-    gate_edge = bool(has_edge)
+    gate_edge = bool(has_edge and not factor_live_muted)
     gate_proximity = bool(dist_to_entry <= 8.0)
     all_gates_passed = gate_session and gate_edge and gate_proximity
 
     if not gate_session:
-        gate_verdict = "NO (อยู่นอกเวลา Killzone — ช่วงเช้าบล็อกการออกออเดอร์ รอปลดล็อก 13:00 น.)"
+        gate_verdict = "NO (อยู่นอกเวลา Killzone — รอปลดล็อก 13:00 น.)"
+    elif factor_live_muted:
+        gate_verdict = f"NO (Self-Learning Guard สั่ง MUTE {active_factor} ชั่วคราวหลังแพ้ต่อเนื่อง)"
     elif not gate_edge:
-        gate_verdict = f"NO (สถิติ Walk-Forward R-PF ต่ำกว่าเกณฑ์ 1.05 — งดออกออเดอร์เพื่อรักษาทุน)"
+        gate_verdict = f"NO (สถิติ Walk-Forward R-PF ต่ำกว่าเกณฑ์ 1.10)"
     elif not gate_proximity:
-        gate_verdict = f"NO (ราคา Spot ปัจจุบันยังอยู่ห่างจุด Entry ${dist_to_entry:.2f} ซึ่งเกินระยะยิงสัญญาณ $8.00)"
+        gate_verdict = f"NO (ราคา Spot ปัจจุบันอยู่ห่าง Entry ${dist_to_entry:.2f} > $8.00)"
     else:
-        gate_verdict = f"YES (ครบทั้ง 3 เงื่อนไข: อยู่ใน Killzone + มี Quant Edge + ราคาเข้าใกล้ Entry ในระยะ ${dist_to_entry:.2f})"
+        gate_verdict = f"YES (ครบทั้ง 3 เงื่อนไข: Killzone + Quant Edge + เข้าใกล้ Entry ${dist_to_entry:.2f})"
 
     start_dt_str = df_intraday.index[0].astimezone(THAI_TZ).strftime("%d/%m/%Y")
     end_dt_str = df_intraday.index[-1].astimezone(THAI_TZ).strftime("%d/%m/%Y %H:%M")
@@ -1509,11 +1668,11 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
         "spot_price": active_spot,
         "bid": bid if bid else active_spot,
         "ask": ask if ask else active_spot,
+        "feed_source": feed_source,
         "futures_price": round(futures_price, 2),
         "spot_offset": round(spot_offset, 2),
-        "paxg_to_spot_offset": round(paxg_offset, 2),
         "data_audit": {
-            "source": "Hydra Local Vault + Yahoo Finance (GC=F) + Swissquote Spot",
+            "source": f"Hydra Local Vault + {feed_source}",
             "total_bars": int(len(df_intraday)),
             "vault_days": vault_days,
             "date_range": f"{start_dt_str} - {end_dt_str}",
@@ -1551,13 +1710,12 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
             "active_factor": active_factor, "regime": regime, "bias": bias, "direction": direction,
             "entry": entry, "sl": sl, "be_target": be_target, "tp": tp,
             "sl_dist": sl_dist, "tp_dist": tp_dist, "rr": rr_ratio,
-            "has_edge": has_edge, "in_killzone": in_killzone, "session_name": session_name,
-            "position_context": position_context, "invalidation_rule": invalidation_rule
+            "has_edge": has_edge, "in_killzone": in_killzone, "session_name": session_name
         }
     }
 
-# ================= 4. LIVE SIGNAL JOURNALS (TREND + SCALP 500PT) =================
-def _process_single_journal(journal_path, setup_dict, is_triggered, current_spot, df_intraday, spot_offset, spread_cost=0.60, dup_tol=8.0, factor_key="active_factor"):
+# ================= 4. LIVE LIFECYCLE JOURNALS + INSTANT NTFY OUTCOME ALERTS =================
+def _process_single_journal(journal_path, mode_label, setup_dict, is_triggered, current_spot, df_intraday, spot_offset, spread_cost=0.60, dup_tol=8.0, factor_key="active_factor"):
     os.makedirs("data", exist_ok=True)
     if os.path.exists(journal_path):
         try:
@@ -1570,6 +1728,7 @@ def _process_single_journal(journal_path, setup_dict, is_triggered, current_spot
 
     now_utc = datetime.now(timezone.utc)
     now_th_str = now_utc.astimezone(THAI_TZ).strftime("%d/%m %H:%M")
+    lifecycle_events = []
 
     df_spot = df_intraday.tail(96).copy()
     bar_times = df_spot.index.tz_localize("UTC") if df_spot.index.tz is None else df_spot.index.tz_convert("UTC")
@@ -1584,6 +1743,7 @@ def _process_single_journal(journal_path, setup_dict, is_triggered, current_spot
         entry_p = float(trade["entry"])
         sl_p = float(trade["sl"])
         tp_p = float(trade["tp"])
+        be_p = float(trade.get("be_target", (entry_p + (tp_p - entry_p) * 0.45)))
 
         sub_highs = [current_spot]
         sub_lows = [current_spot]
@@ -1596,23 +1756,35 @@ def _process_single_journal(journal_path, setup_dict, is_triggered, current_spot
         min_l = min(sub_lows)
 
         if direction == "LONG":
+            # เช็ก SL ก่อน TP (Pessimistic Fill)
             if min_l <= sl_p:
                 trade["status"] = "LOSS"
                 trade["pnl"] = round((sl_p - entry_p) - spread_cost, 2)
                 trade["closed_at_th"] = now_th_str
+                lifecycle_events.append({"event": "SL_LOSS", "mode": mode_label, "trade": dict(trade)})
             elif max_h >= tp_p:
                 trade["status"] = "WIN"
                 trade["pnl"] = round((tp_p - entry_p) - spread_cost, 2)
                 trade["closed_at_th"] = now_th_str
+                lifecycle_events.append({"event": "TP_WIN", "mode": mode_label, "trade": dict(trade)})
+            elif not trade.get("be_hit") and max_h >= be_p:
+                trade["be_hit"] = True
+                lifecycle_events.append({"event": "BE_HIT", "mode": mode_label, "trade": dict(trade)})
+
         elif direction == "SHORT":
             if max_h >= sl_p:
                 trade["status"] = "LOSS"
                 trade["pnl"] = round((entry_p - sl_p) - spread_cost, 2)
                 trade["closed_at_th"] = now_th_str
+                lifecycle_events.append({"event": "SL_LOSS", "mode": mode_label, "trade": dict(trade)})
             elif min_l <= tp_p:
                 trade["status"] = "WIN"
                 trade["pnl"] = round((entry_p - tp_p) - spread_cost, 2)
                 trade["closed_at_th"] = now_th_str
+                lifecycle_events.append({"event": "TP_WIN", "mode": mode_label, "trade": dict(trade)})
+            elif not trade.get("be_hit") and min_l <= be_p:
+                trade["be_hit"] = True
+                lifecycle_events.append({"event": "BE_HIT", "mode": mode_label, "trade": dict(trade)})
 
     if is_triggered:
         has_duplicate = any(
@@ -1622,7 +1794,7 @@ def _process_single_journal(journal_path, setup_dict, is_triggered, current_spot
             for t in journal
         )
         if not has_duplicate:
-            journal.insert(0, {
+            new_sig = {
                 "id": f"SIG-{now_utc.strftime('%m%d%H%M')}",
                 "opened_at": now_utc.isoformat(),
                 "opened_at_th": now_th_str,
@@ -1631,14 +1803,18 @@ def _process_single_journal(journal_path, setup_dict, is_triggered, current_spot
                 "bias": setup_dict["bias"],
                 "entry": setup_dict["entry"],
                 "sl": setup_dict["sl"],
+                "be_target": setup_dict.get("be_target", setup_dict["entry"]),
                 "tp": setup_dict["tp"],
                 "rr": setup_dict["rr"],
+                "be_hit": False,
                 "status": "OPEN",
                 "pnl": 0.0,
                 "closed_at_th": "-"
-            })
+            }
+            journal.insert(0, new_sig)
+            lifecycle_events.append({"event": "NEW_ENTRY", "mode": mode_label, "trade": dict(new_sig)})
 
-    journal = journal[:30]
+    journal = journal[:40]
     with open(journal_path, "w", encoding="utf-8") as f:
         json.dump(journal, f, ensure_ascii=False, indent=2)
 
@@ -1655,24 +1831,24 @@ def _process_single_journal(journal_path, setup_dict, is_triggered, current_spot
         "losses": len(closed) - len(wins),
         "live_win_rate": live_wr,
         "net_live_pnl": net_live_pnl,
-        "recent_trades": journal[:8]
-    }
+        "recent_trades": journal[:10]
+    }, lifecycle_events
 
 def update_all_journals(quant_data, scalp_data, df_intraday, spot_offset, trend_triggered, scalp_triggered):
-    trend_j = _process_single_journal(
-        "data/trade_journal.json", quant_data["setup"], trend_triggered,
+    trend_j, trend_events = _process_single_journal(
+        "data/trade_journal.json", "TREND", quant_data["setup"], trend_triggered,
         quant_data["spot_price"], df_intraday, spot_offset,
         spread_cost=0.60, dup_tol=8.0, factor_key="active_factor"
     )
-    scalp_j = _process_single_journal(
-        "data/scalp_journal.json", scalp_data["setup"], scalp_triggered,
+    scalp_j, scalp_events = _process_single_journal(
+        "data/scalp_journal.json", "SCALP 500PT", scalp_data["setup"], scalp_triggered,
         quant_data["spot_price"], df_intraday, spot_offset,
         spread_cost=0.45, dup_tol=3.0, factor_key="shape"
     )
-    return trend_j, scalp_j
+    return trend_j, scalp_j, (trend_events + scalp_events)
 
-# ================= 5. 4-AGENT SWARM DEBATE COUNCIL (TREND + SCALP 500PT) =================
-def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news_list, kb_text, kb_files):
+# ================= 5. 4-AGENT SWARM DEBATE COUNCIL =================
+def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news_list, learning_state, kb_files):
     setup = quant_data["setup"]
     tech = quant_data["technicals"]
     gates = quant_data["gates"]
@@ -1692,67 +1868,97 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news
     else:
         news_status_text = "ไม่มีข่าวสำคัญ USD คงเหลือในช่วงใกล้ๆ นี้"
 
+    muted_all = learning_state.get("muted_trend_factors", []) + learning_state.get("muted_scalp_shapes", [])
+    learning_note = (
+        f"Self-Learning ปิดกั้นชั่วคราว: {', '.join(muted_all)} (สถิติจริงสะสม {learning_state['overall_wins']}W/{learning_state['overall_losses']}L)"
+        if muted_all else
+        f"Self-Learning ปกติ (สถิติจริงสะสม {learning_state['overall_wins']}W/{learning_state['overall_losses']}L | Net ${learning_state['overall_pnl']})"
+    )
+
+    fb_a1 = (
+        f"ผลทดสอบ Walk-Forward Trend ({bt['trades']} ไม้): WR {bt['win_rate']}%, R-PF {bt['r_profit_factor']}, Net {bt['net_r']}R, "
+        f"Daily Sharpe {bt['sharpe']} | ระบบ Scalp 500 จุด ({sc_bt['trades']} ไม้): WR {sc_bt['win_rate']}%, R-PF {sc_bt['r_profit_factor']}, "
+        f"Net {sc_bt['net_r']}R ({learning_note})"
+    )
     agent1_prompt = (
         "คุณคือ Quantitative R-Multiple & Scalp Auditor ประเมินผลทดสอบทั้งระบบรันเทรนด์และระบบ Scalp 500 จุด "
         "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค ห้ามเปลี่ยนตัวเลข)\n\n"
-        f"- ระบบ Trend: {bt['trades']} ไม้ | WR = {bt['win_rate']}% | R-PF = {bt['r_profit_factor']} | Net = {bt['net_r']}R | Sharpe = {bt['sharpe']} | MC 95% DD = -{bt['mc_dd_95_r']}R\n"
-        f"- ระบบ VP-Anatomy Scalp (SL 500 จุด / TP {sc_bt['tp_points']} จุด): {sc_bt['trades']} ไม้ | WR = {sc_bt['win_rate']}% | R-PF = {sc_bt['r_profit_factor']} | Net = {sc_bt['net_r']}R | ทรงที่เปิดใช้งาน: {', '.join(sc_bt.get('enabled_shapes', []))}\n"
-        "จงสรุปว่าทั้งสองระบบมีความคุ้มเสี่ยงและพร้อมใช้งานคู่กันหรือไม่"
+        f"- Trend: {bt['trades']} ไม้ | WR = {bt['win_rate']}% | R-PF = {bt['r_profit_factor']} | Net = {bt['net_r']}R | Daily Sharpe = {bt['sharpe']} | Expectancy = {bt.get('expectancy_r', 0)}R/ไม้\n"
+        f"- Scalp 500 จุด: {sc_bt['trades']} ไม้ | WR = {sc_bt['win_rate']}% | R-PF = {sc_bt['r_profit_factor']} | Net = {sc_bt['net_r']}R | ทรงที่เปิดใช้งาน: {', '.join(sc_bt.get('enabled_shapes', []))}\n"
+        f"- {learning_note}\n"
+        "จงสรุปความคุ้มเสี่ยงและความพร้อมใช้งาน"
     )
-    quant_audit_text, used_m1 = call_thaillm_agent(MODEL_QUANT_AUDITOR, agent1_prompt, temperature=0.1)
+    quant_audit_text, used_m1 = call_thaillm_agent(MODEL_QUANT_AUDITOR, agent1_prompt, fallback_text=fb_a1, temperature=0.1)
 
     locked_time_fact = (
-        f"ขณะนี้เวลา {now_th_str} (เวลาไทย) ซึ่ง **อยู่ในช่วง KILLZONE ACTIVE แล้ว**"
+        f"ขณะนี้เวลา {now_th_str} (เวลาไทย) ซึ่ง **อยู่ในช่วง KILLZONE ACTIVE**"
         if setup["in_killzone"] else
         f"ขณะนี้เวลา {now_th_str} (เวลาไทย) ซึ่ง **อยู่ในช่วง NO TRADE ZONE (ช่วงเช้า)**"
     )
 
+    fb_a2 = (
+        f"Spot XAU/USD ปัจจุบันอยู่ที่ ${quant_data['spot_price']} โครงสร้าง 24H Volume Profile เป็นทรง {sc_an['title_th']} "
+        f"(POC ตำแหน่ง {sc_an['poc_pos_pct']}% @ ${sc_an['poc']}) ขณะที่ DXY อยู่ที่ {quant_data['dxy_price']} และ US10Y {quant_data['us10y_yield']}%"
+    )
     agent2_prompt = (
         "คุณคือ Macro & Volume Profile Anatomy Officer วิเคราะห์โครงสร้างตลาด Spot XAU/USD "
         "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค)\n\n"
         f"- เวลา: {locked_time_fact} | Spot = ${quant_data['spot_price']}\n"
-        f"- กายวิภาค Volume Profile 24H: {sc_an['title_th']} (สถานะทรงนี้: {'เปิดใช้งาน ON' if sc_set['shape_active'] else 'ถูก MUTE ชั่วคราว'} | POC อยู่ตำแหน่ง {sc_an['poc_pos_pct']}% | VAH ${sc_an['vah']} / POC ${sc_an['poc']} / VAL ${sc_an['val']})\n"
+        f"- กายวิภาค Volume Profile 24H: {sc_an['title_th']} (สถานะ: {'ON' if sc_set['shape_active'] else 'MUTED'} | POC {sc_an['poc_pos_pct']}% | VAH ${sc_an['vah']} / POC ${sc_an['poc']} / VAL ${sc_an['val']})\n"
         f"- DXY = {quant_data['dxy_price']} | US10Y = {quant_data['us10y_yield']}%\n"
         f"- ข่าว USD:\n{news_status_text}\n"
-        "จงอธิบายโครงสร้างโวลุ่มรูปทรงนี้และผลกระทบจากข่าว/มหภาค"
+        "จงอธิบายโครงสร้างโวลุ่มและแรงกดดันมหภาค"
     )
-    macro_audit_text, used_m2 = call_thaillm_agent(MODEL_MACRO_OFFICER, agent2_prompt, temperature=0.1)
+    macro_audit_text, used_m2 = call_thaillm_agent(MODEL_MACRO_OFFICER, agent2_prompt, fallback_text=fb_a2, temperature=0.1)
 
+    fb_a3 = (
+        f"จุดระวังหลักคือ RSI14 อยู่ที่ {tech['rsi14']} และ ADX14 อยู่ที่ {tech['adx14']} "
+        f"หากเข้าออเดอร์ก่อนราคาแตะโซน Entry จริง (Trend ห่าง ${gates['dist_to_entry']} / Scalp ห่าง {sc_set['dist_points']} จุด) อาจโดนไส้เทียนสะบัดกิน SL"
+    )
     agent3_critic_prompt = (
-        "คุณคือ Contrarian Devil's Advocate (ฝ่ายค้านประจำทีมเทรด) จับผิดความเสี่ยงทั้งแผนรันเทรนด์และแผน Scalp 500 จุด "
+        "คุณคือ Contrarian Devil's Advocate จับผิดความเสี่ยงทั้งแผนรันเทรนด์และแผน Scalp 500 จุด "
         "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค)\n\n"
         f"- แผน Trend: {setup['bias']} @ ${setup['entry']} (ห่าง ${gates['dist_to_entry']})\n"
-        f"- แผน Scalp 500 จุด ({sc_an['shape']} - {'ON' if sc_set['shape_active'] else 'MUTED'}): {sc_set['bias']} @ ${sc_set['entry']} (SL ${sc_set['sl']} / ห่าง {sc_set['dist_points']} จุด)\n"
+        f"- แผน Scalp 500 จุด ({sc_an['shape']} - {'ON' if sc_set['shape_active'] else 'MUTED'}): {sc_set['bias']} @ ${sc_set['entry']} (ห่าง {sc_set['dist_points']} จุด)\n"
         f"- RSI14 = {tech['rsi14']} | ADX14 = {tech['adx14']}\n"
-        "จงเตือนจุดเสี่ยงที่อาจทำให้โดนกิน Stop Loss 500 จุด หรือเกิด False Breakout"
+        "จงเตือนจุดเสี่ยงที่อาจทำให้โดน SL"
     )
-    contrarian_audit_text, used_m3_critic = call_thaillm_agent(MODEL_CONTRARIAN_CRITIC, agent3_critic_prompt, temperature=0.15)
+    contrarian_audit_text, used_m3_critic = call_thaillm_agent(MODEL_CONTRARIAN_CRITIC, agent3_critic_prompt, fallback_text=fb_a3, temperature=0.15)
+
+    fb_final = (
+        f"1. **Daily Outlook & VP Anatomy**: ราคา Spot XAU/USD อยู่ที่ ${quant_data['spot_price']} โครงสร้าง 24H Volume Profile เป็นทรง {sc_an['title_th']} ({sc_an['desc_th']}) แนวรับ-ต้านหลักอยู่ที่ VAL ${sc_an['val']} / POC ${sc_an['poc']} / VAH ${sc_an['vah']}\n"
+        f"2. **Dual-Engine Edge & Self-Learning**: ระบบ Trend ทำผลงาน {bt['net_r']}R (WR {bt['win_rate']}%, Daily Sharpe {bt['sharpe']}) และระบบ Scalp 500 จุดทำผลงาน {sc_bt['net_r']}R (WR {sc_bt['win_rate']}%, R-PF {sc_bt['r_profit_factor']}) | {learning_note}\n"
+        f"3. **Trend Execution Plan**: {setup['bias']} | Entry ${setup['entry']} | SL ${setup['sl']} | BE (+1.0R) ${setup['be_target']} | TP ${setup['tp']} (R:R 1:{setup['rr']})\n"
+        f"4. **VP-Anatomy Scalp Plan (500 จุด)**: {sc_set['bias']} | Entry ${sc_set['entry']} | SL ${sc_set['sl']} (500 จุด) | BE +250 จุด (${sc_set['be_target']}) | TP ${sc_set['tp']} ({sc_set['tp_points']} จุด)\n"
+        f"5. **Alert Trigger**: Trend: {gates['verdict_text']} | Scalp 500pt: {sc_gates['verdict_text']}"
+    )
 
     agent4_prompt = (
-        "คุณคือ Chief Execution Strategist & Jane Street Coach สำหรับ Spot XAU/USD (Dual-Engine: Trend + VP-Anatomy Scalp 500 จุด) "
+        "คุณคือ Chief Execution Strategist สำหรับ Spot XAU/USD (Dual-Engine: Trend + VP-Anatomy Scalp 500 จุด) "
         "จงสังเคราะห์ความเห็นจากทั้ง 3 Agents ร่วมกับ [ข้อเท็จจริงที่ถูกล็อกไว้] ห้ามเปลี่ยนคำตัดสินในข้อ 5 เด็ดขาด!\n\n"
         "[ข้อเท็จจริงที่ถูกล็อกไว้ 100%]\n"
         f"- เวลา: {locked_time_fact} | Spot = ${quant_data['spot_price']}\n"
         f"- กายวิภาค Volume Profile 24H: {sc_an['title_th']} ({sc_an['desc_th']})\n"
+        f"- สถานะ Self-Learning: {learning_note}\n"
         f"- แผน Trend หลัก: {setup['bias']} | Entry ${setup['entry']} | SL ${setup['sl']} | BE ${setup['be_target']} | TP ${setup['tp']} (R:R 1:{setup['rr']})\n"
         f"- แผน Scalp 500 จุด: {sc_set['bias']} | Entry ${sc_set['entry']} | SL ${sc_set['sl']} (500 จุด) | BE +250 จุด (${sc_set['be_target']}) | TP ${sc_set['tp']} ({sc_set['tp_points']} จุด)\n"
         f"- คำตัดสิน Alert Trigger ที่บังคับตอบในข้อ 5: Trend: {gates['verdict_text']} | Scalp 500pt: {sc_gates['verdict_text']}\n\n"
         f"[Agent 1]: {quant_audit_text}\n[Agent 2]: {macro_audit_text}\n[Agent 3]: {contrarian_audit_text}\n\n"
         "จงเขียนรายงาน 7 หัวข้อตามรูปแบบนี้เป๊ะๆ:\n"
-        "1. **Daily Outlook & VP Anatomy**: สรุปโครงสร้างราคาและรูปทรง Volume Profile (D/b/P/Double Zone)\n"
-        f"2. **Dual-Engine Edge**: สรุปผลทดสอบ Trend (Net {bt['net_r']}R, Sharpe {bt['sharpe']}) และ Scalp 500 จุด (WR {sc_bt['win_rate']}%, Net {sc_bt['net_r']}R)\n"
+        "1. **Daily Outlook & VP Anatomy**: สรุปโครงสร้างราคาและรูปทรง Volume Profile\n"
+        f"2. **Dual-Engine Edge & Self-Learning**: สรุปผลทดสอบ Trend, Scalp 500 จุด และบทเรียนจาก Journal จริง\n"
         f"3. **Trend Execution Plan**: แผนรันเทรนด์ Entry ${setup['entry']}, SL ${setup['sl']}, BE ${setup['be_target']}, TP ${setup['tp']}\n"
-        f"4. **VP-Anatomy Scalp Plan (500 จุด)**: แผนสั้น Entry ${sc_set['entry']}, SL ${sc_set['sl']} (500 จุด), BE +250 จุด (${sc_set['be_target']}), TP ${sc_set['tp']} ({sc_set['tp_points']} จุด)\n"
+        f"4. **VP-Anatomy Scalp Plan (500 จุด)**: แผนสั้น Entry ${sc_set['entry']}, SL ${sc_set['sl']}, BE ${sc_set['be_target']}, TP ${sc_set['tp']}\n"
         f"5. **Alert Trigger**: คัดลอกคำตัดสินนี้ไปวางทันที -> Trend: {gates['verdict_text']} | Scalp 500pt: {sc_gates['verdict_text']}\n"
-        "6. **Active Recall Question**: ตั้งคำถามสั้นๆ 1 ข้อเกี่ยวกับกายวิภาค Volume Profile หรือระบบ Auto-Mute\n"
+        "6. **Active Recall Question**: ตั้งคำถามสั้นๆ 1 ข้อเกี่ยวกับกายวิภาค Volume Profile หรือระบบ Self-Learning\n"
         "7. **Active Recall Answer**: เฉลยคำตอบสั้นๆ 1-2 ประโยค"
     )
-    final_raw, used_m4 = call_thaillm_agent(MODEL_CHIEF_STRATEGIST, agent4_prompt, temperature=0.08)
+    final_raw, used_m4 = call_thaillm_agent(MODEL_CHIEF_STRATEGIST, agent4_prompt, fallback_text=fb_final, temperature=0.08)
 
     q_match = re.search(r'6\.\s*\*?\*?Active Recall Question\*?\*?:\s*(.*?)(?=\n7\.|\Z)', final_raw, re.DOTALL)
     a_match = re.search(r'7\.\s*\*?\*?Active Recall Answer\*?\*?:\s*(.*)', final_raw, re.DOTALL)
-    recall_q = q_match.group(1).strip() if q_match else "เหตุใดระบบ Scalp จึงสั่ง Auto-Mute รูปทรงที่ขาดทุนใน Walk-Forward ก่อนอนุญาตให้ยิงสัญญาณสด?"
-    recall_a = a_match.group(1).strip() if a_match else "เพื่อกรองสภาวะตลาดที่ไม่เข้ากับกลยุทธ์ระยะสั้นออก ป้องกันการโดน SL 500 จุดซ้ำๆ ในรูปทรงที่ไม่มีความได้เปรียบทางสถิติ"
+    recall_q = q_match.group(1).strip() if q_match else "เหตุใดระบบจึงใช้ Daily Aggregated Returns ในการคำนวณ Sharpe/Sortino และใช้ Self-Learning Guard ปิดทรงที่แพ้ต่อเนื่อง?"
+    recall_a = a_match.group(1).strip() if a_match else "เพื่อป้องกันตัวเลข Sharpe เฟ้อเกินจริงจากจำนวนไม้ที่น้อย และหยุดการขาดทุนซ้ำซากทันทีเมื่อพฤติกรรมราคาจริงเปลี่ยนไปจากผล Backtest"
 
     main_match = re.search(r'(1\.\s*\*?\*?Daily Outlook.*?)(?=\n6\.|\Z)', final_raw, re.DOTALL)
     clean_final = main_match.group(1).strip() if main_match else final_raw
@@ -1773,7 +1979,7 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news
         }
     }
 
-# ================= 6. SMART NTFY NOTIFICATION MANAGER =================
+# ================= 6. FULL-LIFECYCLE NTFY DISPATCHER =================
 def send_ntfy_alert(title, message, priority=4, tags=None):
     url = "https://ntfy.sh"
     payload = {
@@ -1796,164 +2002,135 @@ def send_ntfy_alert(title, message, priority=4, tags=None):
         print(f"[NTFY] เกิดข้อผิดพลาดในการเชื่อมต่อ: {e}")
         return False
 
-def manage_notifications(quant_data, vp_data, bt_best, scalp_data, is_startup=False, force=False):
+def dispatch_lifecycle_notifications(lifecycle_events, updated_learning_state):
+    """ยิงแจ้งเตือนทันทีเมื่อเกิดเหตุการณ์: NEW_ENTRY, BE_HIT, TP_WIN, SL_LOSS"""
+    for ev in lifecycle_events:
+        etype = ev["event"]
+        mode = ev["mode"]
+        tr = ev["trade"]
+        factor = tr.get("factor", "SETUP")
+        direction = tr.get("direction", "-")
+        entry_p = tr.get("entry", 0)
+        sl_p = tr.get("sl", 0)
+        tp_p = tr.get("tp", 0)
+        be_p = tr.get("be_target", entry_p)
+        pnl = tr.get("pnl", 0)
+
+        if etype == "NEW_ENTRY":
+            send_ntfy_alert(
+                f"NEW SIGNAL [{mode}] {direction} @ ${entry_p}",
+                f"**กลยุทธ์:** {factor}\n**Entry:** ${entry_p} | **SL:** ${sl_p} | **BE:** ${be_p} | **TP:** ${tp_p} (R:R 1:{tr.get('rr', 1.0)})\nบันทึกเข้า Live Journal เรียบร้อย",
+                priority=5,
+                tags=["rotating_light", "coin"]
+            )
+        elif etype == "BE_HIT":
+            send_ntfy_alert(
+                f"BREAKEVEN LOCKED [{mode}] {direction} @ ${entry_p}",
+                f"**กลยุทธ์:** {factor} วิ่งแตะจุดบังทุน **${be_p}** แล้ว!\nแนะนำเลื่อน Stop Loss มาหน้าทุนทันทีเพื่อปิดความเสี่ยง 0%",
+                priority=4,
+                tags=["shield", "white_check_mark"]
+            )
+        elif etype == "TP_WIN":
+            send_ntfy_alert(
+                f"TAKE PROFIT HIT! [{mode}] +${pnl}/oz",
+                f"**กลยุทธ์:** {factor} ({direction} @ ${entry_p} -> TP ${tp_p})\n**กำไรสุทธิ:** +${pnl}/oz | **Self-Learning:** บันทึกสถิติชนะเข้า KB เรียบร้อย ({updated_learning_state['overall_wins']}W/{updated_learning_state['overall_losses']}L)",
+                priority=5,
+                tags=["tada", "moneybag"]
+            )
+        elif etype == "SL_LOSS":
+            muted_now = factor in (updated_learning_state.get("muted_trend_factors", []) + updated_learning_state.get("muted_scalp_shapes", []))
+            learn_msg = f"Self-Learning Guard สั่ง AUTO-MUTE `{factor}` ชั่วคราวทันที!" if muted_now else f"Self-Learning บันทึกบทเรียนเข้า KB แล้ว ({updated_learning_state['overall_wins']}W/{updated_learning_state['overall_losses']}L)"
+            send_ntfy_alert(
+                f"STOP LOSS HIT [{mode}] ${pnl}/oz",
+                f"**กลยุทธ์:** {factor} ({direction} @ ${entry_p} -> SL ${sl_p})\n**ขาดทุนสุทธิ:** ${pnl}/oz\n**AI Action:** {learn_msg}",
+                priority=5,
+                tags=["warning", "x"]
+            )
+
+def send_cycle_pulse_notification(quant_data, scalp_data, learning_state, is_startup=False):
+    """ส่งสรุปรอบคำนวณทุกครั้ง (ทุก 15 นาที) เข้า ntfy เพื่อยืนยันว่าบอทคำนวณและอัปเดตเวลาตลอด"""
+    now_th = datetime.now(THAI_TZ)
+    spot = quant_data["spot_price"]
     setup = quant_data["setup"]
     gates = quant_data["gates"]
     sc_an = scalp_data["anatomy"]
     sc_set = scalp_data["setup"]
-    sc_gates = scalp_data["gates"]
-    spot_price = quant_data["spot_price"]
 
-    now_th = datetime.now(THAI_TZ)
-    today_str = now_th.strftime("%Y-%m-%d")
-    now_ts = datetime.now(timezone.utc).timestamp()
+    prefix = "เปิดระบบ Gold Quant V12" if is_startup else "อัปเดตรอบคำนวณ 15 นาที"
+    title = f"{prefix} ({now_th.strftime('%H:%M น.')}) | Spot ${spot}"
 
-    alert_state_path = "data/alert_state.json"
-    state_mem = {}
-    if os.path.exists(alert_state_path):
-        try:
-            with open(alert_state_path, "r", encoding="utf-8") as f:
-                state_mem = json.load(f)
-        except Exception:
-            state_mem = {}
+    scalp_stat = f"ON (ห่าง {sc_set['dist_points']} จุด)" if sc_set["shape_active"] else f"MUTED ({sc_an['shape']})"
+    trend_stat = f"READY (ห่าง ${gates['dist_to_entry']})" if gates["all_passed"] else f"WAIT (ห่าง ${gates['dist_to_entry']})"
 
-    if is_startup:
-        startup_title = f"เปิดระบบ Gold Quant V11 ({now_th.strftime('%H:%M น.')})"
-        startup_msg = (
-            f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
-            f"**แผน Trend:** {setup['bias']} @ ${setup['entry']}\n"
-            f"**แผน Scalp 500 จุด:** {sc_set['bias']} @ ${sc_set['entry']} ({'ON' if sc_set['shape_active'] else 'MUTED'})"
-        )
-        send_ntfy_alert(startup_title, startup_msg, priority=3, tags=["rocket", "coin"])
-
-    scalp_triggered = False
-    if sc_gates["all_passed"] or (force and sc_set["shape_active"]):
-        same_sc_bias = state_mem.get("last_scalp_bias") == sc_set["bias"]
-        sc_diff = abs(float(state_mem.get("last_scalp_entry", 0)) - float(sc_set["entry"]))
-        sc_elapsed = (now_ts - float(state_mem.get("last_scalp_ts", 0))) / 60.0
-        if force or not (same_sc_bias and sc_diff < 3.0 and sc_elapsed < 30.0):
-            sc_msg = (
-                f"**Spot XAU/USD:** ${spot_price} | **ทรง VP:** {sc_an['title_th']}\n"
-                f"**แผน Scalp:** {sc_set['bias']}\n"
-                f"**Entry:** ${sc_set['entry']} | **SL:** ${sc_set['sl']} (500 จุด) | **BE:** ${sc_set['be_target']} (+250 จุด) | **TP:** ${sc_set['tp']} ({sc_set['tp_points']} จุด)"
-            )
-            if send_ntfy_alert(f"SCALP 500 จุด {sc_set['direction']} @ ${sc_set['entry']}", sc_msg, priority=5, tags=["zap", "coin"]):
-                state_mem["last_scalp_bias"] = sc_set["bias"]
-                state_mem["last_scalp_entry"] = sc_set["entry"]
-                state_mem["last_scalp_ts"] = now_ts
-        scalp_triggered = True
-
-    if not setup["in_killzone"]:
-        if now_th.hour >= 7 and state_mem.get("morning_brief_date") != today_str:
-            morning_title = f"แผนวิเคราะห์ทองคำรายวัน ({now_th.strftime('%d/%m %H:%M น.')})"
-            morning_msg = (
-                f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
-                f"**แผนรอรอบบ่าย (Trend):** {setup['bias']} @ ${setup['entry']}\n"
-                f"**แผน Scalp 500 จุด:** {sc_set['bias']} @ ${sc_set['entry']}"
-            )
-            if send_ntfy_alert(morning_title, morning_msg, priority=3, tags=["sunrise", "newspaper"]):
-                state_mem["morning_brief_date"] = today_str
-
-        with open(alert_state_path, "w", encoding="utf-8") as f:
-            json.dump(state_mem, f, ensure_ascii=False, indent=2)
-        return False, scalp_triggered
-
-    if state_mem.get("afternoon_open_date") != today_str:
-        open_title = f"เปิดรอบวิเคราะห์ & เทรดบ่ายโมง ({now_th.strftime('%H:%M น.')}) [KILLZONE ACTIVE]"
-        open_msg = (
-            f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
-            f"**Trend Setup:** {setup['bias']} @ ${setup['entry']}\n"
-            f"**Scalp 500pt Setup:** {sc_set['bias']} @ ${sc_set['entry']}"
-        )
-        if send_ntfy_alert(open_title, open_msg, priority=4, tags=["bell", "chart_with_upwards_trend"]):
-            state_mem["afternoon_open_date"] = today_str
-
-    dist_entry = gates["dist_to_entry"]
-    if gates["edge_ok"] and (8.0 < dist_entry <= 15.0):
-        watch_elapsed = (now_ts - float(state_mem.get("last_watch_ts", 0))) / 60.0
-        if watch_elapsed >= 60.0:
-            watch_msg = (
-                f"**ราคาเข้าใกล้โซน Trend Entry (ห่าง ${dist_entry:.2f})**\n"
-                f"**Spot XAU/USD:** ${spot_price} | **แผน:** {setup['bias']}"
-            )
-            if send_ntfy_alert(f"WATCH TREND {setup['direction']} ใกล้จุดเข้า (${dist_entry:.1f})", watch_msg, priority=3, tags=["eyes", "coin"]):
-                state_mem["last_watch_ts"] = now_ts
-
-    if not gates["all_passed"] and not force:
-        with open(alert_state_path, "w", encoding="utf-8") as f:
-            json.dump(state_mem, f, ensure_ascii=False, indent=2)
-        return False, scalp_triggered
-
-    same_bias = state_mem.get("last_signal_bias") == setup["bias"]
-    entry_diff = abs(float(state_mem.get("last_signal_entry", 0)) - float(setup["entry"]))
-    elapsed_mins = (now_ts - float(state_mem.get("last_signal_ts", 0))) / 60.0
-
-    if not force and same_bias and entry_diff < 8.0 and elapsed_mins < 60.0:
-        return True, scalp_triggered
-
-    alert_msg = (
-        f"**Spot XAU/USD:** ${spot_price} | **Factor:** {setup['active_factor']}\n"
-        f"**แผนเทรด:** {setup['bias']}\n"
-        f"**Entry:** ${setup['entry']} | **SL:** ${setup['sl']} | **BE (+1.0R):** ${setup['be_target']} | **TP:** ${setup['tp']}"
+    msg = (
+        f"**เวลาคำนวณ:** {now_th.strftime('%d/%m/%Y %H:%M:%S น.')}\n"
+        f"**Spot XAU/USD:** ${spot} ({quant_data['feed_source']})\n"
+        f"**VP 24H:** {sc_an['title_th']} | Scalp 500pt: **{scalp_stat}**\n"
+        f"**Trend Setup:** {setup['direction']} @ ${setup['entry']} (**{trend_stat}**)\n"
+        f"**Live Journal:** {learning_state['overall_wins']}W / {learning_state['overall_losses']}L (Net ${learning_state['overall_pnl']})"
     )
-    if send_ntfy_alert(f"SIGNAL TREND {setup['direction']} @ ${setup['entry']}", alert_msg, priority=5, tags=["rotating_light", "coin"]):
-        state_mem["last_signal_bias"] = setup["bias"]
-        state_mem["last_signal_entry"] = setup["entry"]
-        state_mem["last_signal_ts"] = now_ts
-
-    with open(alert_state_path, "w", encoding="utf-8") as f:
-        json.dump(state_mem, f, ensure_ascii=False, indent=2)
-
-    return True, scalp_triggered
+    send_ntfy_alert(title, msg, priority=3, tags=["clock3", "bar_chart"])
 
 def local_git_push():
     if IS_GITHUB_ACTIONS or not os.path.isdir(".git"):
         return
     try:
-        subprocess.run(["git", "add", "data/state.json", "data/alert_state.json", "data/trade_journal.json", "data/scalp_journal.json", "knowledge_base/"], check=True)
-        subprocess.run(["git", "commit", "-m", f"Update spot gold quant V11 {datetime.now().strftime('%H:%M')}"], check=True)
+        subprocess.run(["git", "add", "data/state.json", "data/alert_state.json", "data/trade_journal.json", "data/scalp_journal.json", "data/learning_weights.json", "knowledge_base/"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Auto-sync Gold Quant V12 {datetime.now().strftime('%H:%M')}"], check=True)
         subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", "main"], check=True)
         subprocess.run(["git", "push"], check=True)
     except Exception as e:
         print(f"Local git push skipped: {e}")
 
-def run_single_cycle(is_startup=False, force_flag=False):
-    kb_text, kb_files = ensure_and_load_knowledge_base()
-    print(f"[KB] Loaded {len(kb_files)} knowledge base files: {', '.join(kb_files)}")
+def run_single_cycle(is_startup=False, force_flag=False, silent_pulse=False):
+    kb_text, kb_files, learning_state = ensure_and_load_knowledge_base()
+    print(f"[KB & SELF-LEARNING] Loaded {len(kb_files)} docs | Muted Trend={learning_state['muted_trend_factors']} | Muted Scalp={learning_state['muted_scalp_shapes']}")
 
-    df_intraday_vault, df_daily, df_dxy, df_us10y, spot_price, bid, ask, paxg_mid, open_interest = fetch_market_data()
+    df_intraday_vault, df_daily, df_dxy, df_us10y, spot_price, bid, ask, feed_source, open_interest = fetch_market_data()
     futures_last = float(df_intraday_vault['Close'].iloc[-1])
     spot_offset = (spot_price - futures_last) if spot_price else 0.0
-    paxg_offset = (spot_price - paxg_mid) if (spot_price and paxg_mid) else 0.0
     active_spot = round(spot_price, 2) if spot_price else round(futures_last, 2)
-    print(f"[HYDRA VAULT] Synced {len(df_intraday_vault)} M15 bars (~{round(len(df_intraday_vault)/92.0, 1)} trading days)")
+    print(f"[SPOT FEED] {feed_source}: ${active_spot} (Bid ${bid} / Ask ${ask}) | Vault: {len(df_intraday_vault)} M15 bars")
 
     ind = compute_mtf_indicators(df_intraday_vault, spot_offset=spot_offset)
     backtest_data = run_walkforward_backtest(df_intraday_vault, ind, spot_offset=spot_offset)
     best_params = backtest_data["best"]
 
-    scalp_data = run_vp_anatomy_scalp_engine(df_intraday_vault, ind, active_spot, spot_offset=spot_offset)
+    scalp_data = run_vp_anatomy_scalp_engine(
+        df_intraday_vault, ind, active_spot,
+        spot_offset=spot_offset,
+        live_muted_shapes=learning_state["muted_scalp_shapes"]
+    )
     sc_bt = scalp_data["backtest"]
     print(f"[SCALP 500PT] Anatomy={scalp_data['anatomy']['shape']} (Active={scalp_data['setup']['shape_active']}) | WR={sc_bt['win_rate']}%, R-PF={sc_bt['r_profit_factor']}, Net={sc_bt['net_r']}R ({sc_bt['trades']} trades)")
 
     vp_data = calculate_volume_profile(df_intraday_vault, spot_offset=spot_offset)
     quant_data = calculate_quant_and_setup(
         df_intraday_vault, df_daily, df_dxy, df_us10y, vp_data, ind,
-        spot_price, bid, ask, spot_offset, paxg_offset, open_interest,
-        tuned_params=best_params
+        spot_price, bid, ask, feed_source, spot_offset, open_interest,
+        tuned_params=best_params,
+        live_muted_factors=learning_state["muted_trend_factors"]
     )
     news_list = fetch_usd_news()
 
-    ai_council = run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news_list, kb_text, kb_files)
-    
-    trend_active, scalp_active = manage_notifications(
-        quant_data, vp_data, best_params, scalp_data,
-        is_startup=is_startup, force=force_flag
-    )
-    trend_j, scalp_j = update_all_journals(
+    trend_triggered = bool(quant_data["gates"]["all_passed"] or force_flag)
+    scalp_triggered = bool(scalp_data["gates"]["all_passed"] or (force_flag and scalp_data["setup"]["shape_active"]))
+
+    trend_j, scalp_j, lifecycle_events = update_all_journals(
         quant_data, scalp_data, df_intraday_vault, spot_offset,
-        trend_triggered=trend_active, scalp_triggered=scalp_active
+        trend_triggered=trend_triggered, scalp_triggered=scalp_triggered
     )
+
+    # Re-evaluate Self-Learning immediately if any trade closed during this cycle!
+    if any(ev["event"] in ("TP_WIN", "SL_LOSS") for ev in lifecycle_events):
+        learning_state = evaluate_live_self_learning()
+
+    dispatch_lifecycle_notifications(lifecycle_events, learning_state)
+
+    if not silent_pulse:
+        send_cycle_pulse_notification(quant_data, scalp_data, learning_state, is_startup=is_startup)
+
+    ai_council = run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news_list, learning_state, kb_files)
 
     os.makedirs("data", exist_ok=True)
     state = {
@@ -1964,6 +2141,7 @@ def run_single_cycle(is_startup=False, force_flag=False):
         "scalp": scalp_data,
         "journal": trend_j,
         "scalp_journal": scalp_j,
+        "self_learning": learning_state,
         "news": news_list,
         "ai_analysis": ai_council["final_report"],
         "ai_council": ai_council
@@ -1973,19 +2151,20 @@ def run_single_cycle(is_startup=False, force_flag=False):
         json.dump(state, f, ensure_ascii=False, indent=2)
         
     local_git_push()
-    print(f"Spot Gold Quant V11 Completed. Spot=${quant_data['spot_price']} | Anatomy={scalp_data['anatomy']['shape']}")
+    print(f"Spot Gold Quant V12 Completed @ {datetime.now(THAI_TZ).strftime('%H:%M:%S')} | Spot=${quant_data['spot_price']}")
 
 def main():
     if "--test-alert" in sys.argv:
         send_ntfy_alert(
-            "ทดสอบระบบ XAU/USD Quant & Scalp V11",
-            f"เชื่อมต่อ **ntfy ({NTFY_TOPIC})** สำเร็จ! พร้อมส่งสัญญาณ Trend และ Scalp 500 จุดเข้ามือถือ",
+            "ทดสอบระบบ XAU/USD Quant & Self-Learning V12",
+            f"เชื่อมต่อ **ntfy ({NTFY_TOPIC})** สำเร็จ! พร้อมแจ้งเตือนทุก 15 นาที + ENTRY / BE / TP / SL",
             priority=4
         )
         return
 
     force_flag = "--force-alert" in sys.argv
     no_startup = "--no-startup-alert" in sys.argv
+    silent_pulse = "--silent" in sys.argv
 
     if "--loop" in sys.argv:
         try:
@@ -1993,11 +2172,11 @@ def main():
             interval_mins = int(sys.argv[idx + 1])
         except Exception:
             interval_mins = 15
-        print(f"=== เริ่มทำงานโหมด Auto-Loop V11 ทุก {interval_mins} นาที (กด Ctrl+C เพื่อหยุด) ===")
+        print(f"=== เริ่มทำงานโหมด 24/7 Auto-Loop V12 ทุก {interval_mins} นาที (กด Ctrl+C เพื่อหยุด) ===")
         first_run = True
         while True:
             try:
-                run_single_cycle(is_startup=(first_run and not no_startup), force_flag=False)
+                run_single_cycle(is_startup=(first_run and not no_startup), force_flag=False, silent_pulse=silent_pulse)
                 first_run = False
             except Exception as e:
                 print(f"[LOOP ERROR] {e}")
@@ -2005,7 +2184,7 @@ def main():
             print(f"รออัปเดตรอบถัดไปเวลา {next_run} น. ...\n")
             time.sleep(interval_mins * 60)
     else:
-        run_single_cycle(is_startup=(not no_startup), force_flag=force_flag)
+        run_single_cycle(is_startup=(not no_startup), force_flag=force_flag, silent_pulse=silent_pulse)
 
 if __name__ == "__main__":
     main()
