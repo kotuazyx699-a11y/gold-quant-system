@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XAU/USD Spot Dual-Engine Quant & VP-Anatomy Scalp V10.1</title>
+  <title>XAU/USD Spot Dual-Engine Quant & VP-Anatomy Scalp V11</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -41,7 +41,7 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Dual-Engine Quant & VP-Anatomy Scalp V10.1</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Dual-Engine Quant & VP-Anatomy Scalp V11</h1>
           <span id="live-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> SPOT SYNC
           </span>
@@ -51,8 +51,12 @@
         </div>
         <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังตรวจสอบ Hydra Local Data Vault...</p>
       </div>
-      <div class="flex flex-wrap items-center gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
         <span id="last-updated" class="text-xs text-gray-400 font-mono-num mr-1">กำลังโหลดข้อมูล...</span>
+        <a href="https://github.com/kotuazyx699-a11y/gold-quant-system/actions" target="_blank"
+           class="px-3 py-1.5 text-xs font-medium bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/60 rounded-lg transition">
+          สั่งรัน AI บน GitHub
+        </a>
         <button id="btn-test-ntfy" onclick="testNtfyAlert()" class="px-3 py-1.5 text-xs font-medium bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/40 rounded-lg transition active:scale-95">
           ทดสอบ ntfy
         </button>
@@ -112,8 +116,28 @@
       </div>
     </section>
 
-    <!-- Interactive Position Sizing -->
-    <section class="card p-4 border-cyan-800/40 bg-gradient-to-r from-gray-900 via-gray-900 to-cyan-950/20">
+    <!-- Broker Price Calibration + Interactive Position Sizing -->
+    <section class="card p-4 border-cyan-800/40 bg-gradient-to-r from-gray-900 via-gray-900 to-cyan-950/20 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-800">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="px-2 py-0.5 text-[10px] font-mono-num font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded">
+            BROKER SYNC
+          </span>
+          <span class="text-xs text-gray-300">ราคาในโบรกเกอร์คุณตอนนี้:</span>
+          <input id="input-broker-price" type="number" step="0.01" placeholder="เช่น 3685.50"
+            class="w-28 px-2.5 py-1 text-xs font-mono-num font-bold bg-gray-800 border border-amber-500/50 rounded text-amber-300 focus:outline-none focus:border-amber-400" />
+          <button onclick="calibrateBrokerPrice()" class="px-2.5 py-1 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-gray-950 rounded transition active:scale-95">
+            ซิงก์ราคาโบรกเกอร์
+          </button>
+          <button onclick="resetBrokerOffset()" class="px-2 py-1 text-[11px] bg-gray-800 hover:bg-gray-700 text-gray-400 rounded">
+            รีเซ็ต (0)
+          </button>
+        </div>
+        <span id="broker-offset-badge" class="text-xs font-mono-num text-emerald-400">
+          Broker Offset: +$0.00 (ตรงตาม Feed กลาง)
+        </span>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-4 flex flex-wrap items-center gap-3">
           <div>
@@ -244,7 +268,7 @@
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[11px] text-gray-400 font-medium">สถิติ Walk-Forward แยกตาม 4 กายวิภาค Volume Profile (Auto-Mute ทรงที่ขาดทุน)</span>
+              <span class="text-[11px] text-gray-400 font-medium">สถิติ Walk-Forward แยกตาม 4 กายวิภาค Volume Profile (แสดง WR จริงทุกทรง)</span>
               <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">OOS: -</span>
             </div>
             <div id="anatomy-cards-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono-num text-xs"></div>
@@ -298,7 +322,7 @@
               </tr>
             </thead>
             <tbody id="scalp-bt-table-body" class="divide-y divide-gray-800/60">
-              <tr><td colspan="9" class="py-3 text-gray-500 text-center">กำลังรอผล Backtest Scalp...</td></tr>
+              <tr><td colspan="9" class="py-3 text-gray-500 text-center">กด "สั่งรัน AI บน GitHub" 1 รอบเพื่ออัปเดตตาราง V11</td></tr>
             </tbody>
           </table>
         </div>
@@ -313,7 +337,7 @@
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-base font-bold text-white">5D Spot Volume Profile (Trend)</h2>
-            <p class="text-xs text-gray-400">โครงสร้างการสะสม Volume 5 วัน (ฐานราคา Spot XAU/USD)</p>
+            <p class="text-xs text-gray-400">โครงสร้างการสะสม Volume 5 วัน (ปรับตาม Broker Offset)</p>
           </div>
           <span id="live-poc-dist" class="text-[11px] font-mono-num text-amber-400 bg-amber-950/50 border border-amber-800/50 px-2 py-0.5 rounded">
             ห่าง POC: -
@@ -453,7 +477,7 @@
       </div>
     </section>
 
-    <!-- Bottom Section: Trend Walk-Forward Backtest & Dual Live Journals -->
+    <!-- Bottom Section: Trend Walk-Forward Backtest & Dual Live Journals with Floating PnL -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
       <div class="card p-5 lg:col-span-7 space-y-4">
@@ -519,7 +543,7 @@
             <div class="flex items-center justify-between mb-1.5">
               <div>
                 <h2 class="text-sm font-bold text-purple-300">Live Scalp 500pt Signal Journal</h2>
-                <p class="text-[11px] text-gray-400">บันทึกสัญญาณ Scalp (เฉพาะทรงที่ผ่าน Backtest)</p>
+                <p class="text-[11px] text-gray-400">คำนวณกำไร/ขาดทุนลอยตัวสดตาม Tick ปัจจุบัน</p>
               </div>
               <div class="text-right font-mono-num">
                 <span id="scalp-wr-badge" class="text-xs font-bold text-purple-300">Scalp WR: 0%</span>
@@ -533,7 +557,7 @@
                     <th class="py-1.5 pr-2">เวลา / ทรง VP</th>
                     <th class="py-1.5 pr-2">ฝั่ง</th>
                     <th class="py-1.5 pr-2 text-right">Entry</th>
-                    <th class="py-1.5 text-right">สถานะ</th>
+                    <th class="py-1.5 text-right">สถานะ / ลอยตัว</th>
                   </tr>
                 </thead>
                 <tbody id="scalp-journal-body" class="divide-y divide-gray-800/60">
@@ -547,7 +571,7 @@
             <div class="flex items-center justify-between mb-1.5">
               <div>
                 <h2 class="text-sm font-bold text-white">Live Trend Signal Journal</h2>
-                <p class="text-[11px] text-gray-400">บันทึกสัญญาณรันเทรนด์หลัก</p>
+                <p class="text-[11px] text-gray-400">บันทึกสัญญาณรันเทรนด์ + ลอยตัวสด</p>
               </div>
               <div class="text-right font-mono-num">
                 <span id="live-wr-badge" class="text-xs font-bold text-emerald-400">Trend WR: 0%</span>
@@ -561,7 +585,7 @@
                     <th class="py-1.5 pr-2">เวลา / Factor</th>
                     <th class="py-1.5 pr-2">ฝั่ง</th>
                     <th class="py-1.5 pr-2 text-right">Entry</th>
-                    <th class="py-1.5 text-right">สถานะ</th>
+                    <th class="py-1.5 text-right">สถานะ / ลอยตัว</th>
                   </tr>
                 </thead>
                 <tbody id="journal-table-body" class="divide-y divide-gray-800/60">
@@ -573,7 +597,7 @@
         </div>
 
         <p class="text-[11px] text-gray-500 border-t border-gray-800 pt-2">
-          * Real-Time XAU/USD Spot Sync + Hydra Local Vault + 4 กายวิภาค Volume Profile (VPAnatomies_EA)
+          * Broker Price Calibration + Real-Time XAU/USD Spot Sync + Hydra Local Vault V11
         </p>
       </div>
 
@@ -590,14 +614,14 @@
     let lastChartSignature = null;
     let lastEquitySignature = null;
     let lastScalpEquitySignature = null;
-    let lastLivePrice = null;
+    let lastRawFeedSpot = null;
+    let lastCalibratedPrice = null;
     let goldWs = null;
 
-    // ตัวแปรซิงก์ราคา Spot XAU/USD จริงทุก 3 วินาที ป้องกันราคา PAXG เพี้ยนและแก้ Spread $0.01
     let dynamicPaxgOffset = 0;
     let realSpotSpread = 0.22;
     let lastRawPaxgMid = null;
-    let spotFeedSource = "XAU/USD SPOT";
+    let userBrokerOffset = parseFloat(localStorage.getItem('xau_broker_offset') || '0') || 0;
 
     (function restoreUserPrefs() {
       const savedBal = localStorage.getItem('xau_balance');
@@ -606,7 +630,50 @@
       if (savedBal) document.getElementById('input-balance').value = savedBal;
       if (savedRisk) document.getElementById('input-risk-pct').value = savedRisk;
       if (savedThb) document.getElementById('input-thb-rate').value = savedThb;
+      updateBrokerOffsetBadge();
     })();
+
+    function updateBrokerOffsetBadge() {
+      const el = document.getElementById('broker-offset-badge');
+      if (Math.abs(userBrokerOffset) < 0.01) {
+        el.textContent = "Broker Offset: +$0.00 (ตรงตาม Feed กลาง)";
+        el.className = "text-xs font-mono-num text-emerald-400";
+      } else {
+        el.textContent = `Broker Offset: ${userBrokerOffset >= 0 ? '+' : ''}$${userBrokerOffset.toFixed(2)} (ปรับทุกจุดเข้า/SL/TP ตรงกับโบรกเกอร์แล้ว)`;
+        el.className = "text-xs font-mono-num text-amber-400 font-bold";
+      }
+    }
+
+    function calibrateBrokerPrice() {
+      const brokerVal = parseFloat(document.getElementById('input-broker-price').value);
+      if (!brokerVal || brokerVal <= 100) return;
+      const baseFeed = lastRawFeedSpot || (cachedState && cachedState.quant ? cachedState.quant.spot_price : null);
+      if (!baseFeed) return;
+      userBrokerOffset = parseFloat((brokerVal - baseFeed).toFixed(2));
+      localStorage.setItem('xau_broker_offset', userBrokerOffset);
+      updateBrokerOffsetBadge();
+      if (cachedState) renderAllShiftedLevels(cachedState);
+      if (lastRawFeedSpot) {
+        const half = realSpotSpread / 2.0;
+        renderSpotPriceUI(lastRawFeedSpot, lastRawFeedSpot - half, lastRawFeedSpot + half, realSpotSpread);
+      }
+    }
+
+    function resetBrokerOffset() {
+      userBrokerOffset = 0;
+      localStorage.setItem('xau_broker_offset', '0');
+      document.getElementById('input-broker-price').value = '';
+      updateBrokerOffsetBadge();
+      if (cachedState) renderAllShiftedLevels(cachedState);
+      if (lastRawFeedSpot) {
+        const half = realSpotSpread / 2.0;
+        renderSpotPriceUI(lastRawFeedSpot, lastRawFeedSpot - half, lastRawFeedSpot + half, realSpotSpread);
+      }
+    }
+
+    function shiftP(val) {
+      return parseFloat((parseFloat(val) + userBrokerOffset).toFixed(2));
+    }
 
     function formatAIResponse(text) {
       return text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-400 font-semibold">$1</strong>');
@@ -674,8 +741,8 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             topic: NTFY_TOPIC,
-            title: "ทดสอบ XAU/USD Dual-Engine V10.1",
-            message: `เชื่อมต่อแจ้งเตือน Trend & Scalp 500 จุด (${NTFY_TOPIC}) สำเร็จ! ราคา Spot ปัจจุบัน $${lastLivePrice || '-'}`,
+            title: "ทดสอบ XAU/USD Dual-Engine V11",
+            message: `เชื่อมต่อแจ้งเตือน Trend & Scalp 500 จุด (${NTFY_TOPIC}) สำเร็จ! ราคา Spot ปัจจุบัน $${lastCalibratedPrice || '-'}`,
             priority: 4,
             tags: ["white_check_mark", "coin"]
           })
@@ -695,16 +762,77 @@
       }, 3000);
     }
 
-    function renderSpotPriceUI(spotMid, bid, ask, spread) {
+    function renderJournalsWithLiveFloating(liveSpot) {
+      if (!cachedState) return;
+      if (cachedState.scalp_journal) {
+        const sj = cachedState.scalp_journal;
+        document.getElementById('scalp-wr-badge').textContent = `Scalp WR: ${sj.live_win_rate}% (${sj.wins}W/${sj.losses}L)`;
+        document.getElementById('scalp-pnl-sub').textContent = `Closed: ${sj.closed_trades} | Open: ${sj.open_trades} | Net: ${sj.net_live_pnl >= 0 ? '+' : ''}$${sj.net_live_pnl}`;
+        const sjBody = document.getElementById('scalp-journal-body');
+        if (sj.recent_trades && sj.recent_trades.length > 0) {
+          sjBody.innerHTML = sj.recent_trades.map(t => {
+            const entShifted = shiftP(t.entry);
+            const rawDiff = t.direction === 'LONG' ? (liveSpot - entShifted) : (entShifted - liveSpot);
+            const pts = Math.round(rawDiff * 100);
+            const floatHtml = t.status === 'OPEN'
+              ? `<span class="px-1.5 py-0.5 rounded font-bold ${rawDiff >= 0 ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'}">${rawDiff >= 0 ? '+' : ''}${pts}pt ($${rawDiff.toFixed(2)})</span>`
+              : (t.status === 'WIN'
+                  ? `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold">WIN (+$${t.pnl})</span>`
+                  : `<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 font-bold">LOSS ($${t.pnl})</span>`);
+            return `
+              <tr class="hover:bg-gray-800/40">
+                <td class="py-1.5 pr-2 text-gray-400">${t.opened_at_th} <span class="text-purple-400">${t.factor}</span></td>
+                <td class="py-1.5 pr-2 font-bold ${t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
+                <td class="py-1.5 pr-2 text-right text-white">$${entShifted.toFixed(2)}</td>
+                <td class="py-1.5 text-right">${floatHtml}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      if (cachedState.journal) {
+        const j = cachedState.journal;
+        document.getElementById('live-wr-badge').textContent = `Trend WR: ${j.live_win_rate}% (${j.wins}W/${j.losses}L)`;
+        document.getElementById('live-pnl-sub').textContent = `Closed: ${j.closed_trades} | Open: ${j.open_trades} | Net: ${j.net_live_pnl >= 0 ? '+' : ''}$${j.net_live_pnl}`;
+        const jBody = document.getElementById('journal-table-body');
+        if (j.recent_trades && j.recent_trades.length > 0) {
+          jBody.innerHTML = j.recent_trades.map(t => {
+            const entShifted = shiftP(t.entry);
+            const rawDiff = t.direction === 'LONG' ? (liveSpot - entShifted) : (entShifted - liveSpot);
+            const floatHtml = t.status === 'OPEN'
+              ? `<span class="px-1.5 py-0.5 rounded font-bold ${rawDiff >= 0 ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'}">OPEN (${rawDiff >= 0 ? '+' : ''}$${rawDiff.toFixed(2)})</span>`
+              : (t.status === 'WIN'
+                  ? `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold">WIN (+$${t.pnl})</span>`
+                  : `<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 font-bold">LOSS ($${t.pnl})</span>`);
+            return `
+              <tr class="hover:bg-gray-800/40">
+                <td class="py-1.5 pr-2 text-gray-400">${t.opened_at_th} <span class="text-amber-400/80">${t.factor || 'SETUP'}</span></td>
+                <td class="py-1.5 pr-2 font-bold ${t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
+                <td class="py-1.5 pr-2 text-right text-white">$${entShifted.toFixed(2)}</td>
+                <td class="py-1.5 text-right">${floatHtml}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+    }
+
+    function renderSpotPriceUI(rawSpotMid, rawBid, rawAsk, spread) {
+      lastRawFeedSpot = rawSpotMid;
+      const spotMid = shiftP(rawSpotMid);
+      const bid = shiftP(rawBid);
+      const ask = shiftP(rawAsk);
+
       const priceEl = document.getElementById('kpi-price');
       priceEl.textContent = `$${spotMid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-      if (lastLivePrice !== null && spotMid !== lastLivePrice) {
+      if (lastCalibratedPrice !== null && spotMid !== lastCalibratedPrice) {
         priceEl.classList.remove('tick-up', 'tick-down');
         void priceEl.offsetWidth;
-        priceEl.classList.add(spotMid > lastLivePrice ? 'tick-up' : 'tick-down');
+        priceEl.classList.add(spotMid > lastCalibratedPrice ? 'tick-up' : 'tick-down');
       }
-      lastLivePrice = spotMid;
+      lastCalibratedPrice = spotMid;
 
       document.getElementById('live-tick-time').textContent = new Date().toLocaleTimeString('th-TH');
       document.getElementById('kpi-bidask').textContent = `Bid: $${bid.toFixed(2)} | Ask: $${ask.toFixed(2)} (Spd: $${spread.toFixed(2)})`;
@@ -714,19 +842,19 @@
       const vp = cachedState.volume_profile;
 
       if (q.mean_20_spot && q.std_20 > 0) {
-        const liveZ = (spotMid - q.mean_20_spot) / q.std_20;
+        const liveZ = (rawSpotMid - q.mean_20_spot) / q.std_20;
         const rsiTxt = q.technicals ? `${q.technicals.rsi14}` : '-';
         document.getElementById('kpi-zscore').textContent = `RSI14: ${rsiTxt} | Price Z: ${(liveZ > 0 ? '+' : '') + liveZ.toFixed(2)}`;
       }
 
       if (vp && vp.poc) {
-        const distPoc = (spotMid - vp.poc).toFixed(2);
+        const distPoc = (spotMid - shiftP(vp.poc)).toFixed(2);
         document.getElementById('live-poc-dist').textContent = `ห่าง POC: ${distPoc > 0 ? '+' : ''}$${distPoc}`;
       }
 
       if (cachedState.scalp && cachedState.scalp.setup) {
         const scSet = cachedState.scalp.setup;
-        const scDistUsd = Math.abs(spotMid - scSet.entry);
+        const scDistUsd = Math.abs(spotMid - shiftP(scSet.entry));
         const scDistPts = Math.round(scDistUsd * 100);
         const scDistEl = document.getElementById('scalp-live-dist');
         const g4Pill = document.getElementById('gate-4-scalp-pill');
@@ -751,7 +879,7 @@
       }
 
       if (q.setup && q.setup.entry) {
-        const distEntry = Math.abs(spotMid - q.setup.entry);
+        const distEntry = Math.abs(spotMid - shiftP(q.setup.entry));
         const distEl = document.getElementById('live-entry-dist');
         const g3Pill = document.getElementById('gate-3-pill');
 
@@ -771,18 +899,17 @@
           }
         }
       }
+
+      renderJournalsWithLiveFloating(spotMid);
     }
 
     function updateFromPaxgTick(rawBid, rawAsk) {
       lastRawPaxgMid = (rawBid + rawAsk) / 2.0;
       const spotMid = parseFloat((lastRawPaxgMid + dynamicPaxgOffset).toFixed(2));
       const halfSpd = realSpotSpread / 2.0;
-      const bid = parseFloat((spotMid - halfSpd).toFixed(2));
-      const ask = parseFloat((spotMid + halfSpd).toFixed(2));
-      renderSpotPriceUI(spotMid, bid, ask, realSpotSpread);
+      renderSpotPriceUI(spotMid, spotMid - halfSpd, spotMid + halfSpd, realSpotSpread);
     }
 
-    // ดึงราคา Spot XAU/USD จริงทุก 3 วินาที (Swissquote BBO -> fallback gold-api.com) เพื่อแก้ปัญหา PAXG เพี้ยนและ Spread $0.01
     async function syncTrueSpotGoldPrice() {
       try {
         const resSq = await fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" });
@@ -796,8 +923,7 @@
           if (lastRawPaxgMid !== null) {
             dynamicPaxgOffset = trueMid - lastRawPaxgMid;
           }
-          spotFeedSource = "SWISSQUOTE XAU/USD";
-          document.getElementById('spot-feed-label').textContent = "Spot XAU/USD (Swissquote)";
+          document.getElementById('spot-feed-label').textContent = Math.abs(userBrokerOffset) >= 0.01 ? "Spot XAU/USD (Broker Sync)" : "Spot XAU/USD (Swissquote)";
           renderSpotPriceUI(trueMid, trueBid, trueAsk, realSpotSpread);
           return;
         }
@@ -809,15 +935,10 @@
           const gData = await resGold.json();
           if (gData && gData.price) {
             const trueMid = parseFloat(parseFloat(gData.price).toFixed(2));
-            if (cachedState && cachedState.quant && cachedState.quant.ask && cachedState.quant.bid) {
-              const savedSpd = parseFloat((cachedState.quant.ask - cachedState.quant.bid).toFixed(2));
-              if (savedSpd >= 0.08 && savedSpd <= 1.20) realSpotSpread = savedSpd;
-            }
             if (lastRawPaxgMid !== null) {
               dynamicPaxgOffset = trueMid - lastRawPaxgMid;
             }
-            spotFeedSource = "GOLD-API XAU/USD";
-            document.getElementById('spot-feed-label').textContent = "Spot XAU/USD (Live Sync)";
+            document.getElementById('spot-feed-label').textContent = Math.abs(userBrokerOffset) >= 0.01 ? "Spot XAU/USD (Broker Sync)" : "Spot XAU/USD (Live Sync)";
             const halfSpd = realSpotSpread / 2.0;
             renderSpotPriceUI(trueMid, trueMid - halfSpd, trueMid + halfSpd, realSpotSpread);
           }
@@ -853,12 +974,12 @@
     }
 
     function renderVolumeProfileChart(vpData) {
-      const signature = `${vpData.poc}_${vpData.vah}_${vpData.val}_${vpData.histogram.length}`;
+      const signature = `${vpData.poc}_${vpData.vah}_${vpData.val}_${userBrokerOffset}_${vpData.histogram.length}`;
       if (signature === lastChartSignature && vpChartInstance) return;
       lastChartSignature = signature;
 
       const ctx = document.getElementById('vpChart').getContext('2d');
-      const labels = vpData.histogram.map(item => '$' + item.price.toFixed(1));
+      const labels = vpData.histogram.map(item => '$' + shiftP(item.price).toFixed(1));
       const volumes = vpData.histogram.map(item => item.volume);
       
       const bgColors = vpData.histogram.map(item => {
@@ -951,6 +1072,43 @@
       else equityChartInstance = chartObj;
     }
 
+    function renderAllShiftedLevels(data) {
+      const q = data.quant;
+      if (q.technicals) {
+        const t = q.technicals;
+        const trendDir = q.spot_price < t.h1_ema200 ? 'BEAR' : 'BULL';
+        document.getElementById('kpi-regime').textContent = `ADX ${t.adx14} (${trendDir})`;
+        document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${shiftP(t.pdh)} | PDL: $${shiftP(t.pdl)}`;
+      }
+      if (q.setup) {
+        document.getElementById('setup-factor-tag').textContent = q.setup.active_factor;
+        document.getElementById('setup-bias').textContent = q.setup.bias;
+        document.getElementById('setup-rr').textContent = `R:R 1:${q.setup.rr}`;
+        document.getElementById('setup-entry').textContent = `$${shiftP(q.setup.entry).toLocaleString()}`;
+        document.getElementById('setup-sl').textContent = `$${shiftP(q.setup.sl).toLocaleString()}`;
+        document.getElementById('setup-be-target').textContent = `$${shiftP(q.setup.be_target || q.setup.entry).toLocaleString()}`;
+        document.getElementById('setup-tp').textContent = `$${shiftP(q.setup.tp).toLocaleString()}`;
+      }
+      if (data.scalp) {
+        const an = data.scalp.anatomy;
+        const sSet = data.scalp.setup;
+        document.getElementById('sc-vah').textContent = `$${shiftP(an.vah)}`;
+        document.getElementById('sc-poc').textContent = `$${shiftP(an.poc)}`;
+        document.getElementById('sc-val').textContent = `$${shiftP(an.val)}`;
+        document.getElementById('anatomy-peaks-line').textContent =
+          `Lower Peak: $${shiftP(an.lower_peak)} | Upper Peak: $${shiftP(an.upper_peak)} | Valley: ${an.valley ? '$' + shiftP(an.valley) : 'ไม่มี (Single Peak)'}`;
+        document.getElementById('sc-entry').textContent = `$${shiftP(sSet.entry).toLocaleString()}`;
+        document.getElementById('sc-sl').textContent = `$${shiftP(sSet.sl).toLocaleString()}`;
+        document.getElementById('sc-be').textContent = `$${shiftP(sSet.be_target).toLocaleString()}`;
+        document.getElementById('sc-tp').textContent = `$${shiftP(sSet.tp).toLocaleString()}`;
+      }
+      const vp = data.volume_profile;
+      document.getElementById('vp-vah').textContent = `$${shiftP(vp.vah)}`;
+      document.getElementById('vp-poc').textContent = `$${shiftP(vp.poc)}`;
+      document.getElementById('vp-val').textContent = `$${shiftP(vp.val)}`;
+      renderVolumeProfileChart(vp);
+    }
+
     async function loadDashboardData() {
       try {
         const res = await fetch(`./data/state.json?t=${Date.now()}`);
@@ -959,7 +1117,10 @@
         cachedState = data;
 
         const dateObj = new Date(data.updated_at);
-        document.getElementById('last-updated').textContent = `AI อัปเดต: ${dateObj.toLocaleTimeString('th-TH')}`;
+        const ageMins = Math.round((Date.now() - dateObj.getTime()) / 60000);
+        const updEl = document.getElementById('last-updated');
+        updEl.textContent = `AI อัปเดต: ${dateObj.toLocaleTimeString('th-TH')} (${ageMins} นาทีที่แล้ว)`;
+        updEl.className = ageMins > 25 ? "text-xs text-rose-400 font-bold font-mono-num mr-1" : "text-xs text-emerald-400 font-mono-num mr-1";
 
         const q = data.quant;
         if (typeof q.paxg_to_spot_offset === 'number' && lastRawPaxgMid === null) {
@@ -974,7 +1135,7 @@
             `Hydra Vault: ${q.data_audit.total_bars.toLocaleString()} แท่ง M15 (~${q.data_audit.vault_days || 60} วัน | ${q.data_audit.date_range}) | Spot Offset: ${q.data_audit.spot_offset >= 0 ? '+' : ''}$${q.data_audit.spot_offset}`;
         }
 
-        if (lastLivePrice === null) {
+        if (lastRawFeedSpot === null) {
           renderSpotPriceUI(q.spot_price, q.bid, q.ask, realSpotSpread);
         }
 
@@ -1013,7 +1174,6 @@
           }
         }
 
-        // Render VP-Anatomy 500-Point Scalp Section + Full Backtest
         if (data.scalp) {
           const sc = data.scalp;
           const an = sc.anatomy;
@@ -1032,16 +1192,11 @@
           } else {
             activePill.textContent = "MUTED (งดยิงสัญญาณ)";
             activePill.className = "text-[10px] font-mono-num px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/60";
-            setupBox.className = "bg-gray-900/60 border border-rose-900/50 rounded-lg p-3.5 opacity-60";
+            setupBox.className = "bg-gray-900/60 border border-rose-900/50 rounded-lg p-3.5 opacity-65";
           }
 
           document.getElementById('anatomy-desc').textContent = an.desc_th;
           document.getElementById('anatomy-rule').textContent = an.rule_th;
-          document.getElementById('sc-vah').textContent = `$${an.vah}`;
-          document.getElementById('sc-poc').textContent = `$${an.poc}`;
-          document.getElementById('sc-val').textContent = `$${an.val}`;
-          document.getElementById('anatomy-peaks-line').textContent =
-            `Lower Peak: $${an.lower_peak} | Upper Peak: $${an.upper_peak} | Valley: ${an.valley ? '$' + an.valley : 'ไม่มี (Single Peak)'}`;
 
           document.getElementById('scalp-bt-badge').textContent =
             `Scalp WR: ${sBt.win_rate}% (${sBt.trades} ไม้) | Net: ${sBt.net_r >= 0 ? '+' : ''}${sBt.net_r}R`;
@@ -1052,11 +1207,7 @@
             ? sSet.bias
             : `[MUTED] ${sSet.bias} (รอเปลี่ยนเข้าทรงที่เปิดใช้งาน)`;
           document.getElementById('scalp-rr-badge').textContent = `SL ${sSet.sl_points} จุด / TP ${sSet.tp_points} จุด`;
-          document.getElementById('sc-entry').textContent = `$${sSet.entry.toLocaleString()}`;
-          document.getElementById('sc-sl').textContent = `$${sSet.sl.toLocaleString()}`;
-          document.getElementById('sc-be').textContent = `$${sSet.be_target.toLocaleString()}`;
           document.getElementById('sc-tp-label').textContent = `TP (${sSet.tp_points} จุด)`;
-          document.getElementById('sc-tp').textContent = `$${sSet.tp.toLocaleString()}`;
 
           document.getElementById('sc-sharpe').textContent = sBt.sharpe || 0;
           document.getElementById('sc-sortino').textContent = sBt.sortino || 0;
@@ -1067,11 +1218,11 @@
 
           if (Array.isArray(sBt.anatomy_breakdown)) {
             document.getElementById('anatomy-cards-grid').innerHTML = sBt.anatomy_breakdown.map(ab => `
-              <div class="bg-gray-900/90 border ${ab.enabled ? 'border-purple-800/50' : 'border-rose-900/50 opacity-55'} rounded-lg p-2">
+              <div class="bg-gray-900/90 border ${ab.enabled ? 'border-purple-800/50' : 'border-rose-900/50 opacity-65'} rounded-lg p-2">
                 <div class="flex items-center justify-between gap-1 mb-1">
                   <span class="text-[9px] font-bold truncate ${ab.enabled ? 'text-purple-300' : 'text-gray-400'}">${ab.shape}</span>
                   <span class="text-[8px] px-1 rounded ${ab.enabled ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'}">
-                    ${ab.enabled ? `ON(${ab.trades})` : 'MUTE'}
+                    ${ab.enabled ? `ON(${ab.trades})` : `MUTE(${ab.trades})`}
                   </span>
                 </div>
                 <div class="flex items-center justify-between text-[11px]">
@@ -1101,13 +1252,6 @@
           }
         }
 
-        if (q.technicals) {
-          const t = q.technicals;
-          const trendDir = q.spot_price < t.h1_ema200 ? 'BEAR' : 'BULL';
-          document.getElementById('kpi-regime').textContent = `ADX ${t.adx14} (${trendDir})`;
-          document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${t.pdh} | PDL: $${t.pdl}`;
-        }
-
         if (data.backtest && data.backtest.best) {
           const bt = data.backtest.best;
           const scWr = (data.scalp && data.scalp.backtest) ? data.scalp.backtest.win_rate : 0;
@@ -1126,11 +1270,11 @@
 
           if (Array.isArray(data.backtest.factor_breakdown)) {
             document.getElementById('factor-cards-grid').innerHTML = data.backtest.factor_breakdown.map(fb => `
-              <div class="bg-gray-900/80 border ${fb.enabled ? 'border-gray-800' : 'border-rose-900/50 opacity-55'} rounded-lg p-2">
+              <div class="bg-gray-900/80 border ${fb.enabled ? 'border-gray-800' : 'border-rose-900/50 opacity-65'} rounded-lg p-2">
                 <div class="flex items-center justify-between gap-1 mb-1">
                   <span class="text-[9px] font-bold truncate ${fb.enabled ? 'text-amber-300' : 'text-gray-400'}">${fb.factor}</span>
                   <span class="text-[8px] px-1 py-0.2 rounded shrink-0 ${fb.enabled ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'}">
-                    ${fb.enabled ? `ON(${fb.trades})` : 'MUTE'}
+                    ${fb.enabled ? `ON(${fb.trades})` : `MUTE(${fb.trades})`}
                   </span>
                 </div>
                 <div class="flex items-center justify-between text-[11px]">
@@ -1158,47 +1302,8 @@
           `).join('');
         }
 
-        if (data.scalp_journal) {
-          const sj = data.scalp_journal;
-          document.getElementById('scalp-wr-badge').textContent = `Scalp WR: ${sj.live_win_rate}% (${sj.wins}W/${sj.losses}L)`;
-          document.getElementById('scalp-pnl-sub').textContent = `Closed: ${sj.closed_trades} | Open: ${sj.open_trades} | Net: ${sj.net_live_pnl >= 0 ? '+' : ''}$${sj.net_live_pnl}`;
-          const sjBody = document.getElementById('scalp-journal-body');
-          if (sj.recent_trades && sj.recent_trades.length > 0) {
-            sjBody.innerHTML = sj.recent_trades.map(t => `
-              <tr class="hover:bg-gray-800/40">
-                <td class="py-1.5 pr-2 text-gray-400">${t.opened_at_th} <span class="text-purple-400">${t.factor}</span></td>
-                <td class="py-1.5 pr-2 font-bold ${t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
-                <td class="py-1.5 pr-2 text-right text-white">$${t.entry}</td>
-                <td class="py-1.5 text-right">
-                  ${t.status === 'WIN' ? `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold">WIN</span>` :
-                    t.status === 'LOSS' ? `<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 font-bold">LOSS</span>` :
-                    `<span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300">OPEN</span>`}
-                </td>
-              </tr>
-            `).join('');
-          }
-        }
-
-        if (data.journal) {
-          const j = data.journal;
-          document.getElementById('live-wr-badge').textContent = `Trend WR: ${j.live_win_rate}% (${j.wins}W/${j.losses}L)`;
-          document.getElementById('live-pnl-sub').textContent = `Closed: ${j.closed_trades} | Open: ${j.open_trades} | Net: ${j.net_live_pnl >= 0 ? '+' : ''}$${j.net_live_pnl}`;
-          const jBody = document.getElementById('journal-table-body');
-          if (j.recent_trades && j.recent_trades.length > 0) {
-            jBody.innerHTML = j.recent_trades.map(t => `
-              <tr class="hover:bg-gray-800/40">
-                <td class="py-1.5 pr-2 text-gray-400">${t.opened_at_th} <span class="text-amber-400/80">${t.factor || 'SETUP'}</span></td>
-                <td class="py-1.5 pr-2 font-bold ${t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
-                <td class="py-1.5 pr-2 text-right text-white">$${t.entry}</td>
-                <td class="py-1.5 text-right">
-                  ${t.status === 'WIN' ? `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold">WIN</span>` :
-                    t.status === 'LOSS' ? `<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 font-bold">LOSS</span>` :
-                    `<span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-400">OPEN</span>`}
-                </td>
-              </tr>
-            `).join('');
-          }
-        }
+        renderAllShiftedLevels(data);
+        renderJournalsWithLiveFloating(lastCalibratedPrice || shiftP(q.spot_price));
 
         const cvdEl = document.getElementById('kpi-cvd');
         cvdEl.textContent = (q.cvd_6h_proxy > 0 ? '+' : '') + q.cvd_6h_proxy.toLocaleString();
@@ -1206,22 +1311,6 @@
 
         document.getElementById('kpi-macro').textContent = `${q.dxy_price} / ${q.us10y_yield}%`;
         document.getElementById('kpi-corr').textContent = `Gold-DXY Corr: ${q.corr_gold_dxy_20d}`;
-
-        if (q.setup) {
-          document.getElementById('setup-factor-tag').textContent = q.setup.active_factor;
-          document.getElementById('setup-bias').textContent = q.setup.bias;
-          document.getElementById('setup-rr').textContent = `R:R 1:${q.setup.rr}`;
-          document.getElementById('setup-entry').textContent = `$${q.setup.entry.toLocaleString()}`;
-          document.getElementById('setup-sl').textContent = `$${q.setup.sl.toLocaleString()}`;
-          document.getElementById('setup-be-target').textContent = `$${(q.setup.be_target || q.setup.entry).toLocaleString()}`;
-          document.getElementById('setup-tp').textContent = `$${q.setup.tp.toLocaleString()}`;
-        }
-
-        const vp = data.volume_profile;
-        document.getElementById('vp-vah').textContent = `$${vp.vah}`;
-        document.getElementById('vp-poc').textContent = `$${vp.poc}`;
-        document.getElementById('vp-val').textContent = `$${vp.val}`;
-        renderVolumeProfileChart(vp);
 
         if (data.ai_council) {
           const kbCount = Array.isArray(data.ai_council.kb_files_loaded) ? data.ai_council.kb_files_loaded.length : 4;

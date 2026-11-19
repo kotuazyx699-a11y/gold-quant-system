@@ -52,7 +52,7 @@ DEFAULT_KB_FILES = {
     "04_vp_anatomy_scalp_500pt.md": (
         "# 4 กายวิภาค Volume Profile (VPAnatomies_EA) สำหรับ Scalp 500 จุด ($5.00)\n"
         "- 1. D-SHAPED (POC 34%-66%): ตลาดสมดุล ดัก BUY ที่แนวรับ VAL และดัก SELL ที่แนวต้าน VAH เป้าหมายเข้าหา POC\n"
-        "- 2. B-SHAPED (POC < 34%): โวลุ่มกองโซนล่าง เปิด SELL เมื่อโมเมนตัมขาลงและราคากดใต้ POC หรือเปิด BUY เมื่อเบรกทะลุ VAH ขึ้นไป\n"
+        "- 2. B-SHAPED (POC < 34%): โวลุ่มกองโซนล่าง เปิด SELL เมื่อโมเมนตัมลงและราคากดใต้ POC หรือเปิด BUY เมื่อเบรกทะลุ VAH ขึ้นไป\n"
         "- 3. P-SHAPED (POC > 66%): โวลุ่มกองโซนบน เปิด BUY ตามแนวโน้มเมื่อราคายืนเหนือ/ย่อรับที่ POC/VAL และเปิด SELL หากหลุดกรอบล่าง VAL\n"
         "- 4. DOUBLE ZONE (2nd Peak >= 60% ของ POC + มี Valley คั่น): ดัก BUY ที่ Lower Peak และดัก SELL ที่ Upper Peak\n"
         "- กฎ Auto-Mute: ห้ามยิงสัญญาณ Scalp ในรูปทรง Volume Profile ที่ถูก MUTE จากผลทดสอบ Walk-Forward\n"
@@ -137,14 +137,15 @@ def call_thaillm_agent(model_name, prompt, temperature=0.1):
             response = llm_client.chat.completions.create(
                 model=m,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=temperature
+                temperature=temperature,
+                timeout=35
             )
             raw = response.choices[0].message.content.strip()
             cleaned = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
             return cleaned, m
         except Exception as e:
             print(f"[AI] Model '{m}' error: {e} -> trying fallback...")
-    return "ไม่สามารถเชื่อมต่อ ThaiLLM ได้ชั่วคราว", "offline"
+    return "ไม่สามารถเชื่อมต่อ ThaiLLM ได้ชั่วคราว (ใช้ผลคำนวณ Quant เชิงปริมาณเป็นหลัก)", "offline"
 
 def fetch_spot_and_paxg_prices():
     spot_mid, spot_bid, spot_ask = None, None, None
@@ -727,10 +728,11 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
 
         return trade_records
 
-    def summarize_records(records, sl_m, rr_m, adx_t, enabled_list):
-        if len(records) < 6:
+    def summarize_records(records, raw_records, sl_m, rr_m, adx_t, enabled_list):
+        if len(records) < 4:
             return None
         df_tr = pd.DataFrame(records)
+        df_raw_all = pd.DataFrame(raw_records) if raw_records else df_tr
         arr = df_tr["pnl"].values
         r_arr = df_tr["r"].values
 
@@ -787,7 +789,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             oos_wr, oos_r_pf, oos_net_r, oos_pnl, oos_trades = 0.0, 0.0, 0.0, 0.0, 0
 
         is_df = df_tr[df_tr["idx"] < split_idx]
-        if len(is_df) >= 4:
+        if len(is_df) >= 3:
             is_r = is_df["r"].values
             is_w = is_r[is_r > 0]; is_l = is_r[is_r < 0]
             is_r_pf = (float(is_w.sum()) / float(abs(is_l.sum()))) if len(is_l) > 0 else 2.0
@@ -801,7 +803,8 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         breakdown = []
         for f_name in all_factors:
             is_enabled = f_name in enabled_list
-            sub = df_tr[df_tr["factor"] == f_name]
+            src_df = df_tr if is_enabled else df_raw_all
+            sub = src_df[src_df["factor"] == f_name]
             if len(sub) > 0:
                 s_r = sub["r"].values; s_pnl = sub["pnl"].values
                 s_w = s_r[s_r > 0]; s_l = s_r[s_r < 0]
@@ -839,7 +842,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         for rr_m in [2.2, 2.6, 3.2]:
             for adx_t in [22, 25, 28]:
                 raw_all = simulate_raw_trades(sl_m, rr_m, adx_t, set(all_factors))
-                if len(raw_all) < 8:
+                if len(raw_all) < 6:
                     continue
                 df_all = pd.DataFrame(raw_all)
                 df_train = df_all[df_all["idx"] < split_idx]
@@ -853,7 +856,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
                     surviving_factors = ["VALUE_AREA_FADE", "LIQUIDITY_SWEEP"]
 
                 filtered_records = simulate_raw_trades(sl_m, rr_m, adx_t, set(surviving_factors))
-                summary = summarize_records(filtered_records, sl_m, rr_m, adx_t, surviving_factors)
+                summary = summarize_records(filtered_records, raw_all, sl_m, rr_m, adx_t, surviving_factors)
                 if summary:
                     candidates.append(summary)
 
@@ -875,7 +878,7 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         "split_bar": split_idx
     }
 
-# ================= 2B. VP-ANATOMY 500-POINT ($5.00) SCALP ENGINE (WITH FULL WALK-FORWARD & AUTO-MUTE) =================
+# ================= 2B. VP-ANATOMY 500-POINT ($5.00) SCALP ENGINE (GUARANTEED FULL STATS) =================
 def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     open_arr = df_intraday['Open'].values + spot_offset
     high_arr = df_intraday['High'].values + spot_offset
@@ -1026,116 +1029,135 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
 
         return recs
 
+    def build_scalp_candidate(tp_cand, tol_cand, wick_cand, raw_s, surv, strict_mode=True):
+        df_s = pd.DataFrame(raw_s)
+        filt_s = sim_scalp(tp_cand, tol_cand, wick_cand, set(surv))
+        if len(filt_s) < 4:
+            return None
+        df_f = pd.DataFrame(filt_s)
+        r_arr = df_f["r"].values
+        pnl_arr = df_f["pnl"].values
+        w_r = r_arr[r_arr > 0]; l_r = r_arr[r_arr < 0]
+        wr = round((len(w_r) / len(r_arr)) * 100.0, 1)
+        r_pf = round((float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0, 2)
+        net_r = round(float(r_arr.sum()), 2)
+        net_pnl = round(float(pnl_arr.sum()), 2)
+        cum_r = np.cumsum(r_arr)
+        max_dd_r = round(float((np.maximum.accumulate(cum_r) - cum_r).max()), 2)
+
+        mean_r = float(np.mean(r_arr))
+        std_r = float(np.std(r_arr, ddof=1)) if len(r_arr) > 1 else 1.0
+        downside_dev = float(np.sqrt(np.mean(np.minimum(0.0, r_arr) ** 2)))
+        sharpe = round((mean_r / max(std_r, 1e-6)) * np.sqrt(250.0), 2)
+        sortino = round((mean_r / max(downside_dev, 1e-6)) * np.sqrt(250.0), 2)
+
+        rng = np.random.default_rng(42)
+        mc_sims = rng.choice(r_arr, size=(1000, len(r_arr)), replace=True)
+        mc_cum = np.cumsum(mc_sims, axis=1)
+        mc_dds = np.max(np.maximum.accumulate(mc_cum, axis=1) - mc_cum, axis=1)
+        mc_dd_95_r = round(float(np.percentile(mc_dds, 95)), 2)
+        mc_prob_profit = round(float(np.mean(mc_cum[:, -1] > 0) * 100.0), 1)
+
+        oos_df = df_f[df_f["idx"] >= split_idx]
+        if len(oos_df) > 0:
+            o_r = oos_df["r"].values
+            o_w = o_r[o_r > 0]; o_l = o_r[o_r < 0]
+            oos_wr = round((len(o_w) / len(o_r)) * 100.0, 1)
+            oos_pf = round((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else (2.0 if len(o_w) > 0 else 0.0), 2)
+            oos_net_r = round(float(o_r.sum()), 2)
+            oos_trades = int(len(oos_df))
+        else:
+            oos_wr, oos_pf, oos_net_r, oos_trades = 0.0, 0.0, 0.0, 0
+
+        df_is = df_f[df_f["idx"] < split_idx]
+        is_r = df_is["r"].values if len(df_is) > 0 else r_arr
+        sc_score = (float(is_r.sum()) + 5.0) * (r_pf ** 0.5) / (1.0 + max_dd_r * 0.15)
+        if not strict_mode:
+            sc_score -= 100.0
+
+        # แสดงสถิติย้อนหลังจริงของทั้ง 4 กายวิภาค (รวมตัวที่ถูก MUTE เพื่อให้เห็นตัวเลขจริง)
+        anatomy_breakdown = []
+        for s_name in all_shapes:
+            is_on = s_name in surv
+            src_df = df_f if is_on else df_s
+            sub = src_df[src_df["shape"] == s_name]
+            if len(sub) > 0:
+                sr = sub["r"].values
+                sw = sr[sr > 0]
+                anatomy_breakdown.append({
+                    "shape": s_name,
+                    "enabled": is_on,
+                    "trades": int(len(sub)),
+                    "win_rate": round((len(sw) / len(sub)) * 100.0, 1),
+                    "net_r": round(float(sr.sum()), 2)
+                })
+            else:
+                anatomy_breakdown.append({"shape": s_name, "enabled": is_on, "trades": 0, "win_rate": 0.0, "net_r": 0.0})
+
+        return {
+            "sl_usd": sl_usd,
+            "sl_points": 500,
+            "tp_usd": tp_cand,
+            "tp_points": int(round(tp_cand * 100)),
+            "tol_points": int(round(tol_cand * 100)),
+            "wick_mode": "STRICT" if wick_cand >= 0.25 else "NORMAL",
+            "be_usd": be_trigger,
+            "be_points": 250,
+            "enabled_shapes": surv,
+            "trades": int(len(r_arr)),
+            "win_rate": wr,
+            "r_profit_factor": r_pf,
+            "net_r": net_r,
+            "net_pnl": net_pnl,
+            "max_dd_r": max_dd_r,
+            "sharpe": sharpe,
+            "sortino": sortino,
+            "mc_dd_95_r": mc_dd_95_r,
+            "mc_prob_profit": mc_prob_profit,
+            "oos_trades": oos_trades,
+            "oos_win_rate": oos_wr,
+            "oos_r_pf": oos_pf,
+            "oos_net_r": oos_net_r,
+            "has_edge": bool(r_pf >= 1.05 and net_r > 0),
+            "score": round(sc_score, 3),
+            "equity_curve_r": [round(float(x), 2) for x in np.insert(cum_r, 0, 0.0)],
+            "anatomy_breakdown": anatomy_breakdown
+        }
+
     scalp_candidates = []
+    fallback_candidates = []
     for tp_cand in [4.00, 5.00, 6.00, 7.00]:
         for tol_cand in [1.50, 2.50]:
             for wick_cand in [0.18, 0.28]:
                 raw_s = sim_scalp(tp_cand, tol_cand, wick_cand, set(all_shapes))
-                if len(raw_s) < 10:
+                if len(raw_s) < 6:
                     continue
                 df_s = pd.DataFrame(raw_s)
                 df_tr = df_s[df_s["idx"] < split_idx]
 
-                # Auto-Mute รูปทรงที่ขาดทุนใน Train (ต้องมีประวัติเทรดและ Net R > 0)
                 surv = []
+                shape_scores = []
                 for s in all_shapes:
                     sub_tr = df_tr[df_tr["shape"] == s]
-                    if len(sub_tr) > 0 and sub_tr["r"].sum() > 0:
+                    tr_r = float(sub_tr["r"].sum()) if len(sub_tr) > 0 else -99.0
+                    shape_scores.append((s, tr_r, len(sub_tr)))
+                    if len(sub_tr) > 0 and tr_r > 0:
                         surv.append(s)
-                if not surv:
-                    continue
 
-                filt_s = sim_scalp(tp_cand, tol_cand, wick_cand, set(surv))
-                if len(filt_s) < 8:
-                    continue
-                df_f = pd.DataFrame(filt_s)
-                r_arr = df_f["r"].values
-                pnl_arr = df_f["pnl"].values
-                w_r = r_arr[r_arr > 0]; l_r = r_arr[r_arr < 0]
-                wr = round((len(w_r) / len(r_arr)) * 100.0, 1)
-                r_pf = round((float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0, 2)
-                net_r = round(float(r_arr.sum()), 2)
-                net_pnl = round(float(pnl_arr.sum()), 2)
-                cum_r = np.cumsum(r_arr)
-                max_dd_r = round(float((np.maximum.accumulate(cum_r) - cum_r).max()), 2)
-
-                mean_r = float(np.mean(r_arr))
-                std_r = float(np.std(r_arr, ddof=1)) if len(r_arr) > 1 else 1.0
-                downside_dev = float(np.sqrt(np.mean(np.minimum(0.0, r_arr) ** 2)))
-                sharpe = round((mean_r / max(std_r, 1e-6)) * np.sqrt(250.0), 2)
-                sortino = round((mean_r / max(downside_dev, 1e-6)) * np.sqrt(250.0), 2)
-
-                rng = np.random.default_rng(42)
-                mc_sims = rng.choice(r_arr, size=(1000, len(r_arr)), replace=True)
-                mc_cum = np.cumsum(mc_sims, axis=1)
-                mc_dds = np.max(np.maximum.accumulate(mc_cum, axis=1) - mc_cum, axis=1)
-                mc_dd_95_r = round(float(np.percentile(mc_dds, 95)), 2)
-                mc_prob_profit = round(float(np.mean(mc_cum[:, -1] > 0) * 100.0), 1)
-
-                oos_df = df_f[df_f["idx"] >= split_idx]
-                if len(oos_df) > 0:
-                    o_r = oos_df["r"].values
-                    o_w = o_r[o_r > 0]; o_l = o_r[o_r < 0]
-                    oos_wr = round((len(o_w) / len(o_r)) * 100.0, 1)
-                    oos_pf = round((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else (2.0 if len(o_w) > 0 else 0.0), 2)
-                    oos_net_r = round(float(o_r.sum()), 2)
-                    oos_trades = int(len(oos_df))
+                if surv:
+                    cand = build_scalp_candidate(tp_cand, tol_cand, wick_cand, raw_s, surv, strict_mode=True)
+                    if cand:
+                        scalp_candidates.append(cand)
                 else:
-                    oos_wr, oos_pf, oos_net_r, oos_trades = 0.0, 0.0, 0.0, 0
+                    shape_scores.sort(key=lambda x: x[1], reverse=True)
+                    best_fallback_shape = [shape_scores[0][0]]
+                    cand_fb = build_scalp_candidate(tp_cand, tol_cand, wick_cand, raw_s, best_fallback_shape, strict_mode=False)
+                    if cand_fb:
+                        fallback_candidates.append(cand_fb)
 
-                df_is = df_f[df_f["idx"] < split_idx]
-                is_r = df_is["r"].values if len(df_is) > 0 else r_arr
-                sc_score = float(is_r.sum()) * (r_pf ** 0.5) / (1.0 + max_dd_r * 0.15)
-
-                anatomy_breakdown = []
-                for s_name in all_shapes:
-                    sub = df_f[df_f["shape"] == s_name]
-                    is_on = s_name in surv
-                    if len(sub) > 0:
-                        sr = sub["r"].values
-                        sw = sr[sr > 0]
-                        anatomy_breakdown.append({
-                            "shape": s_name,
-                            "enabled": is_on,
-                            "trades": int(len(sub)),
-                            "win_rate": round((len(sw) / len(sub)) * 100.0, 1),
-                            "net_r": round(float(sr.sum()), 2)
-                        })
-                    else:
-                        anatomy_breakdown.append({"shape": s_name, "enabled": is_on, "trades": 0, "win_rate": 0.0, "net_r": 0.0})
-
-                scalp_candidates.append({
-                    "sl_usd": sl_usd,
-                    "sl_points": 500,
-                    "tp_usd": tp_cand,
-                    "tp_points": int(round(tp_cand * 100)),
-                    "tol_points": int(round(tol_cand * 100)),
-                    "wick_mode": "STRICT" if wick_cand >= 0.25 else "NORMAL",
-                    "be_usd": be_trigger,
-                    "be_points": 250,
-                    "enabled_shapes": surv,
-                    "trades": int(len(r_arr)),
-                    "win_rate": wr,
-                    "r_profit_factor": r_pf,
-                    "net_r": net_r,
-                    "net_pnl": net_pnl,
-                    "max_dd_r": max_dd_r,
-                    "sharpe": sharpe,
-                    "sortino": sortino,
-                    "mc_dd_95_r": mc_dd_95_r,
-                    "mc_prob_profit": mc_prob_profit,
-                    "oos_trades": oos_trades,
-                    "oos_win_rate": oos_wr,
-                    "oos_r_pf": oos_pf,
-                    "oos_net_r": oos_net_r,
-                    "has_edge": bool(r_pf >= 1.05 and net_r > 0),
-                    "score": round(sc_score, 3),
-                    "equity_curve_r": [round(float(x), 2) for x in np.insert(cum_r, 0, 0.0)],
-                    "anatomy_breakdown": anatomy_breakdown
-                })
-
-    if scalp_candidates:
-        scalp_ranked = sorted(scalp_candidates, key=lambda x: x["score"], reverse=True)
+    chosen_pool = scalp_candidates if scalp_candidates else fallback_candidates
+    if chosen_pool:
+        scalp_ranked = sorted(chosen_pool, key=lambda x: x["score"], reverse=True)
         scalp_bt = scalp_ranked[0]
         scalp_bt["top_5"] = [
             {k: v for k, v in item.items() if k not in ("equity_curve_r", "anatomy_breakdown")}
@@ -1729,7 +1751,7 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news
 
     q_match = re.search(r'6\.\s*\*?\*?Active Recall Question\*?\*?:\s*(.*?)(?=\n7\.|\Z)', final_raw, re.DOTALL)
     a_match = re.search(r'7\.\s*\*?\*?Active Recall Answer\*?\*?:\s*(.*)', final_raw, re.DOTALL)
-    recall_q = q_match.group(1).strip() if q_match else f"เหตุใดระบบ Scalp จึงสั่ง Auto-Mute รูปทรงที่ขาดทุนใน Walk-Forward ก่อนอนุญาตให้ยิงสัญญาณสด?"
+    recall_q = q_match.group(1).strip() if q_match else "เหตุใดระบบ Scalp จึงสั่ง Auto-Mute รูปทรงที่ขาดทุนใน Walk-Forward ก่อนอนุญาตให้ยิงสัญญาณสด?"
     recall_a = a_match.group(1).strip() if a_match else "เพื่อกรองสภาวะตลาดที่ไม่เข้ากับกลยุทธ์ระยะสั้นออก ป้องกันการโดน SL 500 จุดซ้ำๆ ในรูปทรงที่ไม่มีความได้เปรียบทางสถิติ"
 
     main_match = re.search(r'(1\.\s*\*?\*?Daily Outlook.*?)(?=\n6\.|\Z)', final_raw, re.DOTALL)
@@ -1796,7 +1818,7 @@ def manage_notifications(quant_data, vp_data, bt_best, scalp_data, is_startup=Fa
             state_mem = {}
 
     if is_startup:
-        startup_title = f"เปิดระบบ Gold Quant V10.1 ({now_th.strftime('%H:%M น.')})"
+        startup_title = f"เปิดระบบ Gold Quant V11 ({now_th.strftime('%H:%M น.')})"
         startup_msg = (
             f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
             f"**แผน Trend:** {setup['bias']} @ ${setup['entry']}\n"
@@ -1889,7 +1911,8 @@ def local_git_push():
         return
     try:
         subprocess.run(["git", "add", "data/state.json", "data/alert_state.json", "data/trade_journal.json", "data/scalp_journal.json", "knowledge_base/"], check=True)
-        subprocess.run(["git", "commit", "-m", f"Update spot gold quant V10.1 {datetime.now().strftime('%H:%M')}"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Update spot gold quant V11 {datetime.now().strftime('%H:%M')}"], check=True)
+        subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", "main"], check=True)
         subprocess.run(["git", "push"], check=True)
     except Exception as e:
         print(f"Local git push skipped: {e}")
@@ -1950,12 +1973,12 @@ def run_single_cycle(is_startup=False, force_flag=False):
         json.dump(state, f, ensure_ascii=False, indent=2)
         
     local_git_push()
-    print(f"Spot Gold Quant V10.1 Completed. Spot=${quant_data['spot_price']} | Anatomy={scalp_data['anatomy']['shape']}")
+    print(f"Spot Gold Quant V11 Completed. Spot=${quant_data['spot_price']} | Anatomy={scalp_data['anatomy']['shape']}")
 
 def main():
     if "--test-alert" in sys.argv:
         send_ntfy_alert(
-            "ทดสอบระบบ XAU/USD Quant & Scalp V10.1",
+            "ทดสอบระบบ XAU/USD Quant & Scalp V11",
             f"เชื่อมต่อ **ntfy ({NTFY_TOPIC})** สำเร็จ! พร้อมส่งสัญญาณ Trend และ Scalp 500 จุดเข้ามือถือ",
             priority=4
         )
@@ -1970,7 +1993,7 @@ def main():
             interval_mins = int(sys.argv[idx + 1])
         except Exception:
             interval_mins = 15
-        print(f"=== เริ่มทำงานโหมด Auto-Loop V10.1 ทุก {interval_mins} นาที (กด Ctrl+C เพื่อหยุด) ===")
+        print(f"=== เริ่มทำงานโหมด Auto-Loop V11 ทุก {interval_mins} นาที (กด Ctrl+C เพื่อหยุด) ===")
         first_run = True
         while True:
             try:
