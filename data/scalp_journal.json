@@ -10,8 +10,8 @@
     "sl": 3735.73,
     "tp": 3747.23,
     "rr": 1.3,
-    "status": "OPEN",
-    "pnl": 0.0,
-    "closed_at_th": "-"
+    "status": "LOSS",
+    "pnl": -5.45,
+    "closed_at_th": "19/11 23:19"
   }
 ]
