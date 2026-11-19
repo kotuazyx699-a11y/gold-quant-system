@@ -55,12 +55,11 @@ DEFAULT_KB_FILES = {
         "- 2. B-SHAPED (POC < 34%): โวลุ่มกองโซนล่าง เปิด SELL เมื่อโมเมนตัมขาลงและราคากดใต้ POC หรือเปิด BUY เมื่อเบรกทะลุ VAH ขึ้นไป\n"
         "- 3. P-SHAPED (POC > 66%): โวลุ่มกองโซนบน เปิด BUY ตามแนวโน้มเมื่อราคายืนเหนือ/ย่อรับที่ POC/VAL และเปิด SELL หากหลุดกรอบล่าง VAL\n"
         "- 4. DOUBLE ZONE (2nd Peak >= 60% ของ POC + มี Valley คั่น): ดัก BUY ที่ Lower Peak และดัก SELL ที่ Upper Peak\n"
-        "- ระยะ Scalp มาตรฐาน: SL = $5.00 (500 จุด), เลื่อนบังทุน BE เมื่อบวก +$2.50 (+250 จุด), TP = $5.00 - $6.50 (500 - 650 จุด)\n"
+        "- กฎ Auto-Mute: ห้ามยิงสัญญาณ Scalp ในรูปทรง Volume Profile ที่ถูก MUTE จากผลทดสอบ Walk-Forward\n"
     )
 }
 
 def update_journal_lessons_kb():
-    """สรุปผลแพ้-ชนะจริงจาก trade_journal.json และ scalp_journal.json ลง Knowledge Base"""
     lesson_path = "knowledge_base/05_live_journal_lessons.md"
     all_closed = []
     for j_file, mode_lbl in [("data/trade_journal.json", "TREND"), ("data/scalp_journal.json", "SCALP_500PT")]:
@@ -157,8 +156,8 @@ def fetch_spot_and_paxg_prices():
             timeout=8
         ).json()
         prices = res[0]["spreadProfilePrices"][0]
-        spot_bid = float(prices["bid"])
-        spot_ask = float(prices["ask"])
+        spot_bid = round(float(prices["bid"]), 2)
+        spot_ask = round(float(prices["ask"]), 2)
         spot_mid = round((spot_bid + spot_ask) / 2, 2)
     except Exception:
         pass
@@ -168,7 +167,8 @@ def fetch_spot_and_paxg_prices():
             res = requests.get("https://api.gold-api.com/price/XAU", timeout=8).json()
             if "price" in res and res["price"]:
                 spot_mid = round(float(res["price"]), 2)
-                spot_bid, spot_ask = spot_mid, spot_mid
+                spot_bid = round(spot_mid - 0.12, 2)
+                spot_ask = round(spot_mid + 0.12, 2)
         except Exception:
             pass
 
@@ -384,7 +384,6 @@ ANATOMY_META = {
 }
 
 def classify_vp_anatomy(low_win, high_win, close_win, vol_win, bins=32):
-    """จำแนก 4 กายวิภาค Volume Profile (D-Shaped, b-Shaped, P-Shaped, Double Zone) ตามหลัก VPAnatomies_EA"""
     w_min = float(low_win.min())
     w_max = float(high_win.max())
     if w_max - w_min < 2.0:
@@ -395,7 +394,6 @@ def classify_vp_anatomy(low_win, high_win, close_win, vol_win, bins=32):
     weights = vol_win if vol_win.sum() > 0 else np.ones_like(vol_win)
     hist, _ = np.histogram(typical, bins=bin_edges, weights=weights)
 
-    # เกลี่ยความเรียบ (Smoothing) เพื่อค้นหา Peak และ Valley
     kernel = np.array([0.2, 0.6, 0.2])
     smooth_hist = np.convolve(hist, kernel, mode='same')
 
@@ -877,14 +875,8 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         "split_bar": split_idx
     }
 
-# ================= 2B. VP-ANATOMY 500-POINT ($5.00) SCALP ENGINE =================
+# ================= 2B. VP-ANATOMY 500-POINT ($5.00) SCALP ENGINE (WITH FULL WALK-FORWARD & AUTO-MUTE) =================
 def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
-    """
-    ระบบ Scalp 500 จุด ($5.00 SL / $5.00-$6.50 TP) จาก 4 กายวิภาค Volume Profile (VPAnatomies_EA):
-    - คำนวณ Volume Profile รอบ 24 ชม. (92 แท่ง M15) + เกลี่ยความเรียบหา 2nd Peak & Valley
-    - จำแนก D-Shaped, b-Shaped, P-Shaped, Double Zone อัตโนมัติ
-    - หาจังหวะเข้าบ่อยขึ้นในจุดที่มั่นใจ (10:00 - 00:30 น. เวลาไทย) พร้อม Walk-Forward & Auto-Mute
-    """
     open_arr = df_intraday['Open'].values + spot_offset
     high_arr = df_intraday['High'].values + spot_offset
     low_arr = df_intraday['Low'].values + spot_offset
@@ -898,7 +890,6 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     dt_index_utc = df_intraday.index.tz_localize("UTC") if df_intraday.index.tz is None else df_intraday.index.tz_convert("UTC")
     utc_hours = dt_index_utc.hour.values
 
-    # วิเคราะห์ 4 กายวิภาค Volume Profile ล่าสุด (24H = 92 แท่ง M15)
     curr_anatomy = classify_vp_anatomy(
         low_arr[-92:], high_arr[-92:], close_arr[-92:], vol_arr[-92:], bins=32
     )
@@ -913,7 +904,6 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
             "lower_peak": round(spot_price - 8.0, 2), "upper_peak": round(spot_price + 8.0, 2)
         }
 
-    # Precompute 24H VP Anatomy ทุกๆ 4 แท่ง (1 ชม.) สำหรับ Walk-Forward Backtest
     win_24h = 92
     split_idx = win_24h + int((n_bars - win_24h) * 0.67)
     an_shape = np.empty(n_bars, dtype=object)
@@ -940,9 +930,9 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     all_shapes = ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"]
     sl_usd = 5.00       # 500 จุด
     be_trigger = 2.50   # +250 จุด เลื่อนบังทุน
-    spread_cost = 0.50  # Spread Scalp เฉลี่ย 50 จุด
+    spread_cost = 0.45  # Spread Scalp จริง ~45 จุด
 
-    def sim_scalp(tp_usd, tol_usd, enabled_shapes):
+    def sim_scalp(tp_usd, tol_usd, wick_min, enabled_shapes):
         in_pos = 0
         active_sh = ""
         entry_p = sl_p = tp_p = 0.0
@@ -965,7 +955,7 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
                     recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
                     in_pos = 0; cooldown = 1; continue
                 if not be_moved and high_arr[i] >= entry_p + be_trigger:
-                    sl_p = entry_p + 0.50  # ล็อกคุ้มค่า Spread +50 จุด
+                    sl_p = entry_p + 0.45
                     be_moved = True
                 continue
             elif in_pos == -1:
@@ -978,14 +968,13 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
                     recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
                     in_pos = 0; cooldown = 1; continue
                 if not be_moved and low_arr[i] <= entry_p - be_trigger:
-                    sl_p = entry_p - 0.50
+                    sl_p = entry_p - 0.45
                     be_moved = True
                 continue
 
             if cooldown > 0:
                 cooldown -= 1; continue
 
-            # ช่วงเวลา Scalp: 10:00 - 00:30 น. เวลาไทย (03:00 - 17:30 UTC)
             hr = utc_hours[i]
             if not (3 <= hr <= 17):
                 continue
@@ -997,13 +986,12 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
             c_rng = max(c_high - c_low, 1e-6)
             lo_wick = (min(c_open, c_close) - c_low) / c_rng
             up_wick = (c_high - max(c_open, c_close)) / c_rng
-            bull_c = c_close > c_open and (lo_wick >= 0.20 or c_close > close_arr[i - 1])
-            bear_c = c_close < c_open and (up_wick >= 0.20 or c_close < close_arr[i - 1])
+            bull_c = c_close > c_open and (lo_wick >= wick_min or c_close > close_arr[i - 1])
+            bear_c = c_close < c_open and (up_wick >= wick_min or c_close < close_arr[i - 1])
             rsi = rsi_arr[i]
             poc = an_poc[i]; vah = an_vah[i]; val = an_val[i]
             lo_pk = an_lo_pk[i]; hi_pk = an_hi_pk[i]
 
-            # 1. D-SHAPED: ดัก BUY ที่ VAL / ดัก SELL ที่ VAH
             if sh == "D_SHAPED":
                 if c_low <= val + tol_usd and c_close >= val - 1.5 and bull_c and rsi <= 52:
                     in_pos = 1; active_sh = "D_SHAPED"; be_moved = False
@@ -1012,7 +1000,6 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
                     in_pos = -1; active_sh = "D_SHAPED"; be_moved = False
                     entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
 
-            # 2. B-SHAPED: SELL ใต้ POC ตามโมเมนตัมลง หรือ BUY เมื่อเบรก VAH
             elif sh == "B_SHAPED":
                 if c_high >= poc - tol_usd and c_close < poc and bear_c and c_close < ema21_arr[i] and rsi >= 30:
                     in_pos = -1; active_sh = "B_SHAPED"; be_moved = False
@@ -1021,7 +1008,6 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
                     in_pos = 1; active_sh = "B_SHAPED"; be_moved = False
                     entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
 
-            # 3. P-SHAPED: BUY ย่อรับที่ POC/VAL หรือ SELL เมื่อหลุด VAL
             elif sh == "P_SHAPED":
                 if ((c_low <= poc + tol_usd and c_close >= poc - 1.0) or (c_low <= val + tol_usd and c_close >= val - 1.0)) and bull_c and c_close > ema50_arr[i] and rsi <= 68:
                     in_pos = 1; active_sh = "P_SHAPED"; be_moved = False
@@ -1030,7 +1016,6 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
                     in_pos = -1; active_sh = "P_SHAPED"; be_moved = False
                     entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
 
-            # 4. DOUBLE_ZONE: ดัก BUY ที่ Lower Peak และดัก SELL ที่ Upper Peak
             elif sh == "DOUBLE_ZONE":
                 if c_low <= lo_pk + tol_usd and c_close >= lo_pk - 1.5 and bull_c and rsi <= 55:
                     in_pos = 1; active_sh = "DOUBLE_ZONE"; be_moved = False
@@ -1041,114 +1026,133 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
 
         return recs
 
-    best_scalp = None
-    best_score = -1e9
-    best_tp_usd = 5.50
-    best_tol_usd = 2.00
-    best_enabled_shapes = all_shapes
-
-    for tp_cand in [5.00, 5.50, 6.50]:
+    scalp_candidates = []
+    for tp_cand in [4.00, 5.00, 6.00, 7.00]:
         for tol_cand in [1.50, 2.50]:
-            raw_s = sim_scalp(tp_cand, tol_cand, set(all_shapes))
-            if len(raw_s) < 12:
-                continue
-            df_s = pd.DataFrame(raw_s)
-            df_tr = df_s[df_s["idx"] < split_idx]
-            surv = [s for s in all_shapes if len(df_tr[df_tr["shape"] == s]) == 0 or df_tr[df_tr["shape"] == s]["r"].sum() > 0]
-            if not surv:
-                surv = all_shapes
+            for wick_cand in [0.18, 0.28]:
+                raw_s = sim_scalp(tp_cand, tol_cand, wick_cand, set(all_shapes))
+                if len(raw_s) < 10:
+                    continue
+                df_s = pd.DataFrame(raw_s)
+                df_tr = df_s[df_s["idx"] < split_idx]
 
-            filt_s = sim_scalp(tp_cand, tol_cand, set(surv))
-            if len(filt_s) < 10:
-                continue
-            df_f = pd.DataFrame(filt_s)
-            r_arr = df_f["r"].values
-            w_r = r_arr[r_arr > 0]; l_r = r_arr[r_arr < 0]
-            r_pf = (float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0
-            net_r = float(r_arr.sum())
-            cum_r = np.cumsum(r_arr)
-            dd_r = float((np.maximum.accumulate(cum_r) - cum_r).max())
+                # Auto-Mute รูปทรงที่ขาดทุนใน Train (ต้องมีประวัติเทรดและ Net R > 0)
+                surv = []
+                for s in all_shapes:
+                    sub_tr = df_tr[df_tr["shape"] == s]
+                    if len(sub_tr) > 0 and sub_tr["r"].sum() > 0:
+                        surv.append(s)
+                if not surv:
+                    continue
 
-            df_is = df_f[df_f["idx"] < split_idx]
-            is_r = df_is["r"].values if len(df_is) > 0 else r_arr
-            sc = float(is_r.sum()) * (r_pf ** 0.5) / (1.0 + dd_r * 0.15)
-            if sc > best_score:
-                best_score = sc
-                best_tp_usd = tp_cand
-                best_tol_usd = tol_cand
-                best_enabled_shapes = surv
-                best_scalp = df_f
+                filt_s = sim_scalp(tp_cand, tol_cand, wick_cand, set(surv))
+                if len(filt_s) < 8:
+                    continue
+                df_f = pd.DataFrame(filt_s)
+                r_arr = df_f["r"].values
+                pnl_arr = df_f["pnl"].values
+                w_r = r_arr[r_arr > 0]; l_r = r_arr[r_arr < 0]
+                wr = round((len(w_r) / len(r_arr)) * 100.0, 1)
+                r_pf = round((float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0, 2)
+                net_r = round(float(r_arr.sum()), 2)
+                net_pnl = round(float(pnl_arr.sum()), 2)
+                cum_r = np.cumsum(r_arr)
+                max_dd_r = round(float((np.maximum.accumulate(cum_r) - cum_r).max()), 2)
 
-    if best_scalp is not None and len(best_scalp) > 0:
-        r_arr = best_scalp["r"].values
-        pnl_arr = best_scalp["pnl"].values
-        w_r = r_arr[r_arr > 0]; l_r = r_arr[r_arr < 0]
-        wr = round((len(w_r) / len(r_arr)) * 100.0, 1)
-        r_pf = round((float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0, 2)
-        net_r = round(float(r_arr.sum()), 2)
-        net_pnl = round(float(pnl_arr.sum()), 2)
-        cum_r = np.cumsum(r_arr)
-        max_dd_r = round(float((np.maximum.accumulate(cum_r) - cum_r).max()), 2)
+                mean_r = float(np.mean(r_arr))
+                std_r = float(np.std(r_arr, ddof=1)) if len(r_arr) > 1 else 1.0
+                downside_dev = float(np.sqrt(np.mean(np.minimum(0.0, r_arr) ** 2)))
+                sharpe = round((mean_r / max(std_r, 1e-6)) * np.sqrt(250.0), 2)
+                sortino = round((mean_r / max(downside_dev, 1e-6)) * np.sqrt(250.0), 2)
 
-        oos_df = best_scalp[best_scalp["idx"] >= split_idx]
-        if len(oos_df) > 0:
-            o_r = oos_df["r"].values
-            o_w = o_r[o_r > 0]; o_l = o_r[o_r < 0]
-            oos_wr = round((len(o_w) / len(o_r)) * 100.0, 1)
-            oos_pf = round((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else 2.0, 2)
-            oos_net_r = round(float(o_r.sum()), 2)
-            oos_trades = int(len(oos_df))
-        else:
-            oos_wr, oos_pf, oos_net_r, oos_trades = 0.0, 0.0, 0.0, 0
+                rng = np.random.default_rng(42)
+                mc_sims = rng.choice(r_arr, size=(1000, len(r_arr)), replace=True)
+                mc_cum = np.cumsum(mc_sims, axis=1)
+                mc_dds = np.max(np.maximum.accumulate(mc_cum, axis=1) - mc_cum, axis=1)
+                mc_dd_95_r = round(float(np.percentile(mc_dds, 95)), 2)
+                mc_prob_profit = round(float(np.mean(mc_cum[:, -1] > 0) * 100.0), 1)
 
-        anatomy_breakdown = []
-        for s_name in all_shapes:
-            sub = best_scalp[best_scalp["shape"] == s_name]
-            is_on = s_name in best_enabled_shapes
-            if len(sub) > 0:
-                sr = sub["r"].values
-                sw = sr[sr > 0]
-                anatomy_breakdown.append({
-                    "shape": s_name,
-                    "enabled": is_on,
-                    "trades": int(len(sub)),
-                    "win_rate": round((len(sw) / len(sub)) * 100.0, 1),
-                    "net_r": round(float(sr.sum()), 2)
+                oos_df = df_f[df_f["idx"] >= split_idx]
+                if len(oos_df) > 0:
+                    o_r = oos_df["r"].values
+                    o_w = o_r[o_r > 0]; o_l = o_r[o_r < 0]
+                    oos_wr = round((len(o_w) / len(o_r)) * 100.0, 1)
+                    oos_pf = round((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else (2.0 if len(o_w) > 0 else 0.0), 2)
+                    oos_net_r = round(float(o_r.sum()), 2)
+                    oos_trades = int(len(oos_df))
+                else:
+                    oos_wr, oos_pf, oos_net_r, oos_trades = 0.0, 0.0, 0.0, 0
+
+                df_is = df_f[df_f["idx"] < split_idx]
+                is_r = df_is["r"].values if len(df_is) > 0 else r_arr
+                sc_score = float(is_r.sum()) * (r_pf ** 0.5) / (1.0 + max_dd_r * 0.15)
+
+                anatomy_breakdown = []
+                for s_name in all_shapes:
+                    sub = df_f[df_f["shape"] == s_name]
+                    is_on = s_name in surv
+                    if len(sub) > 0:
+                        sr = sub["r"].values
+                        sw = sr[sr > 0]
+                        anatomy_breakdown.append({
+                            "shape": s_name,
+                            "enabled": is_on,
+                            "trades": int(len(sub)),
+                            "win_rate": round((len(sw) / len(sub)) * 100.0, 1),
+                            "net_r": round(float(sr.sum()), 2)
+                        })
+                    else:
+                        anatomy_breakdown.append({"shape": s_name, "enabled": is_on, "trades": 0, "win_rate": 0.0, "net_r": 0.0})
+
+                scalp_candidates.append({
+                    "sl_usd": sl_usd,
+                    "sl_points": 500,
+                    "tp_usd": tp_cand,
+                    "tp_points": int(round(tp_cand * 100)),
+                    "tol_points": int(round(tol_cand * 100)),
+                    "wick_mode": "STRICT" if wick_cand >= 0.25 else "NORMAL",
+                    "be_usd": be_trigger,
+                    "be_points": 250,
+                    "enabled_shapes": surv,
+                    "trades": int(len(r_arr)),
+                    "win_rate": wr,
+                    "r_profit_factor": r_pf,
+                    "net_r": net_r,
+                    "net_pnl": net_pnl,
+                    "max_dd_r": max_dd_r,
+                    "sharpe": sharpe,
+                    "sortino": sortino,
+                    "mc_dd_95_r": mc_dd_95_r,
+                    "mc_prob_profit": mc_prob_profit,
+                    "oos_trades": oos_trades,
+                    "oos_win_rate": oos_wr,
+                    "oos_r_pf": oos_pf,
+                    "oos_net_r": oos_net_r,
+                    "has_edge": bool(r_pf >= 1.05 and net_r > 0),
+                    "score": round(sc_score, 3),
+                    "equity_curve_r": [round(float(x), 2) for x in np.insert(cum_r, 0, 0.0)],
+                    "anatomy_breakdown": anatomy_breakdown
                 })
-            else:
-                anatomy_breakdown.append({"shape": s_name, "enabled": is_on, "trades": 0, "win_rate": 0.0, "net_r": 0.0})
 
-        scalp_bt = {
-            "sl_usd": sl_usd,
-            "sl_points": int(sl_usd * 100),
-            "tp_usd": best_tp_usd,
-            "tp_points": int(best_tp_usd * 100),
-            "be_usd": be_trigger,
-            "be_points": int(be_trigger * 100),
-            "trades": int(len(r_arr)),
-            "win_rate": wr,
-            "r_profit_factor": r_pf,
-            "net_r": net_r,
-            "net_pnl": net_pnl,
-            "max_dd_r": max_dd_r,
-            "oos_trades": oos_trades,
-            "oos_win_rate": oos_wr,
-            "oos_r_pf": oos_pf,
-            "oos_net_r": oos_net_r,
-            "has_edge": bool(r_pf >= 1.05 and net_r > 0),
-            "equity_curve_r": [round(float(x), 2) for x in np.insert(cum_r, 0, 0.0)],
-            "anatomy_breakdown": anatomy_breakdown
-        }
+    if scalp_candidates:
+        scalp_ranked = sorted(scalp_candidates, key=lambda x: x["score"], reverse=True)
+        scalp_bt = scalp_ranked[0]
+        scalp_bt["top_5"] = [
+            {k: v for k, v in item.items() if k not in ("equity_curve_r", "anatomy_breakdown")}
+            for item in scalp_ranked[:5]
+        ]
     else:
         scalp_bt = {
             "sl_usd": 5.0, "sl_points": 500, "tp_usd": 5.0, "tp_points": 500,
-            "be_usd": 2.5, "be_points": 250, "trades": 0, "win_rate": 0.0,
+            "tol_points": 200, "wick_mode": "NORMAL",
+            "be_usd": 2.5, "be_points": 250, "enabled_shapes": [],
+            "trades": 0, "win_rate": 0.0,
             "r_profit_factor": 0.0, "net_r": 0.0, "net_pnl": 0.0, "max_dd_r": 0.0,
+            "sharpe": 0.0, "sortino": 0.0, "mc_dd_95_r": 0.0, "mc_prob_profit": 0.0,
             "oos_trades": 0, "oos_win_rate": 0.0, "oos_r_pf": 0.0, "oos_net_r": 0.0,
-            "has_edge": False, "equity_curve_r": [0], "anatomy_breakdown": []
+            "has_edge": False, "equity_curve_r": [0], "anatomy_breakdown": [], "top_5": []
         }
 
-    # คำนวณแผน Scalp สด ณ วินาทีปัจจุบันจาก 4 กายวิภาค Volume Profile
     sh = curr_anatomy["shape"]
     poc = curr_anatomy["poc"]
     vah = curr_anatomy["vah"]
@@ -1157,6 +1161,8 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     hi_pk = curr_anatomy["upper_peak"]
     tp_usd = scalp_bt["tp_usd"]
     tp_pts = scalp_bt["tp_points"]
+    enabled_shapes = set(scalp_bt.get("enabled_shapes", []))
+    shape_is_active = sh in enabled_shapes
 
     if sh == "D_SHAPED":
         if abs(spot_price - val) <= abs(spot_price - vah):
@@ -1179,7 +1185,7 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
         else:
             s_dir = "SHORT"; s_entry = val
             s_bias = f"P-SHAPE VAL BREAKDOWN SELL (เสียทรงหลุดกรอบล่าง VAL ${val})"
-    else:  # DOUBLE_ZONE
+    else:
         if abs(spot_price - lo_pk) <= abs(spot_price - hi_pk):
             s_dir = "LONG"; s_entry = lo_pk
             s_bias = f"DOUBLE-ZONE LOWER PEAK BUY (ดักเด้งยอดโวลุ่มล่าง ${lo_pk})"
@@ -1196,24 +1202,28 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
     now_th = datetime.now(THAI_TZ)
     in_scalp_session = (10 <= now_th.hour <= 23) or (now_th.hour == 0 and now_th.minute <= 30)
     gate_session = bool(in_scalp_session)
-    gate_edge = bool(scalp_bt["has_edge"])
-    gate_prox = bool(dist_usd <= 3.00)  # ใกล้ในระยะ 300 จุด ($3.00)
+    gate_edge = bool(scalp_bt["has_edge"] and shape_is_active)
+    gate_prox = bool(dist_usd <= 3.00)
     scalp_ready = gate_session and gate_edge and gate_prox
 
     if not gate_session:
         s_verdict = "NO (อยู่นอกเวลา Scalp 10:00–00:30 น.)"
-    elif not gate_edge:
+    elif not shape_is_active:
+        active_str = ", ".join(enabled_shapes) if enabled_shapes else "ไม่มี"
+        s_verdict = f"NO (ทรง {sh} ถูก MUTE จากสถิติ Backtest — รอจังหวะในทรง {active_str})"
+    elif not scalp_bt["has_edge"]:
         s_verdict = "NO (สถิติ Scalp R-PF ต่ำกว่า 1.05 — รอจังหวะถัดไป)"
     elif not gate_prox:
         s_verdict = f"NO (ห่างจุดเข้า ${dist_usd:.2f} / {dist_pts} จุด — รอเข้าใกล้ <= 300 จุด)"
     else:
-        s_verdict = f"YES (พร้อมยิง SCALP 500 จุด! ราคาเข้าใกล้ในระยะ {dist_pts} จุด)"
+        s_verdict = f"YES (พร้อมยิง SCALP 500 จุด! ทรง {sh} ผ่านเกณฑ์และเข้าใกล้ {dist_pts} จุด)"
 
     return {
         "anatomy": curr_anatomy,
         "backtest": scalp_bt,
         "setup": {
             "shape": sh,
+            "shape_active": shape_is_active,
             "bias": s_bias,
             "direction": s_dir,
             "entry": round(s_entry, 2),
@@ -1231,6 +1241,7 @@ def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
         },
         "gates": {
             "session_ok": gate_session,
+            "shape_ok": shape_is_active,
             "edge_ok": gate_edge,
             "proximity_ok": gate_prox,
             "all_passed": scalp_ready,
@@ -1634,7 +1645,7 @@ def update_all_journals(quant_data, scalp_data, df_intraday, spot_offset, trend_
     scalp_j = _process_single_journal(
         "data/scalp_journal.json", scalp_data["setup"], scalp_triggered,
         quant_data["spot_price"], df_intraday, spot_offset,
-        spread_cost=0.50, dup_tol=3.0, factor_key="shape"
+        spread_cost=0.45, dup_tol=3.0, factor_key="shape"
     )
     return trend_j, scalp_j
 
@@ -1659,17 +1670,15 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news
     else:
         news_status_text = "ไม่มีข่าวสำคัญ USD คงเหลือในช่วงใกล้ๆ นี้"
 
-    # --- AGENT 1: R-Multiple & Monte Carlo Auditor ---
     agent1_prompt = (
         "คุณคือ Quantitative R-Multiple & Scalp Auditor ประเมินผลทดสอบทั้งระบบรันเทรนด์และระบบ Scalp 500 จุด "
         "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค ห้ามเปลี่ยนตัวเลข)\n\n"
         f"- ระบบ Trend: {bt['trades']} ไม้ | WR = {bt['win_rate']}% | R-PF = {bt['r_profit_factor']} | Net = {bt['net_r']}R | Sharpe = {bt['sharpe']} | MC 95% DD = -{bt['mc_dd_95_r']}R\n"
-        f"- ระบบ VP-Anatomy Scalp (SL 500 จุด / TP {sc_bt['tp_points']} จุด): {sc_bt['trades']} ไม้ | WR = {sc_bt['win_rate']}% | R-PF = {sc_bt['r_profit_factor']} | Net = {sc_bt['net_r']}R | OOS R-PF = {sc_bt['oos_r_pf']}\n"
+        f"- ระบบ VP-Anatomy Scalp (SL 500 จุด / TP {sc_bt['tp_points']} จุด): {sc_bt['trades']} ไม้ | WR = {sc_bt['win_rate']}% | R-PF = {sc_bt['r_profit_factor']} | Net = {sc_bt['net_r']}R | ทรงที่เปิดใช้งาน: {', '.join(sc_bt.get('enabled_shapes', []))}\n"
         "จงสรุปว่าทั้งสองระบบมีความคุ้มเสี่ยงและพร้อมใช้งานคู่กันหรือไม่"
     )
     quant_audit_text, used_m1 = call_thaillm_agent(MODEL_QUANT_AUDITOR, agent1_prompt, temperature=0.1)
 
-    # --- AGENT 2: Macro & VP Anatomy Officer ---
     locked_time_fact = (
         f"ขณะนี้เวลา {now_th_str} (เวลาไทย) ซึ่ง **อยู่ในช่วง KILLZONE ACTIVE แล้ว**"
         if setup["in_killzone"] else
@@ -1680,25 +1689,23 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news
         "คุณคือ Macro & Volume Profile Anatomy Officer วิเคราะห์โครงสร้างตลาด Spot XAU/USD "
         "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค)\n\n"
         f"- เวลา: {locked_time_fact} | Spot = ${quant_data['spot_price']}\n"
-        f"- กายวิภาค Volume Profile 24H: {sc_an['title_th']} (POC อยู่ตำแหน่ง {sc_an['poc_pos_pct']}% | VAH ${sc_an['vah']} / POC ${sc_an['poc']} / VAL ${sc_an['val']})\n"
+        f"- กายวิภาค Volume Profile 24H: {sc_an['title_th']} (สถานะทรงนี้: {'เปิดใช้งาน ON' if sc_set['shape_active'] else 'ถูก MUTE ชั่วคราว'} | POC อยู่ตำแหน่ง {sc_an['poc_pos_pct']}% | VAH ${sc_an['vah']} / POC ${sc_an['poc']} / VAL ${sc_an['val']})\n"
         f"- DXY = {quant_data['dxy_price']} | US10Y = {quant_data['us10y_yield']}%\n"
         f"- ข่าว USD:\n{news_status_text}\n"
         "จงอธิบายโครงสร้างโวลุ่มรูปทรงนี้และผลกระทบจากข่าว/มหภาค"
     )
     macro_audit_text, used_m2 = call_thaillm_agent(MODEL_MACRO_OFFICER, agent2_prompt, temperature=0.1)
 
-    # --- AGENT 3: Contrarian Devil's Advocate ---
     agent3_critic_prompt = (
         "คุณคือ Contrarian Devil's Advocate (ฝ่ายค้านประจำทีมเทรด) จับผิดความเสี่ยงทั้งแผนรันเทรนด์และแผน Scalp 500 จุด "
         "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค)\n\n"
         f"- แผน Trend: {setup['bias']} @ ${setup['entry']} (ห่าง ${gates['dist_to_entry']})\n"
-        f"- แผน Scalp 500 จุด ({sc_an['shape']}): {sc_set['bias']} @ ${sc_set['entry']} (SL ${sc_set['sl']} / ห่าง {sc_set['dist_points']} จุด)\n"
+        f"- แผน Scalp 500 จุด ({sc_an['shape']} - {'ON' if sc_set['shape_active'] else 'MUTED'}): {sc_set['bias']} @ ${sc_set['entry']} (SL ${sc_set['sl']} / ห่าง {sc_set['dist_points']} จุด)\n"
         f"- RSI14 = {tech['rsi14']} | ADX14 = {tech['adx14']}\n"
         "จงเตือนจุดเสี่ยงที่อาจทำให้โดนกิน Stop Loss 500 จุด หรือเกิด False Breakout"
     )
     contrarian_audit_text, used_m3_critic = call_thaillm_agent(MODEL_CONTRARIAN_CRITIC, agent3_critic_prompt, temperature=0.15)
 
-    # --- AGENT 4: Chief Execution Strategist (Synthesis) ---
     agent4_prompt = (
         "คุณคือ Chief Execution Strategist & Jane Street Coach สำหรับ Spot XAU/USD (Dual-Engine: Trend + VP-Anatomy Scalp 500 จุด) "
         "จงสังเคราะห์ความเห็นจากทั้ง 3 Agents ร่วมกับ [ข้อเท็จจริงที่ถูกล็อกไว้] ห้ามเปลี่ยนคำตัดสินในข้อ 5 เด็ดขาด!\n\n"
@@ -1715,15 +1722,15 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news
         f"3. **Trend Execution Plan**: แผนรันเทรนด์ Entry ${setup['entry']}, SL ${setup['sl']}, BE ${setup['be_target']}, TP ${setup['tp']}\n"
         f"4. **VP-Anatomy Scalp Plan (500 จุด)**: แผนสั้น Entry ${sc_set['entry']}, SL ${sc_set['sl']} (500 จุด), BE +250 จุด (${sc_set['be_target']}), TP ${sc_set['tp']} ({sc_set['tp_points']} จุด)\n"
         f"5. **Alert Trigger**: คัดลอกคำตัดสินนี้ไปวางทันที -> Trend: {gates['verdict_text']} | Scalp 500pt: {sc_gates['verdict_text']}\n"
-        "6. **Active Recall Question**: ตั้งคำถามสั้นๆ 1 ข้อเกี่ยวกับกายวิภาค Volume Profile หรือระยะ 500 จุด\n"
+        "6. **Active Recall Question**: ตั้งคำถามสั้นๆ 1 ข้อเกี่ยวกับกายวิภาค Volume Profile หรือระบบ Auto-Mute\n"
         "7. **Active Recall Answer**: เฉลยคำตอบสั้นๆ 1-2 ประโยค"
     )
     final_raw, used_m4 = call_thaillm_agent(MODEL_CHIEF_STRATEGIST, agent4_prompt, temperature=0.08)
 
     q_match = re.search(r'6\.\s*\*?\*?Active Recall Question\*?\*?:\s*(.*?)(?=\n7\.|\Z)', final_raw, re.DOTALL)
     a_match = re.search(r'7\.\s*\*?\*?Active Recall Answer\*?\*?:\s*(.*)', final_raw, re.DOTALL)
-    recall_q = q_match.group(1).strip() if q_match else f"ในโครงสร้าง {sc_an['title_th']} เหตุใดระบบ Scalp จึงตั้งจุดเลื่อนบังทุน (BE) ที่ +250 จุด (+$2.50) ก่อนถึงเป้า TP?"
-    recall_a = a_match.group(1).strip() if a_match else "เพื่อตัดความเสี่ยงขาดทุนออกทันทีเมื่อราคาวิ่งไปครึ่งทางของระยะ SL 500 จุด ช่วยรักษาอัตราชนะ (Win-Rate) ในตลาดทองคำที่ผันผวน"
+    recall_q = q_match.group(1).strip() if q_match else f"เหตุใดระบบ Scalp จึงสั่ง Auto-Mute รูปทรงที่ขาดทุนใน Walk-Forward ก่อนอนุญาตให้ยิงสัญญาณสด?"
+    recall_a = a_match.group(1).strip() if a_match else "เพื่อกรองสภาวะตลาดที่ไม่เข้ากับกลยุทธ์ระยะสั้นออก ป้องกันการโดน SL 500 จุดซ้ำๆ ในรูปทรงที่ไม่มีความได้เปรียบทางสถิติ"
 
     main_match = re.search(r'(1\.\s*\*?\*?Daily Outlook.*?)(?=\n6\.|\Z)', final_raw, re.DOTALL)
     clean_final = main_match.group(1).strip() if main_match else final_raw
@@ -1744,7 +1751,7 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news
         }
     }
 
-# ================= 6. SMART NTFY NOTIFICATION MANAGER (TREND + SCALP) =================
+# ================= 6. SMART NTFY NOTIFICATION MANAGER =================
 def send_ntfy_alert(title, message, priority=4, tags=None):
     url = "https://ntfy.sh"
     payload = {
@@ -1769,7 +1776,6 @@ def send_ntfy_alert(title, message, priority=4, tags=None):
 
 def manage_notifications(quant_data, vp_data, bt_best, scalp_data, is_startup=False, force=False):
     setup = quant_data["setup"]
-    tech = quant_data["technicals"]
     gates = quant_data["gates"]
     sc_an = scalp_data["anatomy"]
     sc_set = scalp_data["setup"]
@@ -1790,17 +1796,16 @@ def manage_notifications(quant_data, vp_data, bt_best, scalp_data, is_startup=Fa
             state_mem = {}
 
     if is_startup:
-        startup_title = f"เปิดระบบ Gold Quant V10 ({now_th.strftime('%H:%M น.')})"
+        startup_title = f"เปิดระบบ Gold Quant V10.1 ({now_th.strftime('%H:%M น.')})"
         startup_msg = (
             f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
             f"**แผน Trend:** {setup['bias']} @ ${setup['entry']}\n"
-            f"**แผน Scalp 500 จุด:** {sc_set['bias']} @ ${sc_set['entry']} (SL 500 จุด / TP {sc_set['tp_points']} จุด)"
+            f"**แผน Scalp 500 จุด:** {sc_set['bias']} @ ${sc_set['entry']} ({'ON' if sc_set['shape_active'] else 'MUTED'})"
         )
         send_ntfy_alert(startup_title, startup_msg, priority=3, tags=["rocket", "coin"])
 
-    # 1. ตรวจสอบสัญญาณ SCALP 500 จุด (ทำงาน 10:00 - 00:30 น.)
     scalp_triggered = False
-    if sc_gates["all_passed"] or force:
+    if sc_gates["all_passed"] or (force and sc_set["shape_active"]):
         same_sc_bias = state_mem.get("last_scalp_bias") == sc_set["bias"]
         sc_diff = abs(float(state_mem.get("last_scalp_entry", 0)) - float(sc_set["entry"]))
         sc_elapsed = (now_ts - float(state_mem.get("last_scalp_ts", 0))) / 60.0
@@ -1816,14 +1821,13 @@ def manage_notifications(quant_data, vp_data, bt_best, scalp_data, is_startup=Fa
                 state_mem["last_scalp_ts"] = now_ts
         scalp_triggered = True
 
-    # 2. ตรวจสอบช่วงเช้า NO TRADE ZONE ของระบบ Trend หลัก
     if not setup["in_killzone"]:
         if now_th.hour >= 7 and state_mem.get("morning_brief_date") != today_str:
             morning_title = f"แผนวิเคราะห์ทองคำรายวัน ({now_th.strftime('%d/%m %H:%M น.')})"
             morning_msg = (
                 f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
                 f"**แผนรอรอบบ่าย (Trend):** {setup['bias']} @ ${setup['entry']}\n"
-                f"**แผน Scalp 500 จุด:** {sc_set['bias']} @ ${sc_set['entry']} (ห่าง {sc_set['dist_points']} จุด)"
+                f"**แผน Scalp 500 จุด:** {sc_set['bias']} @ ${sc_set['entry']}"
             )
             if send_ntfy_alert(morning_title, morning_msg, priority=3, tags=["sunrise", "newspaper"]):
                 state_mem["morning_brief_date"] = today_str
@@ -1885,7 +1889,7 @@ def local_git_push():
         return
     try:
         subprocess.run(["git", "add", "data/state.json", "data/alert_state.json", "data/trade_journal.json", "data/scalp_journal.json", "knowledge_base/"], check=True)
-        subprocess.run(["git", "commit", "-m", f"Update spot gold quant V10 {datetime.now().strftime('%H:%M')}"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Update spot gold quant V10.1 {datetime.now().strftime('%H:%M')}"], check=True)
         subprocess.run(["git", "push"], check=True)
     except Exception as e:
         print(f"Local git push skipped: {e}")
@@ -1907,7 +1911,7 @@ def run_single_cycle(is_startup=False, force_flag=False):
 
     scalp_data = run_vp_anatomy_scalp_engine(df_intraday_vault, ind, active_spot, spot_offset=spot_offset)
     sc_bt = scalp_data["backtest"]
-    print(f"[SCALP 500PT] Anatomy={scalp_data['anatomy']['shape']} | WR={sc_bt['win_rate']}%, R-PF={sc_bt['r_profit_factor']}, Net={sc_bt['net_r']}R ({sc_bt['trades']} trades)")
+    print(f"[SCALP 500PT] Anatomy={scalp_data['anatomy']['shape']} (Active={scalp_data['setup']['shape_active']}) | WR={sc_bt['win_rate']}%, R-PF={sc_bt['r_profit_factor']}, Net={sc_bt['net_r']}R ({sc_bt['trades']} trades)")
 
     vp_data = calculate_volume_profile(df_intraday_vault, spot_offset=spot_offset)
     quant_data = calculate_quant_and_setup(
@@ -1946,12 +1950,12 @@ def run_single_cycle(is_startup=False, force_flag=False):
         json.dump(state, f, ensure_ascii=False, indent=2)
         
     local_git_push()
-    print(f"Spot Gold Quant V10 Completed. Spot=${quant_data['spot_price']} | Anatomy={scalp_data['anatomy']['shape']}")
+    print(f"Spot Gold Quant V10.1 Completed. Spot=${quant_data['spot_price']} | Anatomy={scalp_data['anatomy']['shape']}")
 
 def main():
     if "--test-alert" in sys.argv:
         send_ntfy_alert(
-            "ทดสอบระบบ XAU/USD Quant & Scalp V10",
+            "ทดสอบระบบ XAU/USD Quant & Scalp V10.1",
             f"เชื่อมต่อ **ntfy ({NTFY_TOPIC})** สำเร็จ! พร้อมส่งสัญญาณ Trend และ Scalp 500 จุดเข้ามือถือ",
             priority=4
         )
@@ -1966,7 +1970,7 @@ def main():
             interval_mins = int(sys.argv[idx + 1])
         except Exception:
             interval_mins = 15
-        print(f"=== เริ่มทำงานโหมด Auto-Loop V10 ทุก {interval_mins} นาที (กด Ctrl+C เพื่อหยุด) ===")
+        print(f"=== เริ่มทำงานโหมด Auto-Loop V10.1 ทุก {interval_mins} นาที (กด Ctrl+C เพื่อหยุด) ===")
         first_run = True
         while True:
             try:

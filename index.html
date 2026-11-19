@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XAU/USD Spot Dual-Engine Quant & VP-Anatomy Scalp V10</title>
+  <title>XAU/USD Spot Dual-Engine Quant & VP-Anatomy Scalp V10.1</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -41,9 +41,9 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Dual-Engine Quant & VP-Anatomy Scalp V10</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Dual-Engine Quant & VP-Anatomy Scalp V10.1</h1>
           <span id="live-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE TICK
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> SPOT SYNC
           </span>
           <span id="session-gate-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-gray-800 text-gray-300 border border-gray-700 rounded-full">
             CHECKING SESSION...
@@ -62,17 +62,17 @@
       </div>
     </header>
 
-    <!-- 3-Gate Execution Readiness Banner -->
+    <!-- 4-Gate Execution Readiness Banner -->
     <div id="session-banner" class="card p-3.5 border-amber-600/40 bg-amber-950/20 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
       <div class="flex items-center gap-2.5">
         <span id="session-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-        <span id="session-banner-title" class="text-xs font-bold text-amber-300">กำลังตรวจสอบประตูความพร้อม 3 ชั้น...</span>
+        <span id="session-banner-title" class="text-xs font-bold text-amber-300">กำลังตรวจสอบประตูความพร้อม...</span>
       </div>
       <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono-num">
         <span id="gate-1-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">1. Session: -</span>
         <span id="gate-2-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">2. Quant Edge: -</span>
         <span id="gate-3-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">3. Trend Prox (<=$8): -</span>
-        <span id="gate-4-scalp-pill" class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">4. Scalp 500pt (<=300pt): -</span>
+        <span id="gate-4-scalp-pill" class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">4. Scalp 500pt: -</span>
       </div>
     </div>
 
@@ -80,7 +80,7 @@
     <section class="grid grid-cols-2 lg:grid-cols-5 gap-4">
       <div class="card p-4 border-amber-500/30">
         <div class="flex items-center justify-between">
-          <p class="text-xs text-gray-400">ราคาทองคำ Spot (XAU/USD)</p>
+          <p id="spot-feed-label" class="text-xs text-gray-400">Spot XAU/USD (Real-Time)</p>
           <span id="live-tick-time" class="text-[10px] text-emerald-400 font-mono-num">--:--:--</span>
         </div>
         <p id="kpi-price" class="text-2xl font-bold text-amber-400 font-mono-num mt-1">$0.00</p>
@@ -112,7 +112,7 @@
       </div>
     </section>
 
-    <!-- Interactive Position Sizing (Trend Lot vs. Scalp 500pt Lot) -->
+    <!-- Interactive Position Sizing -->
     <section class="card p-4 border-cyan-800/40 bg-gradient-to-r from-gray-900 via-gray-900 to-cyan-950/20">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-4 flex flex-wrap items-center gap-3">
@@ -158,14 +158,14 @@
       </div>
     </section>
 
-    <!-- NEW: VP-ANATOMY 500-POINT SCALP ENGINE SECTION -->
-    <section class="card p-5 border-purple-600/40 bg-gradient-to-br from-gray-900 via-gray-900 to-purple-950/20 space-y-4">
+    <!-- VP-ANATOMY 500-POINT SCALP ENGINE + FULL WALK-FORWARD BACKTEST -->
+    <section class="card p-5 border-purple-600/40 bg-gradient-to-br from-gray-900 via-gray-900 to-purple-950/20 space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-3">
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded">
             VP-ANATOMY SCALP 500 จุด ($5.00)
           </span>
-          <h2 class="text-base font-bold text-white">ระบบ Scalp 4 กายวิภาค Volume Profile (D / b / P / Double Zone)</h2>
+          <h2 class="text-base font-bold text-white">ระบบ Scalp 4 กายวิภาค Volume Profile + ผลทดสอบย้อนหลัง</h2>
         </div>
         <div class="flex items-center gap-2 font-mono-num text-xs">
           <span id="scalp-bt-badge" class="px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">
@@ -177,15 +177,18 @@
         </div>
       </div>
 
+      <!-- Top Row: Live Anatomy Setup & 4-Shape Filter -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        <!-- Left 5 Cols: Active Anatomy Shape Card -->
         <div class="lg:col-span-5 bg-gray-900/90 border border-purple-800/40 rounded-lg p-4 flex flex-col justify-between space-y-3">
           <div>
             <div class="flex items-center justify-between gap-2">
               <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">โครงสร้าง 24H Volume Profile ปัจจุบัน</span>
               <span id="anatomy-poc-pct" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-purple-950 text-purple-300">POC Pos: 50%</span>
             </div>
-            <h3 id="anatomy-title" class="text-base font-bold text-amber-400 mt-1">① D-SHAPED (ทรงตัว D - ตลาดสมดุล)</h3>
+            <div class="flex items-center justify-between gap-2 mt-1">
+              <h3 id="anatomy-title" class="text-base font-bold text-amber-400">① D-SHAPED</h3>
+              <span id="anatomy-active-pill" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60">ACTIVE</span>
+            </div>
             <p id="anatomy-desc" class="text-xs text-gray-300 mt-1 leading-relaxed">-</p>
             <div class="mt-2.5 p-2 rounded bg-purple-950/30 border border-purple-800/40 text-xs text-purple-200">
               <strong class="text-purple-300">กลยุทธ์ประจำทรง:</strong> <span id="anatomy-rule">-</span>
@@ -211,13 +214,12 @@
           </p>
         </div>
 
-        <!-- Right 7 Cols: 500-Point Scalp Execution Levels + 4 Anatomy Win-Rate Cards -->
         <div class="lg:col-span-7 flex flex-col justify-between space-y-3">
-          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3.5">
+          <div id="scalp-setup-box" class="bg-gray-900/90 border border-gray-800 rounded-lg p-3.5">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
               <span id="scalp-bias" class="text-xs font-bold text-purple-300">กำลังคำนวณจุดเข้า Scalp 500 จุด...</span>
               <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60">
-                SL 500 จุด / TP 550 จุด
+                SL 500 จุด / TP 500 จุด
               </span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
@@ -234,13 +236,12 @@
                 <span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span>
               </div>
               <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2">
-                <span id="sc-tp-label" class="block text-[10px] text-emerald-300">TP (550 จุด)</span>
+                <span id="sc-tp-label" class="block text-[10px] text-emerald-300">TP (500 จุด)</span>
                 <span id="sc-tp" class="font-bold text-emerald-400 text-sm">$0.00</span>
               </div>
             </div>
           </div>
 
-          <!-- 4 Anatomy Win-Rate Breakdown -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <span class="text-[11px] text-gray-400 font-medium">สถิติ Walk-Forward แยกตาม 4 กายวิภาค Volume Profile (Auto-Mute ทรงที่ขาดทุน)</span>
@@ -248,6 +249,58 @@
             </div>
             <div id="anatomy-cards-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono-num text-xs"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Full Scalp Backtest Metrics, Equity Curve & Top-5 Optimization Table -->
+      <div class="border-t border-gray-800 pt-4 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+        <div class="lg:col-span-5 space-y-2.5">
+          <div class="grid grid-cols-4 gap-2 text-center font-mono-num text-xs">
+            <div class="bg-gray-900/90 border border-gray-800 rounded p-2">
+              <span class="block text-[10px] text-gray-400">Scalp Sharpe</span>
+              <span id="sc-sharpe" class="font-bold text-purple-300">0.00</span>
+            </div>
+            <div class="bg-gray-900/90 border border-gray-800 rounded p-2">
+              <span class="block text-[10px] text-gray-400">Scalp Sortino</span>
+              <span id="sc-sortino" class="font-bold text-emerald-400">0.00</span>
+            </div>
+            <div class="bg-gray-900/90 border border-gray-800 rounded p-2">
+              <span class="block text-[10px] text-gray-400">Max DD</span>
+              <span id="sc-maxdd" class="font-bold text-rose-400">-0.0R</span>
+            </div>
+            <div class="bg-gray-900/90 border border-gray-800 rounded p-2">
+              <span class="block text-[10px] text-gray-400">MC Prob</span>
+              <span id="sc-mcprob" class="font-bold text-amber-400">0%</span>
+            </div>
+          </div>
+          <div class="h-[135px] bg-gray-900/70 border border-gray-800 rounded-lg p-2">
+            <canvas id="scalpEquityChart"></canvas>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 overflow-x-auto bg-gray-900/60 border border-gray-800 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-purple-300">ตารางจัดอันดับค่าพารามิเตอร์ Scalp ย้อนหลัง (Top 5 Walk-Forward)</span>
+            <span class="text-[10px] font-mono-num text-gray-400">SL ล็อก 500 จุด ($5.00)</span>
+          </div>
+          <table class="w-full text-left text-xs font-mono-num">
+            <thead>
+              <tr class="border-b border-gray-800 text-gray-400">
+                <th class="py-1.5 pr-2">Rank</th>
+                <th class="py-1.5 pr-2">TP (จุด)</th>
+                <th class="py-1.5 pr-2">โซนเข้า</th>
+                <th class="py-1.5 pr-2">ตัวกรอง</th>
+                <th class="py-1.5 pr-2 text-right">ไม้</th>
+                <th class="py-1.5 pr-2 text-right">WR</th>
+                <th class="py-1.5 pr-2 text-right">R-PF</th>
+                <th class="py-1.5 pr-2 text-right">OOS R-PF</th>
+                <th class="py-1.5 text-right">Net R</th>
+              </tr>
+            </thead>
+            <tbody id="scalp-bt-table-body" class="divide-y divide-gray-800/60">
+              <tr><td colspan="9" class="py-3 text-gray-500 text-center">กำลังรอผล Backtest Scalp...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -295,7 +348,6 @@
       <!-- Right: 4-Agent Swarm Debate Council & News (7 Cols) -->
       <div class="lg:col-span-7 space-y-6">
         
-        <!-- AI Council Synthesis Box -->
         <div class="card p-5 border-amber-500/20">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
             <div class="flex items-center gap-2">
@@ -359,12 +411,10 @@
             </div>
           </div>
 
-          <!-- Chief Strategist Final Report -->
           <div id="ai-content" class="text-sm text-gray-200 leading-relaxed space-y-3 whitespace-pre-line">
             กำลังรอข้อมูลจาก engine.py...
           </div>
 
-          <!-- Jane Street Active Recall Coach Box -->
           <div class="mt-4 bg-amber-950/20 border border-amber-700/40 rounded-lg p-3">
             <div class="flex items-center gap-2 mb-1">
               <span class="text-[10px] font-mono-num font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">JANE STREET ACTIVE RECALL COACH</span>
@@ -377,7 +427,6 @@
           </div>
         </div>
 
-        <!-- USD News Table -->
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-base font-bold text-white">ปฏิทินข่าว USD ประจำสัปดาห์ (เวลาไทย)</h2>
@@ -404,10 +453,9 @@
       </div>
     </section>
 
-    <!-- Bottom Section: Walk-Forward Backtest & Dual Live Journals -->
+    <!-- Bottom Section: Trend Walk-Forward Backtest & Dual Live Journals -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
-      <!-- Left: Walk-Forward Backtest & 5-Factor Auto-Mute Breakdown (7 Cols) -->
       <div class="card p-5 lg:col-span-7 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -465,15 +513,13 @@
         </div>
       </div>
 
-      <!-- Right: Dual Live Signal Journals (Trend + Scalp 500pt) (5 Cols) -->
       <div class="card p-5 lg:col-span-5 flex flex-col justify-between space-y-4">
         <div class="space-y-4">
-          <!-- Scalp 500pt Live Journal -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <div>
                 <h2 class="text-sm font-bold text-purple-300">Live Scalp 500pt Signal Journal</h2>
-                <p class="text-[11px] text-gray-400">บันทึกสัญญาณ Scalp 4 กายวิภาค VP</p>
+                <p class="text-[11px] text-gray-400">บันทึกสัญญาณ Scalp (เฉพาะทรงที่ผ่าน Backtest)</p>
               </div>
               <div class="text-right font-mono-num">
                 <span id="scalp-wr-badge" class="text-xs font-bold text-purple-300">Scalp WR: 0%</span>
@@ -497,7 +543,6 @@
             </div>
           </div>
 
-          <!-- Trend Live Journal -->
           <div class="border-t border-gray-800 pt-3">
             <div class="flex items-center justify-between mb-1.5">
               <div>
@@ -528,7 +573,7 @@
         </div>
 
         <p class="text-[11px] text-gray-500 border-t border-gray-800 pt-2">
-          * Hydra Local Vault + 4 กายวิภาค Volume Profile (VPAnatomies_EA) + Monte Carlo 1,000 รอบ
+          * Real-Time XAU/USD Spot Sync + Hydra Local Vault + 4 กายวิภาค Volume Profile (VPAnatomies_EA)
         </p>
       </div>
 
@@ -540,11 +585,19 @@
     const NTFY_TOPIC = "pansakorn888";
     let vpChartInstance = null;
     let equityChartInstance = null;
+    let scalpEquityChartInstance = null;
     let cachedState = null;
     let lastChartSignature = null;
     let lastEquitySignature = null;
+    let lastScalpEquitySignature = null;
     let lastLivePrice = null;
     let goldWs = null;
+
+    // ตัวแปรซิงก์ราคา Spot XAU/USD จริงทุก 3 วินาที ป้องกันราคา PAXG เพี้ยนและแก้ Spread $0.01
+    let dynamicPaxgOffset = 0;
+    let realSpotSpread = 0.22;
+    let lastRawPaxgMid = null;
+    let spotFeedSource = "XAU/USD SPOT";
 
     (function restoreUserPrefs() {
       const savedBal = localStorage.getItem('xau_balance');
@@ -570,11 +623,10 @@
 
       const riskBudgetUsd = balance * (riskPct / 100.0);
 
-      // คำนวณ Lot สำหรับ Scalp 500 จุด ($5.00 SL)
       const scalpSlUsd = 5.0;
       const scalpTpUsd = (cachedState && cachedState.scalp && cachedState.scalp.setup)
-        ? (parseFloat(cachedState.scalp.setup.tp_usd) || 5.5)
-        : 5.5;
+        ? (parseFloat(cachedState.scalp.setup.tp_usd) || 5.0)
+        : 5.0;
       const scalpLot = Math.max(0.01, Math.round((riskBudgetUsd / (scalpSlUsd * 100.0)) * 100) / 100);
       const scalpRewardUsd = scalpLot * 100.0 * scalpTpUsd;
       const scalpRewardThb = scalpRewardUsd * thbRate;
@@ -622,8 +674,8 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             topic: NTFY_TOPIC,
-            title: "ทดสอบ XAU/USD Dual-Engine V10",
-            message: `เชื่อมต่อแจ้งเตือน Trend & Scalp 500 จุด (${NTFY_TOPIC}) สำเร็จ! ราคาปัจจุบัน $${lastLivePrice || '-'}`,
+            title: "ทดสอบ XAU/USD Dual-Engine V10.1",
+            message: `เชื่อมต่อแจ้งเตือน Trend & Scalp 500 จุด (${NTFY_TOPIC}) สำเร็จ! ราคา Spot ปัจจุบัน $${lastLivePrice || '-'}`,
             priority: 4,
             tags: ["white_check_mark", "coin"]
           })
@@ -643,67 +695,63 @@
       }, 3000);
     }
 
-    function updateLiveMetrics(rawBid, rawAsk) {
-      const offset = (cachedState && cachedState.quant && typeof cachedState.quant.paxg_to_spot_offset === 'number')
-        ? cachedState.quant.paxg_to_spot_offset
-        : 0;
-
-      const bid = parseFloat((rawBid + offset).toFixed(2));
-      const ask = parseFloat((rawAsk + offset).toFixed(2));
-      const spotPrice = parseFloat(((bid + ask) / 2).toFixed(2));
-
+    function renderSpotPriceUI(spotMid, bid, ask, spread) {
       const priceEl = document.getElementById('kpi-price');
-      priceEl.textContent = `$${spotPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      priceEl.textContent = `$${spotMid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-      if (lastLivePrice !== null && spotPrice !== lastLivePrice) {
+      if (lastLivePrice !== null && spotMid !== lastLivePrice) {
         priceEl.classList.remove('tick-up', 'tick-down');
         void priceEl.offsetWidth;
-        priceEl.classList.add(spotPrice > lastLivePrice ? 'tick-up' : 'tick-down');
+        priceEl.classList.add(spotMid > lastLivePrice ? 'tick-up' : 'tick-down');
       }
-      lastLivePrice = spotPrice;
+      lastLivePrice = spotMid;
 
       document.getElementById('live-tick-time').textContent = new Date().toLocaleTimeString('th-TH');
-      const spread = Math.max(0.01, ask - bid).toFixed(2);
-      document.getElementById('kpi-bidask').textContent = `Bid: $${bid.toFixed(2)} | Ask: $${ask.toFixed(2)} (Spd: $${spread})`;
+      document.getElementById('kpi-bidask').textContent = `Bid: $${bid.toFixed(2)} | Ask: $${ask.toFixed(2)} (Spd: $${spread.toFixed(2)})`;
 
       if (!cachedState) return;
       const q = cachedState.quant;
       const vp = cachedState.volume_profile;
 
       if (q.mean_20_spot && q.std_20 > 0) {
-        const liveZ = (spotPrice - q.mean_20_spot) / q.std_20;
+        const liveZ = (spotMid - q.mean_20_spot) / q.std_20;
         const rsiTxt = q.technicals ? `${q.technicals.rsi14}` : '-';
         document.getElementById('kpi-zscore').textContent = `RSI14: ${rsiTxt} | Price Z: ${(liveZ > 0 ? '+' : '') + liveZ.toFixed(2)}`;
       }
 
       if (vp && vp.poc) {
-        const distPoc = (spotPrice - vp.poc).toFixed(2);
+        const distPoc = (spotMid - vp.poc).toFixed(2);
         document.getElementById('live-poc-dist').textContent = `ห่าง POC: ${distPoc > 0 ? '+' : ''}$${distPoc}`;
       }
 
-      // อัปเดตระยะห่างสดของ Scalp 500 จุด
       if (cachedState.scalp && cachedState.scalp.setup) {
         const scSet = cachedState.scalp.setup;
-        const scDistUsd = Math.abs(spotPrice - scSet.entry);
+        const scDistUsd = Math.abs(spotMid - scSet.entry);
         const scDistPts = Math.round(scDistUsd * 100);
         const scDistEl = document.getElementById('scalp-live-dist');
         const g4Pill = document.getElementById('gate-4-scalp-pill');
 
-        scDistEl.textContent = `ห่าง Scalp Entry: $${scDistUsd.toFixed(2)} (${scDistPts} จุด)`;
-        if (scDistUsd <= 3.00) {
-          scDistEl.className = 'px-2.5 py-0.5 rounded bg-purple-600 text-white font-bold animate-pulse';
-          g4Pill.textContent = `4. Scalp 500pt: READY (${scDistPts}pt)`;
-          g4Pill.className = 'px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60';
+        if (!scSet.shape_active) {
+          scDistEl.textContent = `ทรง ${scSet.shape} ถูก MUTE (งดยิงสัญญาณ)`;
+          scDistEl.className = 'px-2.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/60';
+          g4Pill.textContent = `4. Scalp 500pt: MUTED (${scSet.shape})`;
+          g4Pill.className = 'px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/60';
         } else {
-          scDistEl.className = 'px-2.5 py-0.5 rounded bg-gray-800 text-purple-300';
-          g4Pill.textContent = `4. Scalp 500pt: ${scDistPts}pt`;
-          g4Pill.className = 'px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60';
+          scDistEl.textContent = `ห่าง Scalp Entry: $${scDistUsd.toFixed(2)} (${scDistPts} จุด)`;
+          if (scDistUsd <= 3.00) {
+            scDistEl.className = 'px-2.5 py-0.5 rounded bg-purple-600 text-white font-bold animate-pulse';
+            g4Pill.textContent = `4. Scalp 500pt: READY (${scDistPts}pt)`;
+            g4Pill.className = 'px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60';
+          } else {
+            scDistEl.className = 'px-2.5 py-0.5 rounded bg-gray-800 text-purple-300';
+            g4Pill.textContent = `4. Scalp 500pt: ${scDistPts}pt`;
+            g4Pill.className = 'px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60';
+          }
         }
       }
 
-      // อัปเดตระยะห่างสดของ Trend หลัก
       if (q.setup && q.setup.entry) {
-        const distEntry = Math.abs(spotPrice - q.setup.entry);
+        const distEntry = Math.abs(spotMid - q.setup.entry);
         const distEl = document.getElementById('live-entry-dist');
         const g3Pill = document.getElementById('gate-3-pill');
 
@@ -725,12 +773,54 @@
       }
     }
 
-    async function fetchRestSnapshot() {
+    function updateFromPaxgTick(rawBid, rawAsk) {
+      lastRawPaxgMid = (rawBid + rawAsk) / 2.0;
+      const spotMid = parseFloat((lastRawPaxgMid + dynamicPaxgOffset).toFixed(2));
+      const halfSpd = realSpotSpread / 2.0;
+      const bid = parseFloat((spotMid - halfSpd).toFixed(2));
+      const ask = parseFloat((spotMid + halfSpd).toFixed(2));
+      renderSpotPriceUI(spotMid, bid, ask, realSpotSpread);
+    }
+
+    // ดึงราคา Spot XAU/USD จริงทุก 3 วินาที (Swissquote BBO -> fallback gold-api.com) เพื่อแก้ปัญหา PAXG เพี้ยนและ Spread $0.01
+    async function syncTrueSpotGoldPrice() {
       try {
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/bookTicker?symbol=PAXGUSDT`);
-        if (res.ok) {
-          const data = await res.json();
-          updateLiveMetrics(parseFloat(data.bidPrice), parseFloat(data.askPrice));
+        const resSq = await fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" });
+        if (resSq.ok) {
+          const sqData = await resSq.json();
+          const p = sqData[0].spreadProfilePrices[0];
+          const trueBid = parseFloat(p.bid);
+          const trueAsk = parseFloat(p.ask);
+          const trueMid = parseFloat(((trueBid + trueAsk) / 2.0).toFixed(2));
+          realSpotSpread = Math.max(0.08, parseFloat((trueAsk - trueBid).toFixed(2)));
+          if (lastRawPaxgMid !== null) {
+            dynamicPaxgOffset = trueMid - lastRawPaxgMid;
+          }
+          spotFeedSource = "SWISSQUOTE XAU/USD";
+          document.getElementById('spot-feed-label').textContent = "Spot XAU/USD (Swissquote)";
+          renderSpotPriceUI(trueMid, trueBid, trueAsk, realSpotSpread);
+          return;
+        }
+      } catch (e) {}
+
+      try {
+        const resGold = await fetch("https://api.gold-api.com/price/XAU", { cache: "no-store" });
+        if (resGold.ok) {
+          const gData = await resGold.json();
+          if (gData && gData.price) {
+            const trueMid = parseFloat(parseFloat(gData.price).toFixed(2));
+            if (cachedState && cachedState.quant && cachedState.quant.ask && cachedState.quant.bid) {
+              const savedSpd = parseFloat((cachedState.quant.ask - cachedState.quant.bid).toFixed(2));
+              if (savedSpd >= 0.08 && savedSpd <= 1.20) realSpotSpread = savedSpd;
+            }
+            if (lastRawPaxgMid !== null) {
+              dynamicPaxgOffset = trueMid - lastRawPaxgMid;
+            }
+            spotFeedSource = "GOLD-API XAU/USD";
+            document.getElementById('spot-feed-label').textContent = "Spot XAU/USD (Live Sync)";
+            const halfSpd = realSpotSpread / 2.0;
+            renderSpotPriceUI(trueMid, trueMid - halfSpd, trueMid + halfSpd, realSpotSpread);
+          }
         }
       } catch (e) {}
     }
@@ -743,14 +833,14 @@
 
       goldWs.onopen = () => {
         const badge = document.getElementById('live-badge');
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE TICK`;
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> SPOT SYNC`;
       };
 
       goldWs.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
           if (msg.b && msg.a) {
-            updateLiveMetrics(parseFloat(msg.b), parseFloat(msg.a));
+            updateFromPaxgTick(parseFloat(msg.b), parseFloat(msg.a));
           }
         } catch (e) {}
       };
@@ -764,9 +854,7 @@
 
     function renderVolumeProfileChart(vpData) {
       const signature = `${vpData.poc}_${vpData.vah}_${vpData.val}_${vpData.histogram.length}`;
-      if (signature === lastChartSignature && vpChartInstance) {
-        return;
-      }
+      if (signature === lastChartSignature && vpChartInstance) return;
       lastChartSignature = signature;
 
       const ctx = document.getElementById('vpChart').getContext('2d');
@@ -774,18 +862,12 @@
       const volumes = vpData.histogram.map(item => item.volume);
       
       const bgColors = vpData.histogram.map(item => {
-        if (Math.abs(item.price - vpData.poc) <= (vpData.vah - vpData.val) / 25) {
-          return '#f59e0b';
-        }
-        if (item.price >= vpData.val && item.price <= vpData.vah) {
-          return '#3b82f6';
-        }
+        if (Math.abs(item.price - vpData.poc) <= (vpData.vah - vpData.val) / 25) return '#f59e0b';
+        if (item.price >= vpData.val && item.price <= vpData.vah) return '#3b82f6';
         return '#334155';
       });
 
-      if (vpChartInstance) {
-        vpChartInstance.destroy();
-      }
+      if (vpChartInstance) vpChartInstance.destroy();
 
       vpChartInstance = new Chart(ctx, {
         type: 'bar',
@@ -807,48 +889,44 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              callbacks: {
-                label: (ctx) => `Volume: ${ctx.raw.toLocaleString()} contracts`
-              }
+              callbacks: { label: (ctx) => `Volume: ${ctx.raw.toLocaleString()} contracts` }
             }
           },
           scales: {
-            x: {
-              grid: { color: '#1f2937' },
-              ticks: { color: '#6b7280', font: { size: 10 } }
-            },
-            y: {
-              grid: { display: false },
-              ticks: { color: '#9ca3af', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 14 }
-            }
+            x: { grid: { color: '#1f2937' }, ticks: { color: '#6b7280', font: { size: 10 } } },
+            y: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 14 } }
           }
         }
       });
     }
 
-    function renderEquityCurve(equityCurveR) {
+    function renderLineCurve(canvasId, equityCurveR, isScalp) {
       if (!equityCurveR || equityCurveR.length < 2) return;
       const sig = `${equityCurveR.length}_${equityCurveR[equityCurveR.length - 1]}`;
-      if (sig === lastEquitySignature && equityChartInstance) return;
-      lastEquitySignature = sig;
+      if (isScalp) {
+        if (sig === lastScalpEquitySignature && scalpEquityChartInstance) return;
+        lastScalpEquitySignature = sig;
+      } else {
+        if (sig === lastEquitySignature && equityChartInstance) return;
+        lastEquitySignature = sig;
+      }
 
-      const ctx = document.getElementById('equityChart').getContext('2d');
+      const ctx = document.getElementById(canvasId).getContext('2d');
       const labels = equityCurveR.map((_, idx) => idx === 0 ? 'Start' : `#${idx}`);
       const isPositive = equityCurveR[equityCurveR.length - 1] >= 0;
 
-      if (equityChartInstance) {
-        equityChartInstance.destroy();
-      }
+      if (isScalp && scalpEquityChartInstance) scalpEquityChartInstance.destroy();
+      if (!isScalp && equityChartInstance) equityChartInstance.destroy();
 
-      equityChartInstance = new Chart(ctx, {
+      const chartObj = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
           datasets: [{
-            label: 'Cumulative R-Multiple (R)',
+            label: 'Cumulative R',
             data: equityCurveR,
-            borderColor: isPositive ? '#10b981' : '#f43f5e',
-            backgroundColor: isPositive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)',
+            borderColor: isScalp ? (isPositive ? '#c084fc' : '#f43f5e') : (isPositive ? '#10b981' : '#f43f5e'),
+            backgroundColor: isScalp ? 'rgba(192, 132, 252, 0.14)' : 'rgba(16, 185, 129, 0.12)',
             borderWidth: 2,
             fill: true,
             tension: 0.25,
@@ -858,25 +936,19 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            x: {
-              grid: { display: false },
-              ticks: { color: '#6b7280', font: { size: 9 }, maxTicksLimit: 10 }
-            },
+            x: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 9 }, maxTicksLimit: 10 } },
             y: {
               grid: { color: '#1f2937' },
-              ticks: {
-                color: '#9ca3af',
-                font: { size: 10, family: 'JetBrains Mono' },
-                callback: (val) => `${val}R`
-              }
+              ticks: { color: '#9ca3af', font: { size: 10, family: 'JetBrains Mono' }, callback: (val) => `${val}R` }
             }
           }
         }
       });
+
+      if (isScalp) scalpEquityChartInstance = chartObj;
+      else equityChartInstance = chartObj;
     }
 
     async function loadDashboardData() {
@@ -890,13 +962,20 @@
         document.getElementById('last-updated').textContent = `AI อัปเดต: ${dateObj.toLocaleTimeString('th-TH')}`;
 
         const q = data.quant;
+        if (typeof q.paxg_to_spot_offset === 'number' && lastRawPaxgMid === null) {
+          dynamicPaxgOffset = q.paxg_to_spot_offset;
+        }
+        if (q.ask && q.bid && (q.ask - q.bid) >= 0.08) {
+          realSpotSpread = parseFloat((q.ask - q.bid).toFixed(2));
+        }
+
         if (q.data_audit) {
           document.getElementById('data-audit-line').textContent =
             `Hydra Vault: ${q.data_audit.total_bars.toLocaleString()} แท่ง M15 (~${q.data_audit.vault_days || 60} วัน | ${q.data_audit.date_range}) | Spot Offset: ${q.data_audit.spot_offset >= 0 ? '+' : ''}$${q.data_audit.spot_offset}`;
         }
 
         if (lastLivePrice === null) {
-          updateLiveMetrics(q.bid - (q.paxg_to_spot_offset || 0), q.ask - (q.paxg_to_spot_offset || 0));
+          renderSpotPriceUI(q.spot_price, q.bid, q.ask, realSpotSpread);
         }
 
         if (q.setup && q.gates) {
@@ -934,7 +1013,7 @@
           }
         }
 
-        // Render VP-Anatomy 500-Point Scalp Section
+        // Render VP-Anatomy 500-Point Scalp Section + Full Backtest
         if (data.scalp) {
           const sc = data.scalp;
           const an = sc.anatomy;
@@ -943,6 +1022,19 @@
 
           document.getElementById('anatomy-poc-pct').textContent = `POC Pos: ${an.poc_pos_pct}%`;
           document.getElementById('anatomy-title').textContent = an.title_th;
+
+          const activePill = document.getElementById('anatomy-active-pill');
+          const setupBox = document.getElementById('scalp-setup-box');
+          if (sSet.shape_active) {
+            activePill.textContent = "ON (ผ่าน Backtest)";
+            activePill.className = "text-[10px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60";
+            setupBox.className = "bg-gray-900/90 border border-purple-700/50 rounded-lg p-3.5";
+          } else {
+            activePill.textContent = "MUTED (งดยิงสัญญาณ)";
+            activePill.className = "text-[10px] font-mono-num px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800/60";
+            setupBox.className = "bg-gray-900/60 border border-rose-900/50 rounded-lg p-3.5 opacity-60";
+          }
+
           document.getElementById('anatomy-desc').textContent = an.desc_th;
           document.getElementById('anatomy-rule').textContent = an.rule_th;
           document.getElementById('sc-vah').textContent = `$${an.vah}`;
@@ -956,13 +1048,22 @@
           document.getElementById('scalp-oos-line').textContent =
             `OOS: ${sBt.oos_trades} ไม้ (WR ${sBt.oos_win_rate}%, R-PF ${sBt.oos_r_pf})`;
 
-          document.getElementById('scalp-bias').textContent = sSet.bias;
+          document.getElementById('scalp-bias').textContent = sSet.shape_active
+            ? sSet.bias
+            : `[MUTED] ${sSet.bias} (รอเปลี่ยนเข้าทรงที่เปิดใช้งาน)`;
           document.getElementById('scalp-rr-badge').textContent = `SL ${sSet.sl_points} จุด / TP ${sSet.tp_points} จุด`;
           document.getElementById('sc-entry').textContent = `$${sSet.entry.toLocaleString()}`;
           document.getElementById('sc-sl').textContent = `$${sSet.sl.toLocaleString()}`;
           document.getElementById('sc-be').textContent = `$${sSet.be_target.toLocaleString()}`;
           document.getElementById('sc-tp-label').textContent = `TP (${sSet.tp_points} จุด)`;
           document.getElementById('sc-tp').textContent = `$${sSet.tp.toLocaleString()}`;
+
+          document.getElementById('sc-sharpe').textContent = sBt.sharpe || 0;
+          document.getElementById('sc-sortino').textContent = sBt.sortino || 0;
+          document.getElementById('sc-maxdd').textContent = `-${sBt.max_dd_r || 0}R`;
+          document.getElementById('sc-mcprob').textContent = `${sBt.mc_prob_profit || 0}%`;
+
+          renderLineCurve('scalpEquityChart', sBt.equity_curve_r, true);
 
           if (Array.isArray(sBt.anatomy_breakdown)) {
             document.getElementById('anatomy-cards-grid').innerHTML = sBt.anatomy_breakdown.map(ab => `
@@ -980,6 +1081,22 @@
                   </span>
                 </div>
               </div>
+            `).join('');
+          }
+
+          if (Array.isArray(sBt.top_5) && sBt.top_5.length > 0) {
+            document.getElementById('scalp-bt-table-body').innerHTML = sBt.top_5.map((row, i) => `
+              <tr class="${i === 0 ? 'bg-purple-500/15 text-purple-200 font-semibold' : 'hover:bg-gray-800/40 text-gray-300'}">
+                <td class="py-1.5 pr-2">${i === 0 ? '★ #1' : '#' + (i + 1)}</td>
+                <td class="py-1.5 pr-2">${row.tp_points} จุด</td>
+                <td class="py-1.5 pr-2">${row.tol_points} จุด</td>
+                <td class="py-1.5 pr-2">${row.wick_mode}</td>
+                <td class="py-1.5 pr-2 text-right">${row.trades}</td>
+                <td class="py-1.5 pr-2 text-right text-cyan-400">${row.win_rate}%</td>
+                <td class="py-1.5 pr-2 text-right text-emerald-400">${row.r_profit_factor}</td>
+                <td class="py-1.5 pr-2 text-right text-amber-300">${row.oos_r_pf}</td>
+                <td class="py-1.5 text-right font-bold ${row.net_r >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${row.net_r >= 0 ? '+' : ''}${row.net_r}R</td>
+              </tr>
             `).join('');
           }
         }
@@ -1005,7 +1122,7 @@
           document.getElementById('m-calmar').textContent = bt.calmar;
           document.getElementById('m-var95').textContent = `${bt.var_95_r}R`;
 
-          renderEquityCurve(bt.equity_curve_r);
+          renderLineCurve('equityChart', bt.equity_curve_r, false);
 
           if (Array.isArray(data.backtest.factor_breakdown)) {
             document.getElementById('factor-cards-grid').innerHTML = data.backtest.factor_breakdown.map(fb => `
@@ -1041,7 +1158,6 @@
           `).join('');
         }
 
-        // Render Scalp Journal
         if (data.scalp_journal) {
           const sj = data.scalp_journal;
           document.getElementById('scalp-wr-badge').textContent = `Scalp WR: ${sj.live_win_rate}% (${sj.wins}W/${sj.losses}L)`;
@@ -1063,7 +1179,6 @@
           }
         }
 
-        // Render Trend Journal
         if (data.journal) {
           const j = data.journal;
           document.getElementById('live-wr-badge').textContent = `Trend WR: ${j.live_win_rate}% (${j.wins}W/${j.losses}L)`;
@@ -1141,20 +1256,19 @@
 
       } catch (err) {
         document.getElementById('last-updated').textContent = 'รอการรัน engine.py ครั้งแรก';
-        document.getElementById('ai-content').innerHTML = 
-          `<span class="text-amber-400">ยังพบไฟล์ data/state.json ไม่เจอ:</span> กรุณาสั่งรัน <code>python backend/engine.py</code> เพื่อสร้างข้อมูลชุดแรกครับ`;
       }
     }
 
     async function manualRefresh() {
-      await fetchRestSnapshot();
+      await syncTrueSpotGoldPrice();
       await loadDashboardData();
     }
 
     loadDashboardData().then(() => {
-      fetchRestSnapshot();
+      syncTrueSpotGoldPrice();
       connectGoldWebSocket();
     });
+    setInterval(syncTrueSpotGoldPrice, 3000);
     setInterval(loadDashboardData, 30000);
   </script>
 </body>
