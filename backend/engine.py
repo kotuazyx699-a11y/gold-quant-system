@@ -48,42 +48,54 @@ DEFAULT_KB_FILES = {
         "- เมื่อ ADX(14) <= ADX Threshold ตลาดแกว่งออกข้าง ใช้กลยุทธ์ VALUE_AREA_FADE บริเวณขอบ VAH/VAL ร่วมกับ RSI\n"
         "- เมื่อ ADX(14) > ADX Threshold ตลาดมีเทรนด์แข็งแกร่ง ให้เน้น LONDON_BREAKOUT, MOMENTUM_BREAKOUT หรือ HTF_TREND_PULLBACK ที่ไม่ติด RSI Exhaustion\n"
         "- ดัชนี DXY และ US10Y Yield ที่ปรับตัวขึ้นมักกดดันราคาทองคำ ต้องระวังความผันผวนช่วงข่าว USD สำคัญ\n"
+    ),
+    "04_vp_anatomy_scalp_500pt.md": (
+        "# 4 กายวิภาค Volume Profile (VPAnatomies_EA) สำหรับ Scalp 500 จุด ($5.00)\n"
+        "- 1. D-SHAPED (POC 34%-66%): ตลาดสมดุล ดัก BUY ที่แนวรับ VAL และดัก SELL ที่แนวต้าน VAH เป้าหมายเข้าหา POC\n"
+        "- 2. B-SHAPED (POC < 34%): โวลุ่มกองโซนล่าง เปิด SELL เมื่อโมเมนตัมขาลงและราคากดใต้ POC หรือเปิด BUY เมื่อเบรกทะลุ VAH ขึ้นไป\n"
+        "- 3. P-SHAPED (POC > 66%): โวลุ่มกองโซนบน เปิด BUY ตามแนวโน้มเมื่อราคายืนเหนือ/ย่อรับที่ POC/VAL และเปิด SELL หากหลุดกรอบล่าง VAL\n"
+        "- 4. DOUBLE ZONE (2nd Peak >= 60% ของ POC + มี Valley คั่น): ดัก BUY ที่ Lower Peak และดัก SELL ที่ Upper Peak\n"
+        "- ระยะ Scalp มาตรฐาน: SL = $5.00 (500 จุด), เลื่อนบังทุน BE เมื่อบวก +$2.50 (+250 จุด), TP = $5.00 - $6.50 (500 - 650 จุด)\n"
     )
 }
 
 def update_journal_lessons_kb():
-    """Vibe-Trading Self-Learning: สรุปผลแพ้-ชนะจริงจาก trade_journal.json ลง Knowledge Base"""
-    journal_path = "data/trade_journal.json"
-    lesson_path = "knowledge_base/04_live_journal_lessons.md"
-    if not os.path.exists(journal_path):
+    """สรุปผลแพ้-ชนะจริงจาก trade_journal.json และ scalp_journal.json ลง Knowledge Base"""
+    lesson_path = "knowledge_base/05_live_journal_lessons.md"
+    all_closed = []
+    for j_file, mode_lbl in [("data/trade_journal.json", "TREND"), ("data/scalp_journal.json", "SCALP_500PT")]:
+        if os.path.exists(j_file):
+            try:
+                with open(j_file, "r", encoding="utf-8") as f:
+                    items = json.load(f)
+                for t in items:
+                    if t.get("status") in ("WIN", "LOSS"):
+                        t_copy = dict(t)
+                        t_copy["mode"] = mode_lbl
+                        all_closed.append(t_copy)
+            except Exception:
+                pass
+    if not all_closed:
         return
     try:
-        with open(journal_path, "r", encoding="utf-8") as f:
-            journal = json.load(f)
-        closed = [t for t in journal if t.get("status") in ("WIN", "LOSS")]
-        if not closed:
-            return
-        wins = [t for t in closed if t["status"] == "WIN"]
-        wr = round((len(wins) / len(closed)) * 100.0, 1)
-        net_pnl = round(sum(float(t.get("pnl", 0)) for t in closed), 2)
-
-        by_factor = {}
-        for t in closed:
-            fac = t.get("factor", "UNKNOWN")
-            by_factor.setdefault(fac, {"w": 0, "l": 0, "pnl": 0.0})
-            if t["status"] == "WIN":
-                by_factor[fac]["w"] += 1
-            else:
-                by_factor[fac]["l"] += 1
-            by_factor[fac]["pnl"] += float(t.get("pnl", 0))
-
+        wins = [t for t in all_closed if t["status"] == "WIN"]
+        wr = round((len(wins) / len(all_closed)) * 100.0, 1)
+        net_pnl = round(sum(float(t.get("pnl", 0)) for t in all_closed), 2)
         lines = [
             "# Live Signal Journal Post-Mortem (Self-Learning Memory)",
-            f"- สถิติสัญญาณจริงสะสมทั้งหมด {len(closed)} ไม้: Win-Rate = {wr}% | Net PnL = ${net_pnl}/oz"
+            f"- สถิติสัญญาณจริงสะสมทั้งหมด {len(all_closed)} ไม้: Win-Rate = {wr}% | Net PnL = ${net_pnl}/oz"
         ]
-        for fac, st in by_factor.items():
-            lines.append(f"- Factor `{fac}`: ชนะ {st['w']} / แพ้ {st['l']} (รวม ${round(st['pnl'], 2)}/oz)")
-
+        by_factor = {}
+        for t in all_closed:
+            key = f"{t['mode']}:{t.get('factor', 'SETUP')}"
+            by_factor.setdefault(key, {"w": 0, "l": 0, "pnl": 0.0})
+            if t["status"] == "WIN":
+                by_factor[key]["w"] += 1
+            else:
+                by_factor[key]["l"] += 1
+            by_factor[key]["pnl"] += float(t.get("pnl", 0))
+        for k, st in by_factor.items():
+            lines.append(f"- `{k}`: ชนะ {st['w']} / แพ้ {st['l']} (รวม ${round(st['pnl'], 2)}/oz)")
         with open(lesson_path, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
     except Exception as e:
@@ -175,7 +187,6 @@ def fetch_spot_and_paxg_prices():
 
 # ================= 1. HYDRA DATA VAULT & MULTI-TIMEFRAME INDICATORS =================
 def sync_hydra_m15_vault(df_fresh):
-    """StockSharp Hydra Style: บันทึกแท่งเทียน M15 สะสมลงคลังในเครื่องเพื่อทะลุขีดจำกัด 60 วัน"""
     os.makedirs("data", exist_ok=True)
     vault_path = "data/gold_m15_vault.csv"
 
@@ -200,7 +211,6 @@ def sync_hydra_m15_vault(df_fresh):
     else:
         df_merged = df_new.sort_index()
 
-    # เก็บสูงสุด 18,000 แท่ง (~200 วันทำการ) เพื่อความเร็วและแม่นยำ
     df_merged = df_merged.tail(18000)
     try:
         df_merged.to_csv(vault_path)
@@ -228,7 +238,6 @@ def fetch_market_data():
     return df_intraday_vault, df_daily, df_dxy, df_us10y, spot_price, bid, ask, paxg_mid, open_interest
 
 def compute_mtf_indicators(df_intraday, spot_offset=0.0):
-    """คำนวณอินดิเคเตอร์ M15, H1 และ Asian Session Range บนฐานราคา Spot"""
     df_s = pd.DataFrame({
         'Open': df_intraday['Open'] + spot_offset,
         'High': df_intraday['High'] + spot_offset,
@@ -237,33 +246,28 @@ def compute_mtf_indicators(df_intraday, spot_offset=0.0):
         'Volume': df_intraday['Volume']
     }, index=df_intraday.index)
 
-    # H1 Resample (shift(1) เพื่อป้องกัน Look-ahead Bias 100%)
     df_h1 = df_s.resample('1h').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'}).dropna()
     h1_ema50 = df_h1['Close'].ewm(span=50, adjust=False).mean().shift(1)
     h1_ema200 = df_h1['Close'].ewm(span=200, adjust=False).mean().shift(1)
     h1_ema50_m15 = h1_ema50.reindex(df_s.index, method='ffill').bfill()
     h1_ema200_m15 = h1_ema200.reindex(df_s.index, method='ffill').bfill()
 
-    # M15 EMA21 / EMA50 / EMA200
     ema21 = df_s['Close'].ewm(span=21, adjust=False).mean()
     ema50 = df_s['Close'].ewm(span=50, adjust=False).mean()
     ema200 = df_s['Close'].ewm(span=200, adjust=False).mean()
 
-    # M15 ATR(14)
     tr1 = df_s['High'] - df_s['Low']
     tr2 = (df_s['High'] - df_s['Close'].shift(1)).abs()
     tr3 = (df_s['Low'] - df_s['Close'].shift(1)).abs()
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
     atr14 = tr.rolling(14).mean()
 
-    # M15 RSI(14)
     delta = df_s['Close'].diff()
     gain = delta.clip(lower=0).rolling(14).mean()
     loss = (-delta.clip(upper=0)).rolling(14).mean().replace(0, 1e-6)
     rs = gain / loss
     rsi14 = (100.0 - (100.0 / (1.0 + rs))).fillna(50.0)
 
-    # M15 ADX(14)
     up_move = df_s['High'].diff()
     down_move = -df_s['Low'].diff()
     plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
@@ -275,11 +279,9 @@ def compute_mtf_indicators(df_intraday, spot_offset=0.0):
     dx = 100.0 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, 1.0)
     adx14 = dx.rolling(14).mean().fillna(20.0)
 
-    # PDH / PDL (24H Rolling Swing High/Low)
     pdh = df_s['High'].rolling(92).max().shift(1)
     pdl = df_s['Low'].rolling(92).min().shift(1)
 
-    # Asian Session Range (00:00 - 05:45 UTC = 07:00 - 12:45 น. เวลาไทย) สำหรับ London Breakout
     utc_idx = df_s.index.tz_convert("UTC")
     dates_only = pd.Series(utc_idx.date, index=df_s.index)
     asian_mask = (utc_idx.hour >= 0) & (utc_idx.hour <= 5)
@@ -357,6 +359,128 @@ def calculate_volume_profile(df_intraday, spot_offset=0.0, bins=36):
         "histogram": histogram
     }
 
+# ================= 1B. 4-ANATOMY VOLUME PROFILE ANALYZER (VPAnatomies_EA) =================
+ANATOMY_META = {
+    "D_SHAPED": {
+        "title_th": "① D-SHAPED (ทรงตัว D - ตลาดสมดุล)",
+        "desc_th": "POC อยู่กึ่งกลางกรอบ (34%–66%) โวลุ่มสมมาตรคล้ายระฆังคว่ำ",
+        "rule_th": "ดัก BUY ที่แนวรับ VAL เด้งกลับ และดัก SELL ที่แนวต้าน VAH เป้าหมายเข้าหา POC"
+    },
+    "B_SHAPED": {
+        "title_th": "② b-SHAPED (ทรงตัว b - โวลุ่มกองโซนล่าง)",
+        "desc_th": "POC อยู่โซนล่างต่ำกว่า 34% จากแรงเทขายหรือสะสมพลังฐานล่าง",
+        "rule_th": "เปิด SELL เมื่อโมเมนตัมลงและกดใต้ POC หรือเปิด BUY เมื่อเบรกทะลุ VAH ขึ้นไป"
+    },
+    "P_SHAPED": {
+        "title_th": "③ P-SHAPED (ทรงตัว P - โวลุ่มกองโซนบน)",
+        "desc_th": "POC อยู่โซนบนสูงกว่า 66% โมเมนตัมขาขึ้นแข็งแกร่ง / Short Covering",
+        "rule_th": "เปิด BUY ตามแนวโน้มเมื่อย่อรับที่ POC/VAL และเปิด SELL หากหลุดกรอบล่าง VAL"
+    },
+    "DOUBLE_ZONE": {
+        "title_th": "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)",
+        "desc_th": "มียอดโวลุ่มที่ 2 (>= 60% ของ POC) และมีหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง",
+        "rule_th": "ดัก BUY เมื่อเด้งขึ้นจากยอดโวลุ่มล่าง (Lower Peak) และดัก SELL ที่ยอดโวลุ่มบน (Upper Peak)"
+    }
+}
+
+def classify_vp_anatomy(low_win, high_win, close_win, vol_win, bins=32):
+    """จำแนก 4 กายวิภาค Volume Profile (D-Shaped, b-Shaped, P-Shaped, Double Zone) ตามหลัก VPAnatomies_EA"""
+    w_min = float(low_win.min())
+    w_max = float(high_win.max())
+    if w_max - w_min < 2.0:
+        return None
+    bin_edges = np.linspace(w_min, w_max, bins + 1)
+    centers = (bin_edges[:-1] + bin_edges[1:]) / 2.0
+    typical = (high_win + low_win + close_win) / 3.0
+    weights = vol_win if vol_win.sum() > 0 else np.ones_like(vol_win)
+    hist, _ = np.histogram(typical, bins=bin_edges, weights=weights)
+
+    # เกลี่ยความเรียบ (Smoothing) เพื่อค้นหา Peak และ Valley
+    kernel = np.array([0.2, 0.6, 0.2])
+    smooth_hist = np.convolve(hist, kernel, mode='same')
+
+    poc_idx = int(np.argmax(smooth_hist))
+    poc_price = float(centers[poc_idx])
+    poc_vol = float(smooth_hist[poc_idx])
+    if poc_vol <= 0:
+        return None
+
+    tot_vol = hist.sum()
+    cur_vol = hist[poc_idx]
+    lo_i, hi_i = poc_idx, poc_idx
+    while cur_vol < tot_vol * 0.70 and (lo_i > 0 or hi_i < bins - 1):
+        vd = hist[lo_i - 1] if lo_i > 0 else 0
+        vu = hist[hi_i + 1] if hi_i < bins - 1 else 0
+        if vu >= vd and hi_i < bins - 1:
+            hi_i += 1
+            cur_vol += vu
+        elif lo_i > 0:
+            lo_i -= 1
+            cur_vol += vd
+        else:
+            break
+    val_price = float(bin_edges[lo_i])
+    vah_price = float(bin_edges[hi_i + 1])
+
+    peaks = []
+    for k in range(1, bins - 1):
+        if smooth_hist[k] >= smooth_hist[k - 1] and smooth_hist[k] >= smooth_hist[k + 1]:
+            peaks.append((k, float(smooth_hist[k]), float(centers[k])))
+    if smooth_hist[0] > smooth_hist[1]:
+        peaks.append((0, float(smooth_hist[0]), float(centers[0])))
+    if smooth_hist[-1] > smooth_hist[-2]:
+        peaks.append((bins - 1, float(smooth_hist[-1]), float(centers[-1])))
+    peaks.sort(key=lambda x: x[1], reverse=True)
+
+    second_peak = None
+    valley_price = None
+    for idx_p, v_p, p_price in peaks:
+        if abs(idx_p - poc_idx) >= 4 and v_p >= 0.60 * poc_vol:
+            lo_b, hi_b = min(poc_idx, idx_p), max(poc_idx, idx_p)
+            valley_slice = smooth_hist[lo_b + 1:hi_b]
+            if len(valley_slice) > 0:
+                min_v = float(valley_slice.min())
+                if min_v <= 0.78 * v_p:
+                    v_rel_idx = int(np.argmin(valley_slice))
+                    valley_price = float(centers[lo_b + 1 + v_rel_idx])
+                    second_peak = (idx_p, v_p, p_price)
+                    break
+
+    poc_pos_ratio = (poc_price - w_min) / (w_max - w_min)
+
+    if second_peak is not None:
+        shape = "DOUBLE_ZONE"
+        lower_peak = round(min(poc_price, second_peak[2]), 2)
+        upper_peak = round(max(poc_price, second_peak[2]), 2)
+    elif poc_pos_ratio < 0.34:
+        shape = "B_SHAPED"
+        lower_peak = round(poc_price, 2)
+        upper_peak = round(vah_price, 2)
+    elif poc_pos_ratio > 0.66:
+        shape = "P_SHAPED"
+        lower_peak = round(val_price, 2)
+        upper_peak = round(poc_price, 2)
+    else:
+        shape = "D_SHAPED"
+        lower_peak = round(val_price, 2)
+        upper_peak = round(vah_price, 2)
+
+    meta = ANATOMY_META[shape]
+    return {
+        "shape": shape,
+        "title_th": meta["title_th"],
+        "desc_th": meta["desc_th"],
+        "rule_th": meta["rule_th"],
+        "poc": round(poc_price, 2),
+        "vah": round(vah_price, 2),
+        "val": round(val_price, 2),
+        "poc_pos_pct": round(poc_pos_ratio * 100.0, 1),
+        "second_peak": round(second_peak[2], 2) if second_peak else None,
+        "valley": round(valley_price, 2) if valley_price else None,
+        "lower_peak": lower_peak,
+        "upper_peak": upper_peak
+    }
+
 def fetch_usd_news():
     try:
         url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
@@ -399,15 +523,8 @@ def fetch_usd_news():
     except Exception:
         return []
 
-# ================= 2. INSTITUTIONAL WALK-FORWARD & MONTE CARLO ENGINE =================
+# ================= 2A. TREND WALK-FORWARD & MONTE CARLO ENGINE =================
 def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
-    """
-    Walk-Forward Backtest V9:
-    - ใช้ฐานข้อมูลสะสมจาก Hydra Vault
-    - 5 Factors: VALUE_AREA_FADE, LIQUIDITY_SWEEP, LONDON_BREAKOUT, MOMENTUM_BREAKOUT, HTF_TREND_PULLBACK
-    - มี RSI Exhaustion Guard (ห้ามไล่ Short เมื่อ RSI < 28 / ห้ามไล่ Long เมื่อ RSI > 72)
-    - คำนวณ Sharpe, Sortino, Calmar, VaR 95% และ Monte Carlo 1,000 รอบ
-    """
     df = df_intraday.copy()
     open_arr = df['Open'].values + spot_offset
     high_arr = df['High'].values + spot_offset
@@ -429,48 +546,26 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
     asian_l_arr = ind["asian_low"].values
     n_bars = len(df)
 
-    if df.index.tz is None:
-        dt_index_utc = df.index.tz_localize("UTC")
-    else:
-        dt_index_utc = df.index.tz_convert("UTC")
+    dt_index_utc = df.index.tz_localize("UTC") if df.index.tz is None else df.index.tz_convert("UTC")
     utc_hours = dt_index_utc.hour.values
     date_ordinals = dt_index_utc.date
 
     bars_per_day = 92
     lookback_5d = 5 * bars_per_day
-    split_idx = lookback_5d + int((n_bars - lookback_5d) * 0.67)  # 67% Train / 33% Out-of-Sample
+    split_idx = lookback_5d + int((n_bars - lookback_5d) * 0.67)
     spread_cost = 0.60
 
     all_factors = ["VALUE_AREA_FADE", "LIQUIDITY_SWEEP", "LONDON_BREAKOUT", "MOMENTUM_BREAKOUT", "HTF_TREND_PULLBACK"]
 
     default_best = {
-        "atr_sl_mult": 1.6,
-        "rr_mult": 2.2,
-        "adx_thresh": 25,
-        "enabled_factors": all_factors,
-        "trades": 0,
-        "win_rate": 0.0,
-        "profit_factor": 0.0,
-        "r_profit_factor": 0.0,
-        "net_pnl": 0.0,
-        "net_r": 0.0,
-        "max_dd": 0.0,
-        "max_dd_r": 0.0,
-        "sharpe": 0.0,
-        "sortino": 0.0,
-        "calmar": 0.0,
-        "var_95_r": -1.0,
-        "mc_dd_95_r": -4.0,
-        "mc_prob_profit": 50.0,
-        "total_fee_drag": 0.0,
-        "oos_trades": 0,
-        "oos_win_rate": 0.0,
-        "oos_profit_factor": 0.0,
-        "oos_net_r": 0.0,
-        "oos_net_pnl": 0.0,
-        "is_profitable_edge": False,
-        "equity_curve_r": [0],
-        "trade_r_list": []
+        "atr_sl_mult": 1.6, "rr_mult": 2.2, "adx_thresh": 25,
+        "enabled_factors": all_factors, "trades": 0, "win_rate": 0.0,
+        "profit_factor": 0.0, "r_profit_factor": 0.0, "net_pnl": 0.0, "net_r": 0.0,
+        "max_dd": 0.0, "max_dd_r": 0.0, "sharpe": 0.0, "sortino": 0.0,
+        "calmar": 0.0, "var_95_r": -1.0, "mc_dd_95_r": -4.0, "mc_prob_profit": 50.0,
+        "total_fee_drag": 0.0, "oos_trades": 0, "oos_win_rate": 0.0,
+        "oos_profit_factor": 0.0, "oos_net_r": 0.0, "oos_net_pnl": 0.0,
+        "is_profitable_edge": False, "equity_curve_r": [0], "trade_r_list": []
     }
     if n_bars < lookback_5d + 120:
         return {"best": default_best, "factor_breakdown": [], "top_5": [default_best], "split_bar": split_idx}
@@ -499,11 +594,9 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             vd = hist[lo_i - 1] if lo_i > 0 else 0
             vu = hist[hi_i + 1] if hi_i < 29 else 0
             if vu >= vd and hi_i < 29:
-                hi_i += 1
-                cur += vu
+                hi_i += 1; cur += vu
             elif lo_i > 0:
-                lo_i -= 1
-                cur += vd
+                lo_i -= 1; cur += vd
             else:
                 break
         end_idx = min(i + 16, n_bars)
@@ -527,70 +620,45 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             if in_pos == 1:
                 if low_arr[i] <= sl_p:
                     pnl = (sl_p - entry_p) - spread_cost
-                    r_val = pnl / init_risk
-                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": r_val, "date": date_ordinals[i]})
-                    in_pos = 0
-                    cooldown = 3
-                    continue
+                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": pnl / init_risk, "date": date_ordinals[i]})
+                    in_pos = 0; cooldown = 3; continue
                 if high_arr[i] >= tp_p:
                     pnl = (tp_p - entry_p) - spread_cost
-                    r_val = pnl / init_risk
-                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": r_val, "date": date_ordinals[i]})
-                    in_pos = 0
-                    cooldown = 2
-                    continue
+                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": pnl / init_risk, "date": date_ordinals[i]})
+                    in_pos = 0; cooldown = 2; continue
                 if not be_moved and high_arr[i] >= entry_p + init_risk * 1.0:
-                    sl_p = entry_p + (atr_arr[i] * 0.15)
-                    be_moved = True
+                    sl_p = entry_p + (atr_arr[i] * 0.15); be_moved = True
                 if not trail_locked and high_arr[i] >= entry_p + init_risk * 1.8:
-                    sl_p = max(sl_p, entry_p + init_risk * 1.0)
-                    trail_locked = True
+                    sl_p = max(sl_p, entry_p + init_risk * 1.0); trail_locked = True
                 continue
 
             elif in_pos == -1:
                 if high_arr[i] >= sl_p:
                     pnl = (entry_p - sl_p) - spread_cost
-                    r_val = pnl / init_risk
-                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": r_val, "date": date_ordinals[i]})
-                    in_pos = 0
-                    cooldown = 3
-                    continue
+                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": pnl / init_risk, "date": date_ordinals[i]})
+                    in_pos = 0; cooldown = 3; continue
                 if low_arr[i] <= tp_p:
                     pnl = (entry_p - tp_p) - spread_cost
-                    r_val = pnl / init_risk
-                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": r_val, "date": date_ordinals[i]})
-                    in_pos = 0
-                    cooldown = 2
-                    continue
+                    trade_records.append({"idx": i, "factor": active_factor, "pnl": pnl, "r": pnl / init_risk, "date": date_ordinals[i]})
+                    in_pos = 0; cooldown = 2; continue
                 if not be_moved and low_arr[i] <= entry_p - init_risk * 1.0:
-                    sl_p = entry_p - (atr_arr[i] * 0.15)
-                    be_moved = True
+                    sl_p = entry_p - (atr_arr[i] * 0.15); be_moved = True
                 if not trail_locked and low_arr[i] <= entry_p - init_risk * 1.8:
-                    sl_p = min(sl_p, entry_p - init_risk * 1.0)
-                    trail_locked = True
+                    sl_p = min(sl_p, entry_p - init_risk * 1.0); trail_locked = True
                 continue
 
             if cooldown > 0:
-                cooldown -= 1
-                continue
+                cooldown -= 1; continue
 
-            # เทรดเฉพาะ London + NY Killzone (06:00 - 17:30 UTC / 13:00 - 00:30 น. ไทย)
             hr = utc_hours[i]
             if not (6 <= hr <= 17):
                 continue
 
-            atr = atr_arr[i]
-            adx = adx_arr[i]
-            rsi = rsi_arr[i]
-            e21 = ema21_arr[i]
-            e50 = ema50_arr[i]
-            e200 = ema200_arr[i]
-            h1_e50 = h1_ema50_arr[i]
-            h1_e200 = h1_ema200_arr[i]
-            pdh = pdh_arr[i]
-            pdl = pdl_arr[i]
-            as_h = asian_h_arr[i]
-            as_l = asian_l_arr[i]
+            atr = atr_arr[i]; adx = adx_arr[i]; rsi = rsi_arr[i]
+            e21 = ema21_arr[i]; e50 = ema50_arr[i]; e200 = ema200_arr[i]
+            h1_e50 = h1_ema50_arr[i]; h1_e200 = h1_ema200_arr[i]
+            pdh = pdh_arr[i]; pdl = pdl_arr[i]
+            as_h = asian_h_arr[i]; as_l = asian_l_arr[i]
             risk = atr * atr_sl_mult
             reward = risk * rr_mult
 
@@ -602,18 +670,14 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             bull_candle = close_arr[i] > open_arr[i] and close_arr[i] > close_arr[i - 1]
             bear_candle = close_arr[i] < open_arr[i] and close_arr[i] < close_arr[i - 1]
 
-            # --- FACTOR 1: VALUE AREA FADE (ตลาดไซด์เวย์ ADX <= adx_thresh) ---
             if "VALUE_AREA_FADE" in enabled_set and adx <= adx_thresh:
                 if low_arr[i] <= vp_val[i] + atr * 0.35 and close_arr[i] > vp_val[i] - atr * 0.25 and bull_candle and rsi <= 45:
                     in_pos = 1; active_factor = "VALUE_AREA_FADE"; be_moved = False; trail_locked = False
-                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward
-                    continue
+                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward; continue
                 elif high_arr[i] >= vp_vah[i] - atr * 0.35 and close_arr[i] < vp_vah[i] + atr * 0.25 and bear_candle and rsi >= 55:
                     in_pos = -1; active_factor = "VALUE_AREA_FADE"; be_moved = False; trail_locked = False
-                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward
-                    continue
+                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward; continue
 
-            # --- FACTOR 2: LIQUIDITY SWEEP REVERSAL (กวาด PDH/PDL + ไส้เทียนปฏิเสธราคา) ---
             swept_pdl = (low_arr[i] < pdl or low_arr[i - 1] < pdl) and close_arr[i] > pdl and bull_candle and (lower_wick_pct >= 0.22 or rsi <= 45)
             swept_pdh = (high_arr[i] > pdh or high_arr[i - 1] > pdh) and close_arr[i] < pdh and bear_candle and (upper_wick_pct >= 0.22 or rsi >= 55)
 
@@ -622,33 +686,24 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
                 entry_p = close_arr[i]
                 swing_low = min(low_arr[i], low_arr[i - 1])
                 init_risk = max(entry_p - (swing_low - atr * 0.25), risk * 0.85)
-                sl_p = entry_p - init_risk
-                tp_p = entry_p + (init_risk * rr_mult)
-                continue
+                sl_p = entry_p - init_risk; tp_p = entry_p + (init_risk * rr_mult); continue
             elif "LIQUIDITY_SWEEP" in enabled_set and swept_pdh:
                 in_pos = -1; active_factor = "LIQUIDITY_SWEEP"; be_moved = False; trail_locked = False
                 entry_p = close_arr[i]
                 swing_high = max(high_arr[i], high_arr[i - 1])
                 init_risk = max((swing_high + atr * 0.25) - entry_p, risk * 0.85)
-                sl_p = entry_p + init_risk
-                tp_p = entry_p - (init_risk * rr_mult)
-                continue
+                sl_p = entry_p + init_risk; tp_p = entry_p - (init_risk * rr_mult); continue
 
-            # --- FACTOR 3: LONDON BREAKOUT (quant-trading: เบรกกรอบ Asian Range ช่วง 13:00-16:30 น. ไทย) ---
             if "LONDON_BREAKOUT" in enabled_set and (6 <= hr <= 9) and not np.isnan(as_h) and body_pct >= 0.45:
                 htf_bear = close_arr[i] < h1_e200 and close_arr[i] < e200
                 htf_bull = close_arr[i] > h1_e200 and close_arr[i] > e200
-                # RSI Exhaustion Guard: 28 <= RSI <= 72
                 if htf_bear and close_arr[i] < as_l and close_arr[i - 1] >= as_l and bear_candle and (28 <= rsi <= 52):
                     in_pos = -1; active_factor = "LONDON_BREAKOUT"; be_moved = False; trail_locked = False
-                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward
-                    continue
+                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward; continue
                 elif htf_bull and close_arr[i] > as_h and close_arr[i - 1] <= as_h and bull_candle and (48 <= rsi <= 72):
                     in_pos = 1; active_factor = "LONDON_BREAKOUT"; be_moved = False; trail_locked = False
-                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward
-                    continue
+                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward; continue
 
-            # --- FACTOR 4: MOMENTUM BREAKOUT (พร้อม RSI Exhaustion Guard) ---
             if "MOMENTUM_BREAKOUT" in enabled_set and adx > adx_thresh and body_pct >= 0.45:
                 htf_bear = close_arr[i] < h1_e200 and h1_e50 < h1_e200 and close_arr[i] < e200
                 htf_bull = close_arr[i] > h1_e200 and h1_e50 > h1_e200 and close_arr[i] > e200
@@ -657,14 +712,11 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
 
                 if htf_bear and broke_down:
                     in_pos = -1; active_factor = "MOMENTUM_BREAKOUT"; be_moved = False; trail_locked = False
-                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward
-                    continue
+                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p + risk; tp_p = entry_p - reward; continue
                 elif htf_bull and broke_up:
                     in_pos = 1; active_factor = "MOMENTUM_BREAKOUT"; be_moved = False; trail_locked = False
-                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward
-                    continue
+                    entry_p = close_arr[i]; init_risk = risk; sl_p = entry_p - risk; tp_p = entry_p + reward; continue
 
-            # --- FACTOR 5: HTF + M15 PULLBACK ---
             if "HTF_TREND_PULLBACK" in enabled_set and adx > adx_thresh:
                 htf_bear = close_arr[i] < h1_e200 and h1_e50 < h1_e200 and close_arr[i] < e200 and e50 < e200
                 htf_bull = close_arr[i] > h1_e200 and h1_e50 > h1_e200 and close_arr[i] > e200 and e50 > e200
@@ -706,7 +758,6 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         max_dd_r = float((np.maximum.accumulate(cum_r) - cum_r).max()) if len(cum_r) > 0 else 0.0
         total_fee_drag = round(len(arr) * spread_cost, 2)
 
-        # Institutional Risk Metrics (Investing Algorithm Framework style)
         mean_r = float(np.mean(r_arr))
         std_r = float(np.std(r_arr, ddof=1)) if len(r_arr) > 1 else 1.0
         downside_dev = float(np.sqrt(np.mean(np.minimum(0.0, r_arr) ** 2)))
@@ -716,7 +767,6 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         calmar = round((net_r * (250.0 / max(len(r_arr), 1))) / max(max_dd_r, 0.5), 2)
         var_95_r = round(float(np.percentile(r_arr, 5)), 2)
 
-        # 1,000-Run Monte Carlo Bootstrap Simulation (quant-trading style)
         rng = np.random.default_rng(42)
         mc_sims = rng.choice(r_arr, size=(1000, len(r_arr)), replace=True)
         mc_cum = np.cumsum(mc_sims, axis=1)
@@ -725,13 +775,11 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         mc_dd_95_r = round(float(np.percentile(mc_dds, 95)), 2)
         mc_prob_profit = round(float(np.mean(mc_cum[:, -1] > 0) * 100.0), 1)
 
-        # Out-of-Sample (33% หลัง)
         oos_df = df_tr[df_tr["idx"] >= split_idx]
         if len(oos_df) > 0:
             o_r = oos_df["r"].values
             o_pnl = oos_df["pnl"].values
-            o_w = o_r[o_r > 0]
-            o_l = o_r[o_r < 0]
+            o_w = o_r[o_r > 0]; o_l = o_r[o_r < 0]
             oos_wr = round((len(o_w) / len(o_r)) * 100.0, 1)
             oos_r_pf = round((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else (2.0 if len(o_w) > 0 else 0.0), 2)
             oos_net_r = round(float(o_r.sum()), 2)
@@ -740,12 +788,10 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         else:
             oos_wr, oos_r_pf, oos_net_r, oos_pnl, oos_trades = 0.0, 0.0, 0.0, 0.0, 0
 
-        # คัดเลือกพารามิเตอร์จาก In-Sample (67% แรก)
         is_df = df_tr[df_tr["idx"] < split_idx]
         if len(is_df) >= 4:
             is_r = is_df["r"].values
-            is_w = is_r[is_r > 0]
-            is_l = is_r[is_r < 0]
+            is_w = is_r[is_r > 0]; is_l = is_r[is_r < 0]
             is_r_pf = (float(is_w.sum()) / float(abs(is_l.sum()))) if len(is_l) > 0 else 2.0
             is_net_r = float(is_r.sum())
             is_cum_r = np.cumsum(is_r)
@@ -759,15 +805,11 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
             is_enabled = f_name in enabled_list
             sub = df_tr[df_tr["factor"] == f_name]
             if len(sub) > 0:
-                s_r = sub["r"].values
-                s_pnl = sub["pnl"].values
-                s_w = s_r[s_r > 0]
-                s_l = s_r[s_r < 0]
+                s_r = sub["r"].values; s_pnl = sub["pnl"].values
+                s_w = s_r[s_r > 0]; s_l = s_r[s_r < 0]
                 s_r_pf = (float(s_w.sum()) / float(abs(s_l.sum()))) if len(s_l) > 0 else (2.0 if len(s_w) > 0 else 0.0)
                 breakdown.append({
-                    "factor": f_name,
-                    "enabled": is_enabled,
-                    "trades": int(len(sub)),
+                    "factor": f_name, "enabled": is_enabled, "trades": int(len(sub)),
                     "win_rate": round((len(s_w) / len(sub)) * 100.0, 1),
                     "r_profit_factor": round(s_r_pf, 2),
                     "net_pnl": round(float(s_pnl.sum()), 2),
@@ -779,30 +821,14 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
                 })
 
         return {
-            "atr_sl_mult": sl_m,
-            "rr_mult": rr_m,
-            "adx_thresh": adx_t,
-            "enabled_factors": enabled_list,
-            "trades": int(len(r_arr)),
-            "win_rate": round(wr, 1),
-            "profit_factor": round(usd_pf, 2),
-            "r_profit_factor": round(r_pf, 2),
-            "net_pnl": round(net_pnl, 2),
-            "net_r": round(net_r, 2),
-            "max_dd": round(max_dd_usd, 2),
-            "max_dd_r": round(max_dd_r, 2),
-            "sharpe": sharpe,
-            "sortino": sortino,
-            "calmar": calmar,
-            "var_95_r": var_95_r,
-            "mc_dd_95_r": mc_dd_95_r,
-            "mc_prob_profit": mc_prob_profit,
-            "total_fee_drag": total_fee_drag,
-            "oos_trades": oos_trades,
-            "oos_win_rate": oos_wr,
-            "oos_profit_factor": oos_r_pf,
-            "oos_net_r": oos_net_r,
-            "oos_net_pnl": oos_pnl,
+            "atr_sl_mult": sl_m, "rr_mult": rr_m, "adx_thresh": adx_t, "enabled_factors": enabled_list,
+            "trades": int(len(r_arr)), "win_rate": round(wr, 1), "profit_factor": round(usd_pf, 2),
+            "r_profit_factor": round(r_pf, 2), "net_pnl": round(net_pnl, 2), "net_r": round(net_r, 2),
+            "max_dd": round(max_dd_usd, 2), "max_dd_r": round(max_dd_r, 2),
+            "sharpe": sharpe, "sortino": sortino, "calmar": calmar, "var_95_r": var_95_r,
+            "mc_dd_95_r": mc_dd_95_r, "mc_prob_profit": mc_prob_profit, "total_fee_drag": total_fee_drag,
+            "oos_trades": oos_trades, "oos_win_rate": oos_wr, "oos_profit_factor": oos_r_pf,
+            "oos_net_r": oos_net_r, "oos_net_pnl": oos_pnl,
             "is_profitable_edge": bool(r_pf >= 1.05 and net_r > 0),
             "score": round(float(train_score), 3),
             "equity_curve_r": [round(float(x), 2) for x in np.insert(cum_r, 0, 0.0)],
@@ -820,7 +846,6 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
                 df_all = pd.DataFrame(raw_all)
                 df_train = df_all[df_all["idx"] < split_idx]
 
-                # Auto-Mute ด้วยเกณฑ์ R-Multiple จริง: ปิด Factor ที่ทำ Net R <= 0 ในช่วง Train
                 surviving_factors = []
                 for f_name in all_factors:
                     sub_tr = df_train[df_train["factor"] == f_name]
@@ -852,7 +877,368 @@ def run_walkforward_backtest(df_intraday, ind, spot_offset=0.0):
         "split_bar": split_idx
     }
 
-# ================= 3. SESSION-AWARE SPOT TRADE ENGINE (WITH RSI EXHAUSTION GUARD) =================
+# ================= 2B. VP-ANATOMY 500-POINT ($5.00) SCALP ENGINE =================
+def run_vp_anatomy_scalp_engine(df_intraday, ind, spot_price, spot_offset=0.0):
+    """
+    ระบบ Scalp 500 จุด ($5.00 SL / $5.00-$6.50 TP) จาก 4 กายวิภาค Volume Profile (VPAnatomies_EA):
+    - คำนวณ Volume Profile รอบ 24 ชม. (92 แท่ง M15) + เกลี่ยความเรียบหา 2nd Peak & Valley
+    - จำแนก D-Shaped, b-Shaped, P-Shaped, Double Zone อัตโนมัติ
+    - หาจังหวะเข้าบ่อยขึ้นในจุดที่มั่นใจ (10:00 - 00:30 น. เวลาไทย) พร้อม Walk-Forward & Auto-Mute
+    """
+    open_arr = df_intraday['Open'].values + spot_offset
+    high_arr = df_intraday['High'].values + spot_offset
+    low_arr = df_intraday['Low'].values + spot_offset
+    close_arr = df_intraday['Close'].values + spot_offset
+    vol_arr = df_intraday['Volume'].values
+    rsi_arr = ind["rsi14"].values
+    ema21_arr = ind["ema21"].values
+    ema50_arr = ind["ema50"].values
+    n_bars = len(df_intraday)
+
+    dt_index_utc = df_intraday.index.tz_localize("UTC") if df_intraday.index.tz is None else df_intraday.index.tz_convert("UTC")
+    utc_hours = dt_index_utc.hour.values
+
+    # วิเคราะห์ 4 กายวิภาค Volume Profile ล่าสุด (24H = 92 แท่ง M15)
+    curr_anatomy = classify_vp_anatomy(
+        low_arr[-92:], high_arr[-92:], close_arr[-92:], vol_arr[-92:], bins=32
+    )
+    if curr_anatomy is None:
+        curr_anatomy = {
+            "shape": "D_SHAPED",
+            "title_th": ANATOMY_META["D_SHAPED"]["title_th"],
+            "desc_th": ANATOMY_META["D_SHAPED"]["desc_th"],
+            "rule_th": ANATOMY_META["D_SHAPED"]["rule_th"],
+            "poc": round(spot_price, 2), "vah": round(spot_price + 8.0, 2), "val": round(spot_price - 8.0, 2),
+            "poc_pos_pct": 50.0, "second_peak": None, "valley": None,
+            "lower_peak": round(spot_price - 8.0, 2), "upper_peak": round(spot_price + 8.0, 2)
+        }
+
+    # Precompute 24H VP Anatomy ทุกๆ 4 แท่ง (1 ชม.) สำหรับ Walk-Forward Backtest
+    win_24h = 92
+    split_idx = win_24h + int((n_bars - win_24h) * 0.67)
+    an_shape = np.empty(n_bars, dtype=object)
+    an_poc = np.full(n_bars, np.nan)
+    an_vah = np.full(n_bars, np.nan)
+    an_val = np.full(n_bars, np.nan)
+    an_lo_pk = np.full(n_bars, np.nan)
+    an_hi_pk = np.full(n_bars, np.nan)
+
+    for i in range(win_24h, n_bars, 4):
+        res_a = classify_vp_anatomy(
+            low_arr[i - win_24h:i], high_arr[i - win_24h:i],
+            close_arr[i - win_24h:i], vol_arr[i - win_24h:i], bins=28
+        )
+        end_i = min(i + 4, n_bars)
+        if res_a:
+            an_shape[i:end_i] = res_a["shape"]
+            an_poc[i:end_i] = res_a["poc"]
+            an_vah[i:end_i] = res_a["vah"]
+            an_val[i:end_i] = res_a["val"]
+            an_lo_pk[i:end_i] = res_a["lower_peak"]
+            an_hi_pk[i:end_i] = res_a["upper_peak"]
+
+    all_shapes = ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"]
+    sl_usd = 5.00       # 500 จุด
+    be_trigger = 2.50   # +250 จุด เลื่อนบังทุน
+    spread_cost = 0.50  # Spread Scalp เฉลี่ย 50 จุด
+
+    def sim_scalp(tp_usd, tol_usd, enabled_shapes):
+        in_pos = 0
+        active_sh = ""
+        entry_p = sl_p = tp_p = 0.0
+        be_moved = False
+        cooldown = 0
+        recs = []
+
+        for i in range(win_24h + 1, n_bars):
+            sh = an_shape[i]
+            if sh is None or np.isnan(an_poc[i]):
+                continue
+
+            if in_pos == 1:
+                if low_arr[i] <= sl_p:
+                    pnl = (sl_p - entry_p) - spread_cost
+                    recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
+                    in_pos = 0; cooldown = 1; continue
+                if high_arr[i] >= tp_p:
+                    pnl = (tp_p - entry_p) - spread_cost
+                    recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
+                    in_pos = 0; cooldown = 1; continue
+                if not be_moved and high_arr[i] >= entry_p + be_trigger:
+                    sl_p = entry_p + 0.50  # ล็อกคุ้มค่า Spread +50 จุด
+                    be_moved = True
+                continue
+            elif in_pos == -1:
+                if high_arr[i] >= sl_p:
+                    pnl = (entry_p - sl_p) - spread_cost
+                    recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
+                    in_pos = 0; cooldown = 1; continue
+                if low_arr[i] <= tp_p:
+                    pnl = (entry_p - tp_p) - spread_cost
+                    recs.append({"idx": i, "shape": active_sh, "pnl": pnl, "r": pnl / sl_usd})
+                    in_pos = 0; cooldown = 1; continue
+                if not be_moved and low_arr[i] <= entry_p - be_trigger:
+                    sl_p = entry_p - 0.50
+                    be_moved = True
+                continue
+
+            if cooldown > 0:
+                cooldown -= 1; continue
+
+            # ช่วงเวลา Scalp: 10:00 - 00:30 น. เวลาไทย (03:00 - 17:30 UTC)
+            hr = utc_hours[i]
+            if not (3 <= hr <= 17):
+                continue
+
+            if sh not in enabled_shapes:
+                continue
+
+            c_open = open_arr[i]; c_high = high_arr[i]; c_low = low_arr[i]; c_close = close_arr[i]
+            c_rng = max(c_high - c_low, 1e-6)
+            lo_wick = (min(c_open, c_close) - c_low) / c_rng
+            up_wick = (c_high - max(c_open, c_close)) / c_rng
+            bull_c = c_close > c_open and (lo_wick >= 0.20 or c_close > close_arr[i - 1])
+            bear_c = c_close < c_open and (up_wick >= 0.20 or c_close < close_arr[i - 1])
+            rsi = rsi_arr[i]
+            poc = an_poc[i]; vah = an_vah[i]; val = an_val[i]
+            lo_pk = an_lo_pk[i]; hi_pk = an_hi_pk[i]
+
+            # 1. D-SHAPED: ดัก BUY ที่ VAL / ดัก SELL ที่ VAH
+            if sh == "D_SHAPED":
+                if c_low <= val + tol_usd and c_close >= val - 1.5 and bull_c and rsi <= 52:
+                    in_pos = 1; active_sh = "D_SHAPED"; be_moved = False
+                    entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
+                elif c_high >= vah - tol_usd and c_close <= vah + 1.5 and bear_c and rsi >= 48:
+                    in_pos = -1; active_sh = "D_SHAPED"; be_moved = False
+                    entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
+
+            # 2. B-SHAPED: SELL ใต้ POC ตามโมเมนตัมลง หรือ BUY เมื่อเบรก VAH
+            elif sh == "B_SHAPED":
+                if c_high >= poc - tol_usd and c_close < poc and bear_c and c_close < ema21_arr[i] and rsi >= 30:
+                    in_pos = -1; active_sh = "B_SHAPED"; be_moved = False
+                    entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
+                elif c_close > vah and close_arr[i - 1] <= vah and bull_c and rsi <= 70:
+                    in_pos = 1; active_sh = "B_SHAPED"; be_moved = False
+                    entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
+
+            # 3. P-SHAPED: BUY ย่อรับที่ POC/VAL หรือ SELL เมื่อหลุด VAL
+            elif sh == "P_SHAPED":
+                if ((c_low <= poc + tol_usd and c_close >= poc - 1.0) or (c_low <= val + tol_usd and c_close >= val - 1.0)) and bull_c and c_close > ema50_arr[i] and rsi <= 68:
+                    in_pos = 1; active_sh = "P_SHAPED"; be_moved = False
+                    entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
+                elif c_close < val and close_arr[i - 1] >= val and bear_c and rsi >= 32:
+                    in_pos = -1; active_sh = "P_SHAPED"; be_moved = False
+                    entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
+
+            # 4. DOUBLE_ZONE: ดัก BUY ที่ Lower Peak และดัก SELL ที่ Upper Peak
+            elif sh == "DOUBLE_ZONE":
+                if c_low <= lo_pk + tol_usd and c_close >= lo_pk - 1.5 and bull_c and rsi <= 55:
+                    in_pos = 1; active_sh = "DOUBLE_ZONE"; be_moved = False
+                    entry_p = c_close; sl_p = entry_p - sl_usd; tp_p = entry_p + tp_usd
+                elif c_high >= hi_pk - tol_usd and c_close <= hi_pk + 1.5 and bear_c and rsi >= 45:
+                    in_pos = -1; active_sh = "DOUBLE_ZONE"; be_moved = False
+                    entry_p = c_close; sl_p = entry_p + sl_usd; tp_p = entry_p - tp_usd
+
+        return recs
+
+    best_scalp = None
+    best_score = -1e9
+    best_tp_usd = 5.50
+    best_tol_usd = 2.00
+    best_enabled_shapes = all_shapes
+
+    for tp_cand in [5.00, 5.50, 6.50]:
+        for tol_cand in [1.50, 2.50]:
+            raw_s = sim_scalp(tp_cand, tol_cand, set(all_shapes))
+            if len(raw_s) < 12:
+                continue
+            df_s = pd.DataFrame(raw_s)
+            df_tr = df_s[df_s["idx"] < split_idx]
+            surv = [s for s in all_shapes if len(df_tr[df_tr["shape"] == s]) == 0 or df_tr[df_tr["shape"] == s]["r"].sum() > 0]
+            if not surv:
+                surv = all_shapes
+
+            filt_s = sim_scalp(tp_cand, tol_cand, set(surv))
+            if len(filt_s) < 10:
+                continue
+            df_f = pd.DataFrame(filt_s)
+            r_arr = df_f["r"].values
+            w_r = r_arr[r_arr > 0]; l_r = r_arr[r_arr < 0]
+            r_pf = (float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0
+            net_r = float(r_arr.sum())
+            cum_r = np.cumsum(r_arr)
+            dd_r = float((np.maximum.accumulate(cum_r) - cum_r).max())
+
+            df_is = df_f[df_f["idx"] < split_idx]
+            is_r = df_is["r"].values if len(df_is) > 0 else r_arr
+            sc = float(is_r.sum()) * (r_pf ** 0.5) / (1.0 + dd_r * 0.15)
+            if sc > best_score:
+                best_score = sc
+                best_tp_usd = tp_cand
+                best_tol_usd = tol_cand
+                best_enabled_shapes = surv
+                best_scalp = df_f
+
+    if best_scalp is not None and len(best_scalp) > 0:
+        r_arr = best_scalp["r"].values
+        pnl_arr = best_scalp["pnl"].values
+        w_r = r_arr[r_arr > 0]; l_r = r_arr[r_arr < 0]
+        wr = round((len(w_r) / len(r_arr)) * 100.0, 1)
+        r_pf = round((float(w_r.sum()) / float(abs(l_r.sum()))) if len(l_r) > 0 else 2.0, 2)
+        net_r = round(float(r_arr.sum()), 2)
+        net_pnl = round(float(pnl_arr.sum()), 2)
+        cum_r = np.cumsum(r_arr)
+        max_dd_r = round(float((np.maximum.accumulate(cum_r) - cum_r).max()), 2)
+
+        oos_df = best_scalp[best_scalp["idx"] >= split_idx]
+        if len(oos_df) > 0:
+            o_r = oos_df["r"].values
+            o_w = o_r[o_r > 0]; o_l = o_r[o_r < 0]
+            oos_wr = round((len(o_w) / len(o_r)) * 100.0, 1)
+            oos_pf = round((float(o_w.sum()) / float(abs(o_l.sum()))) if len(o_l) > 0 else 2.0, 2)
+            oos_net_r = round(float(o_r.sum()), 2)
+            oos_trades = int(len(oos_df))
+        else:
+            oos_wr, oos_pf, oos_net_r, oos_trades = 0.0, 0.0, 0.0, 0
+
+        anatomy_breakdown = []
+        for s_name in all_shapes:
+            sub = best_scalp[best_scalp["shape"] == s_name]
+            is_on = s_name in best_enabled_shapes
+            if len(sub) > 0:
+                sr = sub["r"].values
+                sw = sr[sr > 0]
+                anatomy_breakdown.append({
+                    "shape": s_name,
+                    "enabled": is_on,
+                    "trades": int(len(sub)),
+                    "win_rate": round((len(sw) / len(sub)) * 100.0, 1),
+                    "net_r": round(float(sr.sum()), 2)
+                })
+            else:
+                anatomy_breakdown.append({"shape": s_name, "enabled": is_on, "trades": 0, "win_rate": 0.0, "net_r": 0.0})
+
+        scalp_bt = {
+            "sl_usd": sl_usd,
+            "sl_points": int(sl_usd * 100),
+            "tp_usd": best_tp_usd,
+            "tp_points": int(best_tp_usd * 100),
+            "be_usd": be_trigger,
+            "be_points": int(be_trigger * 100),
+            "trades": int(len(r_arr)),
+            "win_rate": wr,
+            "r_profit_factor": r_pf,
+            "net_r": net_r,
+            "net_pnl": net_pnl,
+            "max_dd_r": max_dd_r,
+            "oos_trades": oos_trades,
+            "oos_win_rate": oos_wr,
+            "oos_r_pf": oos_pf,
+            "oos_net_r": oos_net_r,
+            "has_edge": bool(r_pf >= 1.05 and net_r > 0),
+            "equity_curve_r": [round(float(x), 2) for x in np.insert(cum_r, 0, 0.0)],
+            "anatomy_breakdown": anatomy_breakdown
+        }
+    else:
+        scalp_bt = {
+            "sl_usd": 5.0, "sl_points": 500, "tp_usd": 5.0, "tp_points": 500,
+            "be_usd": 2.5, "be_points": 250, "trades": 0, "win_rate": 0.0,
+            "r_profit_factor": 0.0, "net_r": 0.0, "net_pnl": 0.0, "max_dd_r": 0.0,
+            "oos_trades": 0, "oos_win_rate": 0.0, "oos_r_pf": 0.0, "oos_net_r": 0.0,
+            "has_edge": False, "equity_curve_r": [0], "anatomy_breakdown": []
+        }
+
+    # คำนวณแผน Scalp สด ณ วินาทีปัจจุบันจาก 4 กายวิภาค Volume Profile
+    sh = curr_anatomy["shape"]
+    poc = curr_anatomy["poc"]
+    vah = curr_anatomy["vah"]
+    val = curr_anatomy["val"]
+    lo_pk = curr_anatomy["lower_peak"]
+    hi_pk = curr_anatomy["upper_peak"]
+    tp_usd = scalp_bt["tp_usd"]
+    tp_pts = scalp_bt["tp_points"]
+
+    if sh == "D_SHAPED":
+        if abs(spot_price - val) <= abs(spot_price - vah):
+            s_dir = "LONG"; s_entry = val
+            s_bias = f"D-SHAPE VAL BOUNCE BUY (ดักเด้งแนวรับ VAL ${val} เป้าหมาย POC ${poc})"
+        else:
+            s_dir = "SHORT"; s_entry = vah
+            s_bias = f"D-SHAPE VAH REJECT SELL (ดักขายแนวต้าน VAH ${vah} เป้าหมาย POC ${poc})"
+    elif sh == "B_SHAPED":
+        if spot_price <= poc + 2.0:
+            s_dir = "SHORT"; s_entry = poc
+            s_bias = f"b-SHAPE POC BREAKDOWN SELL (กดขายใต้ฐานโวลุ่ม POC ${poc})"
+        else:
+            s_dir = "LONG"; s_entry = vah
+            s_bias = f"b-SHAPE VAH BREAKOUT BUY (สะสมฐานล่างเสร็จ เบรก VAH ${vah})"
+    elif sh == "P_SHAPED":
+        if spot_price >= val - 1.5:
+            s_dir = "LONG"; s_entry = poc if spot_price >= poc - 1.5 else val
+            s_bias = f"P-SHAPE PULLBACK BUY (ย่อรับตามโมเมนตัมขาขึ้นที่ ${s_entry})"
+        else:
+            s_dir = "SHORT"; s_entry = val
+            s_bias = f"P-SHAPE VAL BREAKDOWN SELL (เสียทรงหลุดกรอบล่าง VAL ${val})"
+    else:  # DOUBLE_ZONE
+        if abs(spot_price - lo_pk) <= abs(spot_price - hi_pk):
+            s_dir = "LONG"; s_entry = lo_pk
+            s_bias = f"DOUBLE-ZONE LOWER PEAK BUY (ดักเด้งยอดโวลุ่มล่าง ${lo_pk})"
+        else:
+            s_dir = "SHORT"; s_entry = hi_pk
+            s_bias = f"DOUBLE-ZONE UPPER PEAK SELL (ดักขายยอดโวลุ่มบน ${hi_pk})"
+
+    s_sl = round(s_entry - sl_usd, 2) if s_dir == "LONG" else round(s_entry + sl_usd, 2)
+    s_be = round(s_entry + be_trigger, 2) if s_dir == "LONG" else round(s_entry - be_trigger, 2)
+    s_tp = round(s_entry + tp_usd, 2) if s_dir == "LONG" else round(s_entry - tp_usd, 2)
+    dist_usd = round(abs(spot_price - s_entry), 2)
+    dist_pts = int(round(dist_usd * 100))
+
+    now_th = datetime.now(THAI_TZ)
+    in_scalp_session = (10 <= now_th.hour <= 23) or (now_th.hour == 0 and now_th.minute <= 30)
+    gate_session = bool(in_scalp_session)
+    gate_edge = bool(scalp_bt["has_edge"])
+    gate_prox = bool(dist_usd <= 3.00)  # ใกล้ในระยะ 300 จุด ($3.00)
+    scalp_ready = gate_session and gate_edge and gate_prox
+
+    if not gate_session:
+        s_verdict = "NO (อยู่นอกเวลา Scalp 10:00–00:30 น.)"
+    elif not gate_edge:
+        s_verdict = "NO (สถิติ Scalp R-PF ต่ำกว่า 1.05 — รอจังหวะถัดไป)"
+    elif not gate_prox:
+        s_verdict = f"NO (ห่างจุดเข้า ${dist_usd:.2f} / {dist_pts} จุด — รอเข้าใกล้ <= 300 จุด)"
+    else:
+        s_verdict = f"YES (พร้อมยิง SCALP 500 จุด! ราคาเข้าใกล้ในระยะ {dist_pts} จุด)"
+
+    return {
+        "anatomy": curr_anatomy,
+        "backtest": scalp_bt,
+        "setup": {
+            "shape": sh,
+            "bias": s_bias,
+            "direction": s_dir,
+            "entry": round(s_entry, 2),
+            "sl": s_sl,
+            "sl_usd": sl_usd,
+            "sl_points": 500,
+            "be_target": s_be,
+            "be_points": 250,
+            "tp": s_tp,
+            "tp_usd": tp_usd,
+            "tp_points": tp_pts,
+            "rr": round(tp_usd / sl_usd, 2),
+            "dist_usd": dist_usd,
+            "dist_points": dist_pts
+        },
+        "gates": {
+            "session_ok": gate_session,
+            "edge_ok": gate_edge,
+            "proximity_ok": gate_prox,
+            "all_passed": scalp_ready,
+            "verdict_text": s_verdict
+        }
+    }
+
+# ================= 3. SESSION-AWARE SPOT TREND ENGINE =================
 def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, ind, spot_price, bid, ask, spot_offset, paxg_offset, open_interest, tuned_params):
     futures_price = float(df_intraday['Close'].iloc[-1])
     active_spot = round(spot_price, 2) if spot_price else round(futures_price, 2)
@@ -908,13 +1294,11 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
     be_trigger_dist = round(risk_unit * 1.0, 2)
     reward_unit = round(risk_unit * rr_mult, 2)
 
-    # โซนเวลาไทย: 13:00 - 00:30 น. = KILLZONE ACTIVE | 00:31 - 12:59 น. = NO TRADE ZONE
     now_th = datetime.now(THAI_TZ)
     in_killzone = (13 <= now_th.hour <= 23) or (now_th.hour == 0 and now_th.minute <= 30)
     in_london_window = (13 <= now_th.hour <= 16)
     session_name = "LONDON / NY KILLZONE ACTIVE (เปิดวิเคราะห์และเทรด)" if in_killzone else "NO TRADE ZONE (ช่วงเช้า - ปลดล็อก 13:00 น.)"
 
-    # RSI Exhaustion Guard: ตรวจจับภาวะตึงตัวสุดขีดเพื่อป้องกันการไล่ราคา
     rsi_oversold_exhausted = curr_rsi14 < 28.0
     rsi_overbought_exhausted = curr_rsi14 > 72.0
 
@@ -946,9 +1330,8 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
         position_context = f"ราคากวาดสภาพคล่องเหนือ PDH (${curr_pdh}) และถูกแรงขายกดกลับลงมาในกรอบ (RSI {curr_rsi14})"
         invalidation_rule = f"หากราคาเบรกทะลุ Stop Loss ${sl} จะยกเลิกแผน Short ทันที"
     elif curr_adx14 > adx_thresh and active_spot < curr_h1_ema200 and active_spot < curr_ema200:
-        # เทรนด์ขาลงแข็งแกร่ง -> ตรวจสอบ RSI Exhaustion Guard ก่อนเลือกวิธีเข้า
         if rsi_oversold_exhausted:
-            active_factor = "LIQUIDITY_SWEEP"
+            active_factor = "ANTI_CHASE_RETEST"
             regime = f"OVERSOLD EXHAUSTION (ADX {curr_adx14} | RSI {curr_rsi14} < 28)"
             bias = f"ANTI-CHASE RETEST SHORT (RSI ตึงตัว ห้ามไล่ Short ใต้ PDL — รอเด้งชน PDL ${curr_pdl} / EMA21 ${curr_ema21})"
             direction = "SHORT"
@@ -987,7 +1370,7 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
             invalidation_rule = f"หากราคาดีดทะลุ Stop Loss ${sl} กลับขึ้นไปยืนเหนือแนวต้านให้ยกเลิกแผนทันที"
     elif curr_adx14 > adx_thresh and active_spot > curr_h1_ema200 and active_spot > curr_ema200:
         if rsi_overbought_exhausted:
-            active_factor = "LIQUIDITY_SWEEP"
+            active_factor = "ANTI_CHASE_RETEST"
             regime = f"OVERBOUGHT EXHAUSTION (ADX {curr_adx14} | RSI {curr_rsi14} > 72)"
             bias = f"ANTI-CHASE RETEST LONG (RSI ตึงตัว ห้ามไล่ Buy เหนือ PDH — รอย่อแตะ PDH ${curr_pdh} / EMA21 ${curr_ema21})"
             direction = "LONG"
@@ -1115,62 +1498,34 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
         "us10y_yield": us10y_latest,
         "corr_gold_dxy_20d": round(corr_dxy, 2),
         "technicals": {
-            "ema21": curr_ema21,
-            "ema50": curr_ema50,
-            "ema200": curr_ema200,
-            "h1_ema50": curr_h1_ema50,
-            "h1_ema200": curr_h1_ema200,
-            "atr14": curr_atr14,
-            "rsi14": curr_rsi14,
-            "adx14": curr_adx14,
-            "pdh": curr_pdh,
-            "pdl": curr_pdl,
-            "asian_high": curr_asian_h,
-            "asian_low": curr_asian_l,
+            "ema21": curr_ema21, "ema50": curr_ema50, "ema200": curr_ema200,
+            "h1_ema50": curr_h1_ema50, "h1_ema200": curr_h1_ema200,
+            "atr14": curr_atr14, "rsi14": curr_rsi14, "adx14": curr_adx14,
+            "pdh": curr_pdh, "pdl": curr_pdl,
+            "asian_high": curr_asian_h, "asian_low": curr_asian_l,
             "rsi_exhausted": bool(rsi_oversold_exhausted or rsi_overbought_exhausted),
-            "in_killzone": in_killzone,
-            "session_name": session_name
+            "in_killzone": in_killzone, "session_name": session_name
         },
         "tuned_params": {
-            "atr_sl_mult": atr_sl_mult,
-            "rr_mult": rr_mult,
-            "adx_thresh": adx_thresh,
-            "enabled_factors": list(enabled_factors),
-            "is_profitable_edge": has_edge
+            "atr_sl_mult": atr_sl_mult, "rr_mult": rr_mult, "adx_thresh": adx_thresh,
+            "enabled_factors": list(enabled_factors), "is_profitable_edge": has_edge
         },
         "gates": {
-            "session_ok": gate_session,
-            "edge_ok": gate_edge,
-            "proximity_ok": gate_proximity,
-            "all_passed": all_gates_passed,
-            "dist_to_entry": dist_to_entry,
-            "verdict_text": gate_verdict
+            "session_ok": gate_session, "edge_ok": gate_edge, "proximity_ok": gate_proximity,
+            "all_passed": all_gates_passed, "dist_to_entry": dist_to_entry, "verdict_text": gate_verdict
         },
         "setup": {
-            "active_factor": active_factor,
-            "regime": regime,
-            "bias": bias,
-            "direction": direction,
-            "entry": entry,
-            "sl": sl,
-            "be_target": be_target,
-            "tp": tp,
-            "sl_dist": sl_dist,
-            "tp_dist": tp_dist,
-            "rr": rr_ratio,
-            "has_edge": has_edge,
-            "in_killzone": in_killzone,
-            "session_name": session_name,
-            "position_context": position_context,
-            "invalidation_rule": invalidation_rule
+            "active_factor": active_factor, "regime": regime, "bias": bias, "direction": direction,
+            "entry": entry, "sl": sl, "be_target": be_target, "tp": tp,
+            "sl_dist": sl_dist, "tp_dist": tp_dist, "rr": rr_ratio,
+            "has_edge": has_edge, "in_killzone": in_killzone, "session_name": session_name,
+            "position_context": position_context, "invalidation_rule": invalidation_rule
         }
     }
 
-# ================= 4. LIVE SIGNAL JOURNAL & WIN-RATE TRACKER =================
-def update_signal_journal(quant_data, df_intraday, spot_offset, ai_should_trigger):
-    journal_path = "data/trade_journal.json"
+# ================= 4. LIVE SIGNAL JOURNALS (TREND + SCALP 500PT) =================
+def _process_single_journal(journal_path, setup_dict, is_triggered, current_spot, df_intraday, spot_offset, spread_cost=0.60, dup_tol=8.0, factor_key="active_factor"):
     os.makedirs("data", exist_ok=True)
-
     if os.path.exists(journal_path):
         try:
             with open(journal_path, "r", encoding="utf-8") as f:
@@ -1182,14 +1537,9 @@ def update_signal_journal(quant_data, df_intraday, spot_offset, ai_should_trigge
 
     now_utc = datetime.now(timezone.utc)
     now_th_str = now_utc.astimezone(THAI_TZ).strftime("%d/%m %H:%M")
-    current_spot = quant_data["spot_price"]
-    spread_cost = 0.60
 
     df_spot = df_intraday.tail(96).copy()
-    if df_spot.index.tz is None:
-        bar_times = df_spot.index.tz_localize("UTC")
-    else:
-        bar_times = df_spot.index.tz_convert("UTC")
+    bar_times = df_spot.index.tz_localize("UTC") if df_spot.index.tz is None else df_spot.index.tz_convert("UTC")
     bar_highs = (df_spot["High"] + spot_offset).values
     bar_lows = (df_spot["Low"] + spot_offset).values
 
@@ -1231,13 +1581,11 @@ def update_signal_journal(quant_data, df_intraday, spot_offset, ai_should_trigge
                 trade["pnl"] = round((entry_p - tp_p) - spread_cost, 2)
                 trade["closed_at_th"] = now_th_str
 
-    setup = quant_data["setup"]
-    gates = quant_data["gates"]
-    if gates["all_passed"] and ai_should_trigger:
+    if is_triggered:
         has_duplicate = any(
             t["status"] == "OPEN"
-            and t["direction"] == setup["direction"]
-            and abs(float(t["entry"]) - float(setup["entry"])) < 8.0
+            and t["direction"] == setup_dict["direction"]
+            and abs(float(t["entry"]) - float(setup_dict["entry"])) < dup_tol
             for t in journal
         )
         if not has_duplicate:
@@ -1245,13 +1593,13 @@ def update_signal_journal(quant_data, df_intraday, spot_offset, ai_should_trigge
                 "id": f"SIG-{now_utc.strftime('%m%d%H%M')}",
                 "opened_at": now_utc.isoformat(),
                 "opened_at_th": now_th_str,
-                "factor": setup["active_factor"],
-                "direction": setup["direction"],
-                "bias": setup["bias"],
-                "entry": setup["entry"],
-                "sl": setup["sl"],
-                "tp": setup["tp"],
-                "rr": setup["rr"],
+                "factor": setup_dict.get(factor_key, "SETUP"),
+                "direction": setup_dict["direction"],
+                "bias": setup_dict["bias"],
+                "entry": setup_dict["entry"],
+                "sl": setup_dict["sl"],
+                "tp": setup_dict["tp"],
+                "rr": setup_dict["rr"],
                 "status": "OPEN",
                 "pnl": 0.0,
                 "closed_at_th": "-"
@@ -1277,13 +1625,30 @@ def update_signal_journal(quant_data, df_intraday, spot_offset, ai_should_trigge
         "recent_trades": journal[:8]
     }
 
-# ================= 5. 4-AGENT SWARM DEBATE COUNCIL (QUANTAGENT + VIBE-TRADING) =================
-def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, news_list, kb_text, kb_files):
+def update_all_journals(quant_data, scalp_data, df_intraday, spot_offset, trend_triggered, scalp_triggered):
+    trend_j = _process_single_journal(
+        "data/trade_journal.json", quant_data["setup"], trend_triggered,
+        quant_data["spot_price"], df_intraday, spot_offset,
+        spread_cost=0.60, dup_tol=8.0, factor_key="active_factor"
+    )
+    scalp_j = _process_single_journal(
+        "data/scalp_journal.json", scalp_data["setup"], scalp_triggered,
+        quant_data["spot_price"], df_intraday, spot_offset,
+        spread_cost=0.50, dup_tol=3.0, factor_key="shape"
+    )
+    return trend_j, scalp_j
+
+# ================= 5. 4-AGENT SWARM DEBATE COUNCIL (TREND + SCALP 500PT) =================
+def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news_list, kb_text, kb_files):
     setup = quant_data["setup"]
     tech = quant_data["technicals"]
     gates = quant_data["gates"]
     bt = backtest_data["best"]
-    f_breakdown = backtest_data.get("factor_breakdown", [])
+    sc_an = scalp_data["anatomy"]
+    sc_bt = scalp_data["backtest"]
+    sc_set = scalp_data["setup"]
+    sc_gates = scalp_data["gates"]
+
     upcoming = [n for n in news_list if n["is_upcoming"]]
     now_th_str = datetime.now(THAI_TZ).strftime("%H:%M น.")
 
@@ -1294,89 +1659,73 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, news_list, kb_te
     else:
         news_status_text = "ไม่มีข่าวสำคัญ USD คงเหลือในช่วงใกล้ๆ นี้"
 
-    fb_summary = ", ".join([
-        f"{item['factor']} ({'ON' if item['enabled'] else 'MUTED'}): {item['trades']} ไม้ (WR {item['win_rate']}%, Net {item['net_r']}R)"
-        for item in f_breakdown
-    ])
-
     # --- AGENT 1: R-Multiple & Monte Carlo Auditor ---
     agent1_prompt = (
-        "คุณคือ Quantitative R-Multiple & Monte Carlo Auditor ประเมินผลทดสอบกลยุทธ์จากข้อมูลด้านล่าง "
+        "คุณคือ Quantitative R-Multiple & Scalp Auditor ประเมินผลทดสอบทั้งระบบรันเทรนด์และระบบ Scalp 500 จุด "
         "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค ห้ามเปลี่ยนตัวเลข)\n\n"
-        "[ผล Walk-Forward & Monte Carlo 1,000 รอบ]\n"
-        f"- ผลรวม: {bt['trades']} ไม้ | Win-Rate = {bt['win_rate']}% | R-PF = {bt['r_profit_factor']} | Net = {bt['net_r']}R (${bt['net_pnl']}/oz)\n"
-        f"- Institutional Ratios: Sharpe = {bt['sharpe']} | Sortino = {bt['sortino']} | Calmar = {bt['calmar']} | VaR 95% = {bt['var_95_r']}R\n"
-        f"- Monte Carlo 1,000 รอบ: โอกาสกำไร = {bt['mc_prob_profit']}% | Worst-Case 95% DD = -{bt['mc_dd_95_r']}R\n"
-        f"- ช่วงทดสอบจริง OOS: {bt['oos_trades']} ไม้ | OOS R-PF = {bt['oos_profit_factor']} ({bt['oos_net_r']}R)\n"
-        f"- ราย Factor: {fb_summary}\n"
-        "จงสรุปตรงไปตรงมาว่าความคุ้มเสี่ยงและเสถียรภาพพอร์ตอยู่ในเกณฑ์น่าเชื่อถือหรือไม่"
+        f"- ระบบ Trend: {bt['trades']} ไม้ | WR = {bt['win_rate']}% | R-PF = {bt['r_profit_factor']} | Net = {bt['net_r']}R | Sharpe = {bt['sharpe']} | MC 95% DD = -{bt['mc_dd_95_r']}R\n"
+        f"- ระบบ VP-Anatomy Scalp (SL 500 จุด / TP {sc_bt['tp_points']} จุด): {sc_bt['trades']} ไม้ | WR = {sc_bt['win_rate']}% | R-PF = {sc_bt['r_profit_factor']} | Net = {sc_bt['net_r']}R | OOS R-PF = {sc_bt['oos_r_pf']}\n"
+        "จงสรุปว่าทั้งสองระบบมีความคุ้มเสี่ยงและพร้อมใช้งานคู่กันหรือไม่"
     )
     quant_audit_text, used_m1 = call_thaillm_agent(MODEL_QUANT_AUDITOR, agent1_prompt, temperature=0.1)
 
-    # --- AGENT 2: Macro & Session Officer ---
+    # --- AGENT 2: Macro & VP Anatomy Officer ---
     locked_time_fact = (
-        f"ขณะนี้เวลา {now_th_str} (เวลาไทย) ซึ่ง **อยู่ในช่วง LONDON/NY KILLZONE ACTIVE แล้ว** (อนุญาตให้วิเคราะห์และเปิดออเดอร์ได้)"
+        f"ขณะนี้เวลา {now_th_str} (เวลาไทย) ซึ่ง **อยู่ในช่วง KILLZONE ACTIVE แล้ว**"
         if setup["in_killzone"] else
-        f"ขณะนี้เวลา {now_th_str} (เวลาไทย) ซึ่ง **อยู่ในช่วง NO TRADE ZONE (ช่วงเช้า)** (ห้ามออกออเดอร์เด็ดขาด จนกว่าจะถึง 13:00 น.)"
+        f"ขณะนี้เวลา {now_th_str} (เวลาไทย) ซึ่ง **อยู่ในช่วง NO TRADE ZONE (ช่วงเช้า)**"
     )
 
     agent2_prompt = (
-        "คุณคือ Macro & Session Risk Officer ประเมินความเสี่ยงตลาด Spot XAU/USD "
-        "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค ห้ามขัดแย้งกับเวลาที่ระบุไว้)\n\n"
-        "[ข้อเท็จจริงที่ถูกล็อกไว้]\n"
-        f"- เวลาและโซนเทรด: {locked_time_fact}\n"
-        f"- Spot = ${quant_data['spot_price']} | Asian Range = ${tech['asian_low']}-${tech['asian_high']} | PDH/PDL = ${tech['pdh']}/${tech['pdl']}\n"
-        f"- DXY = {quant_data['dxy_price']} (Corr = {quant_data['corr_gold_dxy_20d']}) | US10Y = {quant_data['us10y_yield']}%\n"
+        "คุณคือ Macro & Volume Profile Anatomy Officer วิเคราะห์โครงสร้างตลาด Spot XAU/USD "
+        "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค)\n\n"
+        f"- เวลา: {locked_time_fact} | Spot = ${quant_data['spot_price']}\n"
+        f"- กายวิภาค Volume Profile 24H: {sc_an['title_th']} (POC อยู่ตำแหน่ง {sc_an['poc_pos_pct']}% | VAH ${sc_an['vah']} / POC ${sc_an['poc']} / VAL ${sc_an['val']})\n"
+        f"- DXY = {quant_data['dxy_price']} | US10Y = {quant_data['us10y_yield']}%\n"
         f"- ข่าว USD:\n{news_status_text}\n"
-        "จงประเมินแรงกดดันมหภาคและกรอบราคาสำคัญในรอบนี้"
+        "จงอธิบายโครงสร้างโวลุ่มรูปทรงนี้และผลกระทบจากข่าว/มหภาค"
     )
     macro_audit_text, used_m2 = call_thaillm_agent(MODEL_MACRO_OFFICER, agent2_prompt, temperature=0.1)
 
-    # --- AGENT 3: Contrarian Devil's Advocate (Vibe-Trading / QuantAgent Debate) ---
+    # --- AGENT 3: Contrarian Devil's Advocate ---
     agent3_critic_prompt = (
-        "คุณคือ Contrarian Devil's Advocate (ฝ่ายค้านประจำทีมเทรด) หน้าที่ของคุณคือจับผิดและหาเหตุผลว่าทำไมแผนเทรดนี้ถึงอาจแพ้หรือติดกับดัก "
-        "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค ตรงไปตรงมา)\n\n"
-        "[แผนที่กำลังพิจารณา]\n"
-        f"- แผน: {setup['bias']} ({setup['direction']}) @ Entry ${setup['entry']} | SL ${setup['sl']}\n"
-        f"- ตัวเลขชี้วัด: Spot = ${quant_data['spot_price']} (ห่าง Entry ${gates['dist_to_entry']}) | RSI14 = {tech['rsi14']} | ADX14 = {tech['adx14']} | Price Z-Score = {quant_data['z_score_price']}\n"
-        f"- สถานะ RSI Exhaustion Guard: {'ทำงานอยู่ (RSI ตึงตัวสุดขีด)' if tech['rsi_exhausted'] else 'ปกติ'}\n"
-        "จงชี้จุดเสี่ยงที่อาจทำให้เกิด False Breakout หรือโดนกิน Stop Loss ในรอบนี้"
+        "คุณคือ Contrarian Devil's Advocate (ฝ่ายค้านประจำทีมเทรด) จับผิดความเสี่ยงทั้งแผนรันเทรนด์และแผน Scalp 500 จุด "
+        "(ตอบเป็นภาษาไทยสั้นๆ กระชับ 2-3 ประโยค)\n\n"
+        f"- แผน Trend: {setup['bias']} @ ${setup['entry']} (ห่าง ${gates['dist_to_entry']})\n"
+        f"- แผน Scalp 500 จุด ({sc_an['shape']}): {sc_set['bias']} @ ${sc_set['entry']} (SL ${sc_set['sl']} / ห่าง {sc_set['dist_points']} จุด)\n"
+        f"- RSI14 = {tech['rsi14']} | ADX14 = {tech['adx14']}\n"
+        "จงเตือนจุดเสี่ยงที่อาจทำให้โดนกิน Stop Loss 500 จุด หรือเกิด False Breakout"
     )
     contrarian_audit_text, used_m3_critic = call_thaillm_agent(MODEL_CONTRARIAN_CRITIC, agent3_critic_prompt, temperature=0.15)
 
     # --- AGENT 4: Chief Execution Strategist (Synthesis) ---
     agent4_prompt = (
-        "คุณคือ Chief Execution Strategist & Jane Street Coach สำหรับ Spot XAU/USD "
-        "จงสังเคราะห์ความเห็นจากทั้ง 3 Agents ร่วมกับ [ข้อเท็จจริงที่ถูกล็อกไว้] ห้ามเปลี่ยนคำตัดสินในข้อ 4 เด็ดขาด!\n\n"
+        "คุณคือ Chief Execution Strategist & Jane Street Coach สำหรับ Spot XAU/USD (Dual-Engine: Trend + VP-Anatomy Scalp 500 จุด) "
+        "จงสังเคราะห์ความเห็นจากทั้ง 3 Agents ร่วมกับ [ข้อเท็จจริงที่ถูกล็อกไว้] ห้ามเปลี่ยนคำตัดสินในข้อ 5 เด็ดขาด!\n\n"
         "[ข้อเท็จจริงที่ถูกล็อกไว้ 100%]\n"
-        f"- เวลาปัจจุบัน: {locked_time_fact}\n"
-        f"- คำตัดสิน Alert Trigger ที่บังคับตอบในข้อ 4: {gates['verdict_text']}\n"
-        f"- ราคา Spot ปัจจุบัน: ${quant_data['spot_price']} | Active Factor: {setup['active_factor']}\n"
-        f"- Regime: {setup['regime']} | บริบท: {setup['position_context']}\n"
-        f"- เส้นอ้างอิง: H1 EMA200 = ${tech['h1_ema200']} | M15 EMA21 = ${tech['ema21']} | M15 EMA200 = ${tech['ema200']} | PDH = ${tech['pdh']} | PDL = ${tech['pdl']} | Asian Range = ${tech['asian_low']}-${tech['asian_high']} | RSI14 = {tech['rsi14']}\n"
-        f"- Volume Profile 5D: VAH = ${vp_data['vah']} | POC = ${vp_data['poc']} | VAL = ${vp_data['val']}\n"
-        f"- สถิติ Walk-Forward: WR = {bt['win_rate']}% | R-PF = {bt['r_profit_factor']} | Net = {bt['net_r']}R | Sharpe = {bt['sharpe']} | MC 95% DD = -{bt['mc_dd_95_r']}R\n"
-        f"- แผนเทรด: {setup['bias']} | Entry = ${setup['entry']} | SL = ${setup['sl']} | BE (+1.0R) = ${setup['be_target']} | TP = ${setup['tp']} (R:R 1:{setup['rr']})\n"
-        f"- เงื่อนไขยกเลิกแผน: {setup['invalidation_rule']}\n\n"
-        f"[ความเห็น Agent 1 (Quant Auditor)]: {quant_audit_text}\n"
-        f"[ความเห็น Agent 2 (Macro Officer)]: {macro_audit_text}\n"
-        f"[ความเห็น Agent 3 (Contrarian Critic)]: {contrarian_audit_text}\n\n"
-        "จงเขียนรายงาน 6 หัวข้อตามรูปแบบนี้เป๊ะๆ:\n"
-        "1. **Daily Outlook & Regime**: สรุปโครงสร้างราคาเทียบกับ H1/M15 EMA200, Asian Range, VAH/POC/VAL และ PDH/PDL\n"
-        f"2. **Walk-Forward & Monte Carlo Edge**: สรุปผลทดสอบ Net {bt['net_r']}R (Sharpe {bt['sharpe']}, MC 95% DD -{bt['mc_dd_95_r']}R) และ Factor ที่เปิดใช้งาน\n"
-        f"3. **Execution & Trailing Plan**: อธิบายจุด Entry ${setup['entry']}, SL ${setup['sl']}, จุดเลื่อนบังทุน (+1.0R) ${setup['be_target']} และ TP ${setup['tp']}\n"
-        f"4. **Alert Trigger**: คัดลอกคำตัดสินนี้ไปวางเป็นบรรทัดแรกทันที -> {gates['verdict_text']}\n"
-        "5. **Active Recall Question**: ตั้งคำถามสั้นๆ 1 ข้อแบบ Jane Street Coach เกี่ยวกับแผนหรือความเสี่ยงที่ฝ่ายค้านเตือน\n"
-        "6. **Active Recall Answer**: เฉลยคำตอบสั้นๆ 1-2 ประโยค"
+        f"- เวลา: {locked_time_fact} | Spot = ${quant_data['spot_price']}\n"
+        f"- กายวิภาค Volume Profile 24H: {sc_an['title_th']} ({sc_an['desc_th']})\n"
+        f"- แผน Trend หลัก: {setup['bias']} | Entry ${setup['entry']} | SL ${setup['sl']} | BE ${setup['be_target']} | TP ${setup['tp']} (R:R 1:{setup['rr']})\n"
+        f"- แผน Scalp 500 จุด: {sc_set['bias']} | Entry ${sc_set['entry']} | SL ${sc_set['sl']} (500 จุด) | BE +250 จุด (${sc_set['be_target']}) | TP ${sc_set['tp']} ({sc_set['tp_points']} จุด)\n"
+        f"- คำตัดสิน Alert Trigger ที่บังคับตอบในข้อ 5: Trend: {gates['verdict_text']} | Scalp 500pt: {sc_gates['verdict_text']}\n\n"
+        f"[Agent 1]: {quant_audit_text}\n[Agent 2]: {macro_audit_text}\n[Agent 3]: {contrarian_audit_text}\n\n"
+        "จงเขียนรายงาน 7 หัวข้อตามรูปแบบนี้เป๊ะๆ:\n"
+        "1. **Daily Outlook & VP Anatomy**: สรุปโครงสร้างราคาและรูปทรง Volume Profile (D/b/P/Double Zone)\n"
+        f"2. **Dual-Engine Edge**: สรุปผลทดสอบ Trend (Net {bt['net_r']}R, Sharpe {bt['sharpe']}) และ Scalp 500 จุด (WR {sc_bt['win_rate']}%, Net {sc_bt['net_r']}R)\n"
+        f"3. **Trend Execution Plan**: แผนรันเทรนด์ Entry ${setup['entry']}, SL ${setup['sl']}, BE ${setup['be_target']}, TP ${setup['tp']}\n"
+        f"4. **VP-Anatomy Scalp Plan (500 จุด)**: แผนสั้น Entry ${sc_set['entry']}, SL ${sc_set['sl']} (500 จุด), BE +250 จุด (${sc_set['be_target']}), TP ${sc_set['tp']} ({sc_set['tp_points']} จุด)\n"
+        f"5. **Alert Trigger**: คัดลอกคำตัดสินนี้ไปวางทันที -> Trend: {gates['verdict_text']} | Scalp 500pt: {sc_gates['verdict_text']}\n"
+        "6. **Active Recall Question**: ตั้งคำถามสั้นๆ 1 ข้อเกี่ยวกับกายวิภาค Volume Profile หรือระยะ 500 จุด\n"
+        "7. **Active Recall Answer**: เฉลยคำตอบสั้นๆ 1-2 ประโยค"
     )
     final_raw, used_m4 = call_thaillm_agent(MODEL_CHIEF_STRATEGIST, agent4_prompt, temperature=0.08)
 
-    q_match = re.search(r'5\.\s*\*?\*?Active Recall Question\*?\*?:\s*(.*?)(?=\n6\.|\Z)', final_raw, re.DOTALL)
-    a_match = re.search(r'6\.\s*\*?\*?Active Recall Answer\*?\*?:\s*(.*)', final_raw, re.DOTALL)
-    recall_q = q_match.group(1).strip() if q_match else "ทำไมระบบจึงต้องมี RSI Exhaustion Guard และ Contrarian Agent คอยค้านก่อนไล่ Breakout?"
-    recall_a = a_match.group(1).strip() if a_match else "เพื่อป้องกันการไล่เปิดออเดอร์ในจังหวะที่ราคาวิ่งตึงตัวสุดขีด (RSI < 28 หรือ > 72) ซึ่งมักเกิด False Breakout และเด้งกลับกิน Stop Loss"
+    q_match = re.search(r'6\.\s*\*?\*?Active Recall Question\*?\*?:\s*(.*?)(?=\n7\.|\Z)', final_raw, re.DOTALL)
+    a_match = re.search(r'7\.\s*\*?\*?Active Recall Answer\*?\*?:\s*(.*)', final_raw, re.DOTALL)
+    recall_q = q_match.group(1).strip() if q_match else f"ในโครงสร้าง {sc_an['title_th']} เหตุใดระบบ Scalp จึงตั้งจุดเลื่อนบังทุน (BE) ที่ +250 จุด (+$2.50) ก่อนถึงเป้า TP?"
+    recall_a = a_match.group(1).strip() if a_match else "เพื่อตัดความเสี่ยงขาดทุนออกทันทีเมื่อราคาวิ่งไปครึ่งทางของระยะ SL 500 จุด ช่วยรักษาอัตราชนะ (Win-Rate) ในตลาดทองคำที่ผันผวน"
 
-    main_match = re.search(r'(1\.\s*\*?\*?Daily Outlook.*?)(?=\n5\.|\Z)', final_raw, re.DOTALL)
+    main_match = re.search(r'(1\.\s*\*?\*?Daily Outlook.*?)(?=\n6\.|\Z)', final_raw, re.DOTALL)
     clean_final = main_match.group(1).strip() if main_match else final_raw
 
     return {
@@ -1395,7 +1744,7 @@ def run_multi_agent_thaillm(quant_data, vp_data, backtest_data, news_list, kb_te
         }
     }
 
-# ================= 6. SMART NTFY NOTIFICATION MANAGER =================
+# ================= 6. SMART NTFY NOTIFICATION MANAGER (TREND + SCALP) =================
 def send_ntfy_alert(title, message, priority=4, tags=None):
     url = "https://ntfy.sh"
     payload = {
@@ -1418,11 +1767,15 @@ def send_ntfy_alert(title, message, priority=4, tags=None):
         print(f"[NTFY] เกิดข้อผิดพลาดในการเชื่อมต่อ: {e}")
         return False
 
-def manage_notifications(quant_data, vp_data, bt_best, is_startup=False, force=False):
+def manage_notifications(quant_data, vp_data, bt_best, scalp_data, is_startup=False, force=False):
     setup = quant_data["setup"]
     tech = quant_data["technicals"]
     gates = quant_data["gates"]
+    sc_an = scalp_data["anatomy"]
+    sc_set = scalp_data["setup"]
+    sc_gates = scalp_data["gates"]
     spot_price = quant_data["spot_price"]
+
     now_th = datetime.now(THAI_TZ)
     today_str = now_th.strftime("%Y-%m-%d")
     now_ts = datetime.now(timezone.utc).timestamp()
@@ -1437,41 +1790,54 @@ def manage_notifications(quant_data, vp_data, bt_best, is_startup=False, force=F
             state_mem = {}
 
     if is_startup:
-        startup_title = f"เปิดระบบ Gold Quant V9 ({now_th.strftime('%H:%M น.')})"
+        startup_title = f"เปิดระบบ Gold Quant V10 ({now_th.strftime('%H:%M น.')})"
         startup_msg = (
-            f"**สถานะ:** {setup['session_name']}\n"
-            f"**Spot XAU/USD:** ${spot_price} | **VAH/POC/VAL:** ${vp_data['vah']} / ${vp_data['poc']} / ${vp_data['val']}\n"
-            f"**PDH / PDL:** ${tech['pdh']} / ${tech['pdl']} | **Walk-Forward:** WR {bt_best['win_rate']}% | Net {bt_best['net_r']}R (Sharpe {bt_best['sharpe']})\n"
-            f"**แผนวันนี้:** {setup['bias']}\n"
-            f"**จุดเฝ้าระวัง:** Entry ${setup['entry']} (ห่าง ${gates['dist_to_entry']}) | SL ${setup['sl']} | TP ${setup['tp']}"
+            f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
+            f"**แผน Trend:** {setup['bias']} @ ${setup['entry']}\n"
+            f"**แผน Scalp 500 จุด:** {sc_set['bias']} @ ${sc_set['entry']} (SL 500 จุด / TP {sc_set['tp_points']} จุด)"
         )
         send_ntfy_alert(startup_title, startup_msg, priority=3, tags=["rocket", "coin"])
 
+    # 1. ตรวจสอบสัญญาณ SCALP 500 จุด (ทำงาน 10:00 - 00:30 น.)
+    scalp_triggered = False
+    if sc_gates["all_passed"] or force:
+        same_sc_bias = state_mem.get("last_scalp_bias") == sc_set["bias"]
+        sc_diff = abs(float(state_mem.get("last_scalp_entry", 0)) - float(sc_set["entry"]))
+        sc_elapsed = (now_ts - float(state_mem.get("last_scalp_ts", 0))) / 60.0
+        if force or not (same_sc_bias and sc_diff < 3.0 and sc_elapsed < 30.0):
+            sc_msg = (
+                f"**Spot XAU/USD:** ${spot_price} | **ทรง VP:** {sc_an['title_th']}\n"
+                f"**แผน Scalp:** {sc_set['bias']}\n"
+                f"**Entry:** ${sc_set['entry']} | **SL:** ${sc_set['sl']} (500 จุด) | **BE:** ${sc_set['be_target']} (+250 จุด) | **TP:** ${sc_set['tp']} ({sc_set['tp_points']} จุด)"
+            )
+            if send_ntfy_alert(f"SCALP 500 จุด {sc_set['direction']} @ ${sc_set['entry']}", sc_msg, priority=5, tags=["zap", "coin"]):
+                state_mem["last_scalp_bias"] = sc_set["bias"]
+                state_mem["last_scalp_entry"] = sc_set["entry"]
+                state_mem["last_scalp_ts"] = now_ts
+        scalp_triggered = True
+
+    # 2. ตรวจสอบช่วงเช้า NO TRADE ZONE ของระบบ Trend หลัก
     if not setup["in_killzone"]:
         if now_th.hour >= 7 and state_mem.get("morning_brief_date") != today_str:
-            morning_title = f"แผนวิเคราะห์ทองคำรายวัน ({now_th.strftime('%d/%m %H:%M น.')}) [NO TRADE ZONE]"
+            morning_title = f"แผนวิเคราะห์ทองคำรายวัน ({now_th.strftime('%d/%m %H:%M น.')})"
             morning_msg = (
-                f"**สถานะ:** บล็อกการออกออเดอร์ช่วงเช้า (ปลดล็อกเทรด 13:00 น.)\n"
-                f"**Spot XAU/USD:** ${spot_price} | **Regime:** {setup['regime']}\n"
-                f"**กรอบสำคัญ:** PDH ${tech['pdh']} | Asian ${tech['asian_low']}-${tech['asian_high']} | PDL ${tech['pdl']}\n"
-                f"**แผนรอรอบบ่าย:** {setup['bias']} @ ${setup['entry']} (SL ${setup['sl']} / TP ${setup['tp']})"
+                f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
+                f"**แผนรอรอบบ่าย (Trend):** {setup['bias']} @ ${setup['entry']}\n"
+                f"**แผน Scalp 500 จุด:** {sc_set['bias']} @ ${sc_set['entry']} (ห่าง {sc_set['dist_points']} จุด)"
             )
             if send_ntfy_alert(morning_title, morning_msg, priority=3, tags=["sunrise", "newspaper"]):
                 state_mem["morning_brief_date"] = today_str
-        else:
-            print(f"[NTFY] อยู่ในช่วง NO TRADE ZONE (ช่วงเช้า) - รอปลดล็อกเปิดวิเคราะห์เต็มรูปแบบตอน 13:00 น.")
 
         with open(alert_state_path, "w", encoding="utf-8") as f:
             json.dump(state_mem, f, ensure_ascii=False, indent=2)
-        return False
+        return False, scalp_triggered
 
     if state_mem.get("afternoon_open_date") != today_str:
         open_title = f"เปิดรอบวิเคราะห์ & เทรดบ่ายโมง ({now_th.strftime('%H:%M น.')}) [KILLZONE ACTIVE]"
         open_msg = (
-            f"**ปลดล็อกระบบเทรด London/NY Killzone เรียบร้อยแล้ว**\n"
-            f"**Spot XAU/USD:** ${spot_price} | **Factor:** {setup['active_factor']}\n"
-            f"**แผนเทรด:** {setup['bias']}\n"
-            f"**Entry:** ${setup['entry']} (ห่าง ${gates['dist_to_entry']}) | **SL:** ${setup['sl']} | **TP:** ${setup['tp']}"
+            f"**Spot XAU/USD:** ${spot_price} | **VP Anatomy:** {sc_an['title_th']}\n"
+            f"**Trend Setup:** {setup['bias']} @ ${setup['entry']}\n"
+            f"**Scalp 500pt Setup:** {sc_set['bias']} @ ${sc_set['entry']}"
         )
         if send_ntfy_alert(open_title, open_msg, priority=4, tags=["bell", "chart_with_upwards_trend"]):
             state_mem["afternoon_open_date"] = today_str
@@ -1481,34 +1847,30 @@ def manage_notifications(quant_data, vp_data, bt_best, is_startup=False, force=F
         watch_elapsed = (now_ts - float(state_mem.get("last_watch_ts", 0))) / 60.0
         if watch_elapsed >= 60.0:
             watch_msg = (
-                f"**ราคาเข้าใกล้โซนเฝ้าระวัง (ห่าง Entry ${dist_entry:.2f})**\n"
-                f"**Spot XAU/USD:** ${spot_price} | **แผน:** {setup['bias']}\n"
-                f"**Entry:** ${setup['entry']} | **SL:** ${setup['sl']} | **TP:** ${setup['tp']}"
+                f"**ราคาเข้าใกล้โซน Trend Entry (ห่าง ${dist_entry:.2f})**\n"
+                f"**Spot XAU/USD:** ${spot_price} | **แผน:** {setup['bias']}"
             )
-            if send_ntfy_alert(f"WATCH XAU/USD {setup['direction']} ใกล้จุดเข้า (${dist_entry:.1f})", watch_msg, priority=3, tags=["eyes", "coin"]):
+            if send_ntfy_alert(f"WATCH TREND {setup['direction']} ใกล้จุดเข้า (${dist_entry:.1f})", watch_msg, priority=3, tags=["eyes", "coin"]):
                 state_mem["last_watch_ts"] = now_ts
 
     if not gates["all_passed"] and not force:
-        print(f"[NTFY] Killzone เปิดทำงานปกติ — {gates['verdict_text']}")
         with open(alert_state_path, "w", encoding="utf-8") as f:
             json.dump(state_mem, f, ensure_ascii=False, indent=2)
-        return False
+        return False, scalp_triggered
 
     same_bias = state_mem.get("last_signal_bias") == setup["bias"]
     entry_diff = abs(float(state_mem.get("last_signal_entry", 0)) - float(setup["entry"]))
     elapsed_mins = (now_ts - float(state_mem.get("last_signal_ts", 0))) / 60.0
 
     if not force and same_bias and entry_diff < 8.0 and elapsed_mins < 60.0:
-        print(f"[NTFY] ข้ามการส่งสัญญาณซ้ำ (ส่งแผนเดิมไปแล้วเมื่อ {elapsed_mins:.1f} นาทีก่อน)")
-        return True
+        return True, scalp_triggered
 
     alert_msg = (
         f"**Spot XAU/USD:** ${spot_price} | **Factor:** {setup['active_factor']}\n"
         f"**แผนเทรด:** {setup['bias']}\n"
-        f"**Entry:** ${setup['entry']} | **SL:** ${setup['sl']} | **BE (+1.0R):** ${setup['be_target']} | **TP:** ${setup['tp']}\n"
-        f"**Walk-Forward:** WR {bt_best['win_rate']}% | Net {bt_best['net_r']}R | Sharpe {bt_best['sharpe']} | MC 95% DD -{bt_best['mc_dd_95_r']}R"
+        f"**Entry:** ${setup['entry']} | **SL:** ${setup['sl']} | **BE (+1.0R):** ${setup['be_target']} | **TP:** ${setup['tp']}"
     )
-    if send_ntfy_alert(f"SIGNAL XAU/USD {setup['direction']} @ ${setup['entry']}", alert_msg, priority=5, tags=["rotating_light", "coin"]):
+    if send_ntfy_alert(f"SIGNAL TREND {setup['direction']} @ ${setup['entry']}", alert_msg, priority=5, tags=["rotating_light", "coin"]):
         state_mem["last_signal_bias"] = setup["bias"]
         state_mem["last_signal_entry"] = setup["entry"]
         state_mem["last_signal_ts"] = now_ts
@@ -1516,14 +1878,14 @@ def manage_notifications(quant_data, vp_data, bt_best, is_startup=False, force=F
     with open(alert_state_path, "w", encoding="utf-8") as f:
         json.dump(state_mem, f, ensure_ascii=False, indent=2)
 
-    return True
+    return True, scalp_triggered
 
 def local_git_push():
     if IS_GITHUB_ACTIONS or not os.path.isdir(".git"):
         return
     try:
-        subprocess.run(["git", "add", "data/state.json", "data/alert_state.json", "data/trade_journal.json", "knowledge_base/"], check=True)
-        subprocess.run(["git", "commit", "-m", f"Update spot gold quant V9 {datetime.now().strftime('%H:%M')}"], check=True)
+        subprocess.run(["git", "add", "data/state.json", "data/alert_state.json", "data/trade_journal.json", "data/scalp_journal.json", "knowledge_base/"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Update spot gold quant V10 {datetime.now().strftime('%H:%M')}"], check=True)
         subprocess.run(["git", "push"], check=True)
     except Exception as e:
         print(f"Local git push skipped: {e}")
@@ -1536,12 +1898,16 @@ def run_single_cycle(is_startup=False, force_flag=False):
     futures_last = float(df_intraday_vault['Close'].iloc[-1])
     spot_offset = (spot_price - futures_last) if spot_price else 0.0
     paxg_offset = (spot_price - paxg_mid) if (spot_price and paxg_mid) else 0.0
+    active_spot = round(spot_price, 2) if spot_price else round(futures_last, 2)
     print(f"[HYDRA VAULT] Synced {len(df_intraday_vault)} M15 bars (~{round(len(df_intraday_vault)/92.0, 1)} trading days)")
 
     ind = compute_mtf_indicators(df_intraday_vault, spot_offset=spot_offset)
     backtest_data = run_walkforward_backtest(df_intraday_vault, ind, spot_offset=spot_offset)
     best_params = backtest_data["best"]
-    print(f"[BACKTEST V9] WR={best_params['win_rate']}%, R-PF={best_params['r_profit_factor']}, Net={best_params['net_r']}R | Sharpe={best_params['sharpe']}, Sortino={best_params['sortino']}, MC95DD=-{best_params['mc_dd_95_r']}R")
+
+    scalp_data = run_vp_anatomy_scalp_engine(df_intraday_vault, ind, active_spot, spot_offset=spot_offset)
+    sc_bt = scalp_data["backtest"]
+    print(f"[SCALP 500PT] Anatomy={scalp_data['anatomy']['shape']} | WR={sc_bt['win_rate']}%, R-PF={sc_bt['r_profit_factor']}, Net={sc_bt['net_r']}R ({sc_bt['trades']} trades)")
 
     vp_data = calculate_volume_profile(df_intraday_vault, spot_offset=spot_offset)
     quant_data = calculate_quant_and_setup(
@@ -1551,13 +1917,16 @@ def run_single_cycle(is_startup=False, force_flag=False):
     )
     news_list = fetch_usd_news()
 
-    ai_council = run_multi_agent_thaillm(quant_data, vp_data, backtest_data, news_list, kb_text, kb_files)
+    ai_council = run_multi_agent_thaillm(quant_data, vp_data, backtest_data, scalp_data, news_list, kb_text, kb_files)
     
-    is_signal_active = manage_notifications(
-        quant_data, vp_data, best_params,
+    trend_active, scalp_active = manage_notifications(
+        quant_data, vp_data, best_params, scalp_data,
         is_startup=is_startup, force=force_flag
     )
-    journal_summary = update_signal_journal(quant_data, df_intraday_vault, spot_offset, ai_should_trigger=is_signal_active)
+    trend_j, scalp_j = update_all_journals(
+        quant_data, scalp_data, df_intraday_vault, spot_offset,
+        trend_triggered=trend_active, scalp_triggered=scalp_active
+    )
 
     os.makedirs("data", exist_ok=True)
     state = {
@@ -1565,7 +1934,9 @@ def run_single_cycle(is_startup=False, force_flag=False):
         "quant": quant_data,
         "volume_profile": vp_data,
         "backtest": backtest_data,
-        "journal": journal_summary,
+        "scalp": scalp_data,
+        "journal": trend_j,
+        "scalp_journal": scalp_j,
         "news": news_list,
         "ai_analysis": ai_council["final_report"],
         "ai_council": ai_council
@@ -1575,13 +1946,13 @@ def run_single_cycle(is_startup=False, force_flag=False):
         json.dump(state, f, ensure_ascii=False, indent=2)
         
     local_git_push()
-    print(f"Spot Gold Quant V9 Completed. Spot=${quant_data['spot_price']} | Setup={quant_data['setup']['bias'][:45]}...")
+    print(f"Spot Gold Quant V10 Completed. Spot=${quant_data['spot_price']} | Anatomy={scalp_data['anatomy']['shape']}")
 
 def main():
     if "--test-alert" in sys.argv:
         send_ntfy_alert(
-            "ทดสอบระบบ XAU/USD Quant V9",
-            f"เชื่อมต่อ **ntfy ({NTFY_TOPIC})** สำเร็จ! พร้อมส่งสรุปรายวันและสัญญาณเทรดเข้ามือถือ",
+            "ทดสอบระบบ XAU/USD Quant & Scalp V10",
+            f"เชื่อมต่อ **ntfy ({NTFY_TOPIC})** สำเร็จ! พร้อมส่งสัญญาณ Trend และ Scalp 500 จุดเข้ามือถือ",
             priority=4
         )
         return
@@ -1595,7 +1966,7 @@ def main():
             interval_mins = int(sys.argv[idx + 1])
         except Exception:
             interval_mins = 15
-        print(f"=== เริ่มทำงานโหมด Auto-Loop V9 ทุก {interval_mins} นาที (กด Ctrl+C เพื่อหยุด) ===")
+        print(f"=== เริ่มทำงานโหมด Auto-Loop V10 ทุก {interval_mins} นาที (กด Ctrl+C เพื่อหยุด) ===")
         first_run = True
         while True:
             try:

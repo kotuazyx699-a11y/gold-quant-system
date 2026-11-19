@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XAU/USD Spot Institutional Quant & 4-Agent Swarm Terminal V9</title>
+  <title>XAU/USD Spot Dual-Engine Quant & VP-Anatomy Scalp V10</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -41,7 +41,7 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Institutional Quant & 4-Agent Swarm Terminal V9</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Dual-Engine Quant & VP-Anatomy Scalp V10</h1>
           <span id="live-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE TICK
           </span>
@@ -71,7 +71,8 @@
       <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono-num">
         <span id="gate-1-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">1. Session: -</span>
         <span id="gate-2-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">2. Quant Edge: -</span>
-        <span id="gate-3-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">3. Proximity (<=$8): -</span>
+        <span id="gate-3-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">3. Trend Prox (<=$8): -</span>
+        <span id="gate-4-scalp-pill" class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">4. Scalp 500pt (<=300pt): -</span>
       </div>
     </div>
 
@@ -93,9 +94,9 @@
       </div>
 
       <div class="card p-4">
-        <p class="text-xs text-gray-400">Walk-Forward WR / R-PF</p>
-        <p id="kpi-bt-wr" class="text-2xl font-bold text-cyan-400 font-mono-num mt-1">0.0% / 0.00</p>
-        <p id="kpi-bt-desc" class="text-[11px] text-gray-400 font-mono-num mt-1">Sharpe: - | Sortino: -</p>
+        <p class="text-xs text-gray-400">Trend WR / Scalp 500pt WR</p>
+        <p id="kpi-bt-wr" class="text-xl font-bold text-cyan-400 font-mono-num mt-1">0% / 0%</p>
+        <p id="kpi-bt-desc" class="text-[11px] text-gray-400 font-mono-num mt-1">Sharpe: - | Scalp Net: -</p>
       </div>
 
       <div class="card p-4">
@@ -111,7 +112,7 @@
       </div>
     </section>
 
-    <!-- Interactive Position Sizing, Portfolio Simulator & Monte Carlo 95% DD -->
+    <!-- Interactive Position Sizing (Trend Lot vs. Scalp 500pt Lot) -->
     <section class="card p-4 border-cyan-800/40 bg-gradient-to-r from-gray-900 via-gray-900 to-cyan-950/20">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-4 flex flex-wrap items-center gap-3">
@@ -134,17 +135,17 @@
 
         <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono-num text-center">
           <div class="bg-gray-800/80 border border-gray-700/80 rounded-lg p-2">
-            <span class="block text-[10px] text-gray-400">ขนาดออเดอร์ (Lot)</span>
+            <span class="block text-[10px] text-gray-400">Lot รันเทรนด์</span>
             <span id="calc-lot" class="text-sm font-bold text-cyan-400">0.00 Lot</span>
             <span id="calc-risk-usd" class="block text-[10px] text-rose-400">เสี่ยง -$0</span>
           </div>
-          <div class="bg-gray-800/80 border border-gray-700/80 rounded-lg p-2">
-            <span class="block text-[10px] text-gray-400">เป้ากำไรไม้นี้ (TP)</span>
-            <span id="calc-reward-usd" class="text-sm font-bold text-emerald-400">+$0.00</span>
-            <span id="calc-reward-thb" class="block text-[10px] text-emerald-300">+0 บ.</span>
+          <div class="bg-purple-950/35 border border-purple-700/50 rounded-lg p-2">
+            <span class="block text-[10px] text-purple-300">Lot Scalp (500 จุด)</span>
+            <span id="calc-scalp-lot" class="text-sm font-bold text-purple-300">0.15 Lot</span>
+            <span id="calc-scalp-tp-usd" class="block text-[10px] text-emerald-300">เป้า +$0 (+0 บ.)</span>
           </div>
           <div class="bg-gray-800/80 border border-cyan-800/50 rounded-lg p-2">
-            <span class="block text-[10px] text-gray-400">กำไรจำลอง (ตามพอร์ต)</span>
+            <span class="block text-[10px] text-gray-400">กำไรจำลอง Trend</span>
             <span id="calc-60d-usd" class="text-sm font-bold text-amber-400">+$0.00</span>
             <span id="calc-60d-thb" class="block text-[10px] text-amber-300">+0 บ. (0%)</span>
           </div>
@@ -157,15 +158,109 @@
       </div>
     </section>
 
-    <!-- Main Grid: Volume Profile + 4-Agent Swarm Debate Council -->
+    <!-- NEW: VP-ANATOMY 500-POINT SCALP ENGINE SECTION -->
+    <section class="card p-5 border-purple-600/40 bg-gradient-to-br from-gray-900 via-gray-900 to-purple-950/20 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-3">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <span class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded">
+            VP-ANATOMY SCALP 500 จุด ($5.00)
+          </span>
+          <h2 class="text-base font-bold text-white">ระบบ Scalp 4 กายวิภาค Volume Profile (D / b / P / Double Zone)</h2>
+        </div>
+        <div class="flex items-center gap-2 font-mono-num text-xs">
+          <span id="scalp-bt-badge" class="px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">
+            Scalp WR: 0% | Net: 0.0R
+          </span>
+          <span id="scalp-live-dist" class="px-2.5 py-0.5 rounded bg-gray-800 text-gray-300">
+            ห่าง Scalp Entry: -
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        <!-- Left 5 Cols: Active Anatomy Shape Card -->
+        <div class="lg:col-span-5 bg-gray-900/90 border border-purple-800/40 rounded-lg p-4 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">โครงสร้าง 24H Volume Profile ปัจจุบัน</span>
+              <span id="anatomy-poc-pct" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-purple-950 text-purple-300">POC Pos: 50%</span>
+            </div>
+            <h3 id="anatomy-title" class="text-base font-bold text-amber-400 mt-1">① D-SHAPED (ทรงตัว D - ตลาดสมดุล)</h3>
+            <p id="anatomy-desc" class="text-xs text-gray-300 mt-1 leading-relaxed">-</p>
+            <div class="mt-2.5 p-2 rounded bg-purple-950/30 border border-purple-800/40 text-xs text-purple-200">
+              <strong class="text-purple-300">กลยุทธ์ประจำทรง:</strong> <span id="anatomy-rule">-</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center font-mono-num text-xs pt-2 border-t border-gray-800">
+            <div class="bg-gray-800/70 rounded p-1.5">
+              <span class="block text-[10px] text-gray-400">24H VAH</span>
+              <span id="sc-vah" class="font-bold text-blue-400">$0.00</span>
+            </div>
+            <div class="bg-gray-800/70 rounded p-1.5">
+              <span class="block text-[10px] text-gray-400">24H POC</span>
+              <span id="sc-poc" class="font-bold text-amber-400">$0.00</span>
+            </div>
+            <div class="bg-gray-800/70 rounded p-1.5">
+              <span class="block text-[10px] text-gray-400">24H VAL</span>
+              <span id="sc-val" class="font-bold text-blue-400">$0.00</span>
+            </div>
+          </div>
+          <p id="anatomy-peaks-line" class="text-[11px] font-mono-num text-gray-400 text-center">
+            Lower Peak: - | Upper Peak: - | Valley: -
+          </p>
+        </div>
+
+        <!-- Right 7 Cols: 500-Point Scalp Execution Levels + 4 Anatomy Win-Rate Cards -->
+        <div class="lg:col-span-7 flex flex-col justify-between space-y-3">
+          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+              <span id="scalp-bias" class="text-xs font-bold text-purple-300">กำลังคำนวณจุดเข้า Scalp 500 จุด...</span>
+              <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60">
+                SL 500 จุด / TP 550 จุด
+              </span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
+              <div class="bg-gray-800/80 rounded p-2">
+                <span class="block text-[10px] text-gray-400">Scalp Entry</span>
+                <span id="sc-entry" class="font-bold text-white text-sm">$0.00</span>
+              </div>
+              <div class="bg-rose-950/40 border border-rose-900/50 rounded p-2">
+                <span class="block text-[10px] text-rose-300">SL (500 จุด)</span>
+                <span id="sc-sl" class="font-bold text-rose-400 text-sm">$0.00</span>
+              </div>
+              <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2">
+                <span class="block text-[10px] text-cyan-300">BE (+250 จุด)</span>
+                <span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span>
+              </div>
+              <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2">
+                <span id="sc-tp-label" class="block text-[10px] text-emerald-300">TP (550 จุด)</span>
+                <span id="sc-tp" class="font-bold text-emerald-400 text-sm">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Anatomy Win-Rate Breakdown -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] text-gray-400 font-medium">สถิติ Walk-Forward แยกตาม 4 กายวิภาค Volume Profile (Auto-Mute ทรงที่ขาดทุน)</span>
+              <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">OOS: -</span>
+            </div>
+            <div id="anatomy-cards-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono-num text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid: 5D Volume Profile + 4-Agent Swarm Debate Council -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
       <!-- Left: Volume Profile Histogram (5 Cols) -->
       <div class="card p-5 lg:col-span-5 flex flex-col">
         <div class="flex items-center justify-between mb-3">
           <div>
-            <h2 class="text-base font-bold text-white">5D Spot Volume Profile</h2>
-            <p class="text-xs text-gray-400">โครงสร้างการสะสม Volume (ฐานราคา Spot XAU/USD)</p>
+            <h2 class="text-base font-bold text-white">5D Spot Volume Profile (Trend)</h2>
+            <p class="text-xs text-gray-400">โครงสร้างการสะสม Volume 5 วัน (ฐานราคา Spot XAU/USD)</p>
           </div>
           <span id="live-poc-dist" class="text-[11px] font-mono-num text-amber-400 bg-amber-950/50 border border-amber-800/50 px-2 py-0.5 rounded">
             ห่าง POC: -
@@ -205,10 +300,10 @@
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <h2 class="text-base font-bold text-white">4-Agent ThaiLLM Swarm Debate Council</h2>
+              <h2 class="text-base font-bold text-white">4-Agent ThaiLLM Swarm Debate (Trend + Scalp)</h2>
             </div>
             <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-mono-num">
-              <span id="kb-badge" class="px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/50">KB: 3 Docs</span>
+              <span id="kb-badge" class="px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/50">KB: 4 Docs</span>
               <span class="px-2 py-0.5 rounded bg-purple-950/70 text-purple-300 border border-purple-800/50">1.Quant</span>
               <span class="px-2 py-0.5 rounded bg-cyan-950/70 text-cyan-300 border border-cyan-800/50">2.Macro</span>
               <span class="px-2 py-0.5 rounded bg-rose-950/70 text-rose-300 border border-rose-800/50">3.Critic</span>
@@ -216,12 +311,12 @@
             </div>
           </div>
 
-          <!-- Spot Trade Setup Bar -->
+          <!-- Spot Trend Trade Setup Bar -->
           <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3 mb-4">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
               <div class="flex items-center gap-2">
-                <span id="setup-factor-tag" class="text-[10px] font-mono-num font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">FACTOR</span>
-                <span id="setup-bias" class="text-xs font-bold text-amber-400">กำลังคำนวณแผนเทรด Spot...</span>
+                <span id="setup-factor-tag" class="text-[10px] font-mono-num font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">TREND</span>
+                <span id="setup-bias" class="text-xs font-bold text-amber-400">กำลังคำนวณแผนเทรด Trend...</span>
               </div>
               <div class="flex items-center gap-2">
                 <span id="live-entry-dist" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-gray-800 text-gray-300">ห่าง Entry: -</span>
@@ -230,7 +325,7 @@
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
               <div class="bg-gray-800/70 rounded p-1.5">
-                <span class="block text-[10px] text-gray-400">Entry (Spot)</span>
+                <span class="block text-[10px] text-gray-400">Trend Entry</span>
                 <span id="setup-entry" class="font-bold text-white">$0.00</span>
               </div>
               <div class="bg-rose-950/40 border border-rose-900/50 rounded p-1.5">
@@ -248,14 +343,14 @@
             </div>
           </div>
 
-          <!-- 3 Sub-Agents Debate Strip (Quant + Macro + Contrarian Devil's Advocate) -->
+          <!-- 3 Sub-Agents Debate Strip -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-4">
             <div class="bg-purple-950/20 border border-purple-900/40 rounded-lg p-2.5">
-              <p class="text-[11px] font-bold text-purple-300 mb-1">Agent 1: Quant & MC Auditor</p>
+              <p class="text-[11px] font-bold text-purple-300 mb-1">Agent 1: Quant & Scalp Auditor</p>
               <p id="agent1-audit" class="text-[11px] text-gray-300 leading-relaxed">กำลังตรวจสอบสถิติ...</p>
             </div>
             <div class="bg-cyan-950/20 border border-cyan-900/40 rounded-lg p-2.5">
-              <p class="text-[11px] font-bold text-cyan-300 mb-1">Agent 2: Macro & Session</p>
+              <p class="text-[11px] font-bold text-cyan-300 mb-1">Agent 2: Macro & VP Anatomy</p>
               <p id="agent2-audit" class="text-[11px] text-gray-300 leading-relaxed">กำลังประเมินมหภาค...</p>
             </div>
             <div class="bg-rose-950/20 border border-rose-900/40 rounded-lg p-2.5">
@@ -309,14 +404,14 @@
       </div>
     </section>
 
-    <!-- Bottom Section: Institutional Walk-Forward Backtest & Live Signal Journal -->
+    <!-- Bottom Section: Walk-Forward Backtest & Dual Live Journals -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
       <!-- Left: Walk-Forward Backtest & 5-Factor Auto-Mute Breakdown (7 Cols) -->
       <div class="card p-5 lg:col-span-7 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="text-base font-bold text-white">Institutional Walk-Forward & 5-Factor Engine</h2>
+            <h2 class="text-base font-bold text-white">Trend Walk-Forward & Institutional Risk</h2>
             <p id="bt-meta-sub" class="text-xs text-gray-400">Sharpe / Sortino / Calmar / VaR 95% + Auto-Mute</p>
           </div>
           <span id="bt-summary-badge" class="text-xs font-mono-num px-2.5 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60">
@@ -324,7 +419,6 @@
           </span>
         </div>
 
-        <!-- Institutional Metrics Strip -->
         <div id="inst-metrics-strip" class="grid grid-cols-4 gap-2 text-center font-mono-num text-xs">
           <div class="bg-gray-900/80 border border-gray-800 rounded p-2">
             <span class="block text-[10px] text-gray-400">Sharpe Ratio</span>
@@ -344,15 +438,12 @@
           </div>
         </div>
 
-        <!-- 5-Factor Performance Cards (with Auto-Mute Status) -->
         <div id="factor-cards-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 font-mono-num text-xs"></div>
 
-        <!-- Cumulative R Equity Curve Chart -->
         <div class="h-[145px] bg-gray-900/60 border border-gray-800/80 rounded-lg p-2">
           <canvas id="equityChart"></canvas>
         </div>
 
-        <!-- Top 5 Parameter Sets Table -->
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs font-mono-num">
             <thead>
@@ -374,40 +465,70 @@
         </div>
       </div>
 
-      <!-- Right: Live Signal Journal & Real Win-Rate (5 Cols) -->
+      <!-- Right: Dual Live Signal Journals (Trend + Scalp 500pt) (5 Cols) -->
       <div class="card p-5 lg:col-span-5 flex flex-col justify-between space-y-4">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <div>
-              <h2 class="text-base font-bold text-white">Live Signal Win-Rate Journal</h2>
-              <p class="text-xs text-gray-400">บันทึกสัญญาณและสรุปบทเรียนเข้า Knowledge Base</p>
+        <div class="space-y-4">
+          <!-- Scalp 500pt Live Journal -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div>
+                <h2 class="text-sm font-bold text-purple-300">Live Scalp 500pt Signal Journal</h2>
+                <p class="text-[11px] text-gray-400">บันทึกสัญญาณ Scalp 4 กายวิภาค VP</p>
+              </div>
+              <div class="text-right font-mono-num">
+                <span id="scalp-wr-badge" class="text-xs font-bold text-purple-300">Scalp WR: 0%</span>
+                <span id="scalp-pnl-sub" class="block text-[10px] text-gray-400">Closed: 0 | Open: 0</span>
+              </div>
             </div>
-            <div class="text-right font-mono-num">
-              <span id="live-wr-badge" class="text-sm font-bold text-emerald-400">Live WR: 0.0%</span>
-              <span id="live-pnl-sub" class="block text-[11px] text-gray-400">Closed: 0 | Open: 0</span>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-[11px] font-mono-num">
+                <thead>
+                  <tr class="border-b border-gray-800 text-gray-400">
+                    <th class="py-1.5 pr-2">เวลา / ทรง VP</th>
+                    <th class="py-1.5 pr-2">ฝั่ง</th>
+                    <th class="py-1.5 pr-2 text-right">Entry</th>
+                    <th class="py-1.5 text-right">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody id="scalp-journal-body" class="divide-y divide-gray-800/60">
+                  <tr><td colspan="4" class="py-2.5 text-gray-500 text-center font-sans">ยังไม่มีประวัติสัญญาณ Scalp</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div class="overflow-x-auto mt-3">
-            <table class="w-full text-left text-xs font-mono-num">
-              <thead>
-                <tr class="border-b border-gray-800 text-gray-400">
-                  <th class="py-2 pr-2">เวลา / Factor</th>
-                  <th class="py-2 pr-2">ฝั่ง</th>
-                  <th class="py-2 pr-2 text-right">Entry</th>
-                  <th class="py-2 pr-2 text-right">SL / TP</th>
-                  <th class="py-2 text-right">สถานะ</th>
-                </tr>
-              </thead>
-              <tbody id="journal-table-body" class="divide-y divide-gray-800/60">
-                <tr><td colspan="5" class="py-4 text-gray-500 text-center font-sans">ยังไม่มีประวัติสัญญาณที่ถูกบันทึก</td></tr>
-              </tbody>
-            </table>
+          <!-- Trend Live Journal -->
+          <div class="border-t border-gray-800 pt-3">
+            <div class="flex items-center justify-between mb-1.5">
+              <div>
+                <h2 class="text-sm font-bold text-white">Live Trend Signal Journal</h2>
+                <p class="text-[11px] text-gray-400">บันทึกสัญญาณรันเทรนด์หลัก</p>
+              </div>
+              <div class="text-right font-mono-num">
+                <span id="live-wr-badge" class="text-xs font-bold text-emerald-400">Trend WR: 0%</span>
+                <span id="live-pnl-sub" class="block text-[10px] text-gray-400">Closed: 0 | Open: 0</span>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-[11px] font-mono-num">
+                <thead>
+                  <tr class="border-b border-gray-800 text-gray-400">
+                    <th class="py-1.5 pr-2">เวลา / Factor</th>
+                    <th class="py-1.5 pr-2">ฝั่ง</th>
+                    <th class="py-1.5 pr-2 text-right">Entry</th>
+                    <th class="py-1.5 text-right">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody id="journal-table-body" class="divide-y divide-gray-800/60">
+                  <tr><td colspan="4" class="py-2.5 text-gray-500 text-center font-sans">ยังไม่มีประวัติสัญญาณ Trend</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         <p class="text-[11px] text-gray-500 border-t border-gray-800 pt-2">
-          * ฐานข้อมูลสะสมอัตโนมัติผ่าน Hydra Local Vault | ตรวจสอบ RSI Exhaustion Guard และ Monte Carlo 1,000 รอบ
+          * Hydra Local Vault + 4 กายวิภาค Volume Profile (VPAnatomies_EA) + Monte Carlo 1,000 รอบ
         </p>
       </div>
 
@@ -447,24 +568,29 @@
       localStorage.setItem('xau_risk_pct', riskPct);
       localStorage.setItem('xau_thb_rate', thbRate);
 
+      const riskBudgetUsd = balance * (riskPct / 100.0);
+
+      // คำนวณ Lot สำหรับ Scalp 500 จุด ($5.00 SL)
+      const scalpSlUsd = 5.0;
+      const scalpTpUsd = (cachedState && cachedState.scalp && cachedState.scalp.setup)
+        ? (parseFloat(cachedState.scalp.setup.tp_usd) || 5.5)
+        : 5.5;
+      const scalpLot = Math.max(0.01, Math.round((riskBudgetUsd / (scalpSlUsd * 100.0)) * 100) / 100);
+      const scalpRewardUsd = scalpLot * 100.0 * scalpTpUsd;
+      const scalpRewardThb = scalpRewardUsd * thbRate;
+      document.getElementById('calc-scalp-lot').textContent = `${scalpLot.toFixed(2)} Lot`;
+      document.getElementById('calc-scalp-tp-usd').textContent = `เป้า +$${scalpRewardUsd.toFixed(0)} (+${Math.round(scalpRewardThb).toLocaleString()} บ.)`;
+
       if (!cachedState || !cachedState.quant || !cachedState.quant.setup) return;
 
       const setup = cachedState.quant.setup;
       const slDist = Math.max(0.5, parseFloat(setup.sl_dist) || Math.abs(setup.entry - setup.sl));
-      const tpDist = Math.max(0.5, parseFloat(setup.tp_dist) || Math.abs(setup.tp - setup.entry));
-
-      const riskBudgetUsd = balance * (riskPct / 100.0);
       const rawLot = riskBudgetUsd / (slDist * 100.0);
       const recLot = Math.max(0.01, Math.round(rawLot * 100) / 100);
-
       const actualRiskUsd = recLot * 100.0 * slDist;
-      const expectedRewardUsd = recLot * 100.0 * tpDist;
-      const expectedRewardThb = expectedRewardUsd * thbRate;
 
       document.getElementById('calc-lot').textContent = `${recLot.toFixed(2)} Lot`;
       document.getElementById('calc-risk-usd').textContent = `เสี่ยง -$${actualRiskUsd.toFixed(2)}`;
-      document.getElementById('calc-reward-usd').textContent = `+$${expectedRewardUsd.toFixed(2)}`;
-      document.getElementById('calc-reward-thb').textContent = `+${Math.round(expectedRewardThb).toLocaleString()} บ.`;
 
       if (cachedState.backtest && cachedState.backtest.best && Array.isArray(cachedState.backtest.best.trade_r_list)) {
         const bt = cachedState.backtest.best;
@@ -496,8 +622,8 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             topic: NTFY_TOPIC,
-            title: "ทดสอบ XAU/USD Quant Terminal V9",
-            message: `เชื่อมต่อแจ้งเตือนเข้ามือถือ (${NTFY_TOPIC}) สำเร็จ! ราคาปัจจุบัน $${lastLivePrice || '-'}`,
+            title: "ทดสอบ XAU/USD Dual-Engine V10",
+            message: `เชื่อมต่อแจ้งเตือน Trend & Scalp 500 จุด (${NTFY_TOPIC}) สำเร็จ! ราคาปัจจุบัน $${lastLivePrice || '-'}`,
             priority: 4,
             tags: ["white_check_mark", "coin"]
           })
@@ -555,6 +681,27 @@
         document.getElementById('live-poc-dist').textContent = `ห่าง POC: ${distPoc > 0 ? '+' : ''}$${distPoc}`;
       }
 
+      // อัปเดตระยะห่างสดของ Scalp 500 จุด
+      if (cachedState.scalp && cachedState.scalp.setup) {
+        const scSet = cachedState.scalp.setup;
+        const scDistUsd = Math.abs(spotPrice - scSet.entry);
+        const scDistPts = Math.round(scDistUsd * 100);
+        const scDistEl = document.getElementById('scalp-live-dist');
+        const g4Pill = document.getElementById('gate-4-scalp-pill');
+
+        scDistEl.textContent = `ห่าง Scalp Entry: $${scDistUsd.toFixed(2)} (${scDistPts} จุด)`;
+        if (scDistUsd <= 3.00) {
+          scDistEl.className = 'px-2.5 py-0.5 rounded bg-purple-600 text-white font-bold animate-pulse';
+          g4Pill.textContent = `4. Scalp 500pt: READY (${scDistPts}pt)`;
+          g4Pill.className = 'px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60';
+        } else {
+          scDistEl.className = 'px-2.5 py-0.5 rounded bg-gray-800 text-purple-300';
+          g4Pill.textContent = `4. Scalp 500pt: ${scDistPts}pt`;
+          g4Pill.className = 'px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60';
+        }
+      }
+
+      // อัปเดตระยะห่างสดของ Trend หลัก
       if (q.setup && q.setup.entry) {
         const distEntry = Math.abs(spotPrice - q.setup.entry);
         const distEl = document.getElementById('live-entry-dist');
@@ -567,15 +714,11 @@
           distEl.textContent = `ห่าง Entry: $${distEntry.toFixed(2)}`;
           if (distEntry <= 8.0 && q.setup.has_edge) {
             distEl.className = 'text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-600 text-white font-bold animate-pulse';
-            g3Pill.textContent = `3. Proximity: READY ($${distEntry.toFixed(1)})`;
+            g3Pill.textContent = `3. Trend Prox: READY ($${distEntry.toFixed(1)})`;
             g3Pill.className = 'px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60';
-          } else if (distEntry <= 15.0) {
-            distEl.className = 'text-[11px] font-mono-num px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/60';
-            g3Pill.textContent = `3. Proximity: WATCH ($${distEntry.toFixed(1)})`;
-            g3Pill.className = 'px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/60';
           } else {
             distEl.className = 'text-[11px] font-mono-num px-2 py-0.5 rounded bg-gray-800 text-gray-300';
-            g3Pill.textContent = `3. Proximity: FAR ($${distEntry.toFixed(1)})`;
+            g3Pill.textContent = `3. Trend Prox: FAR ($${distEntry.toFixed(1)})`;
             g3Pill.className = 'px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700';
           }
         }
@@ -779,17 +922,65 @@
             sBadge.className = "px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full";
             sBanner.className = "card p-3.5 border-emerald-700/40 bg-emerald-950/20 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5";
             sDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
-            sTitle.textContent = q.gates.all_passed
-              ? "ALL 3 GATES PASSED — สัญญาณเข้าเทรดพร้อมยิง!"
-              : "KILLZONE ACTIVE — ระบบเปิดทำงานและกำลังรอราคาเข้าใกล้จุด Entry (<=$8)";
+            sTitle.textContent = "DUAL-ENGINE ACTIVE — กำลังสแกนจุดเข้าทั้งระบบ Trend และ VP-Anatomy Scalp 500 จุด";
             sTitle.className = "text-xs font-bold text-emerald-300";
           } else {
-            sBadge.textContent = "NO TRADE ZONE (ปลดล็อก 13:00 น.)";
-            sBadge.className = "px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-rose-950 text-rose-400 border border-rose-700/60 rounded-full";
-            sBanner.className = "card p-3.5 border-rose-800/40 bg-rose-950/20 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5";
-            sDot.className = "w-2.5 h-2.5 rounded-full bg-rose-400";
-            sTitle.textContent = "NO TRADE ZONE (ช่วงเช้า) — บล็อกการออกออเดอร์ชั่วคราว (ส่งแผนรายวันแล้ว รอ 13:00 น.)";
-            sTitle.className = "text-xs font-bold text-rose-300";
+            sBadge.textContent = "SCALP ACTIVE / TREND LOCKED (13:00)";
+            sBadge.className = "px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full";
+            sBanner.className = "card p-3.5 border-purple-800/40 bg-purple-950/20 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5";
+            sDot.className = "w-2.5 h-2.5 rounded-full bg-purple-400";
+            sTitle.textContent = "SCALP 500 จุด เปิดทำงาน (10:00-00:30 น.) — ส่วน Trend หลักรอปลดล็อก 13:00 น.";
+            sTitle.className = "text-xs font-bold text-purple-300";
+          }
+        }
+
+        // Render VP-Anatomy 500-Point Scalp Section
+        if (data.scalp) {
+          const sc = data.scalp;
+          const an = sc.anatomy;
+          const sBt = sc.backtest;
+          const sSet = sc.setup;
+
+          document.getElementById('anatomy-poc-pct').textContent = `POC Pos: ${an.poc_pos_pct}%`;
+          document.getElementById('anatomy-title').textContent = an.title_th;
+          document.getElementById('anatomy-desc').textContent = an.desc_th;
+          document.getElementById('anatomy-rule').textContent = an.rule_th;
+          document.getElementById('sc-vah').textContent = `$${an.vah}`;
+          document.getElementById('sc-poc').textContent = `$${an.poc}`;
+          document.getElementById('sc-val').textContent = `$${an.val}`;
+          document.getElementById('anatomy-peaks-line').textContent =
+            `Lower Peak: $${an.lower_peak} | Upper Peak: $${an.upper_peak} | Valley: ${an.valley ? '$' + an.valley : 'ไม่มี (Single Peak)'}`;
+
+          document.getElementById('scalp-bt-badge').textContent =
+            `Scalp WR: ${sBt.win_rate}% (${sBt.trades} ไม้) | Net: ${sBt.net_r >= 0 ? '+' : ''}${sBt.net_r}R`;
+          document.getElementById('scalp-oos-line').textContent =
+            `OOS: ${sBt.oos_trades} ไม้ (WR ${sBt.oos_win_rate}%, R-PF ${sBt.oos_r_pf})`;
+
+          document.getElementById('scalp-bias').textContent = sSet.bias;
+          document.getElementById('scalp-rr-badge').textContent = `SL ${sSet.sl_points} จุด / TP ${sSet.tp_points} จุด`;
+          document.getElementById('sc-entry').textContent = `$${sSet.entry.toLocaleString()}`;
+          document.getElementById('sc-sl').textContent = `$${sSet.sl.toLocaleString()}`;
+          document.getElementById('sc-be').textContent = `$${sSet.be_target.toLocaleString()}`;
+          document.getElementById('sc-tp-label').textContent = `TP (${sSet.tp_points} จุด)`;
+          document.getElementById('sc-tp').textContent = `$${sSet.tp.toLocaleString()}`;
+
+          if (Array.isArray(sBt.anatomy_breakdown)) {
+            document.getElementById('anatomy-cards-grid').innerHTML = sBt.anatomy_breakdown.map(ab => `
+              <div class="bg-gray-900/90 border ${ab.enabled ? 'border-purple-800/50' : 'border-rose-900/50 opacity-55'} rounded-lg p-2">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                  <span class="text-[9px] font-bold truncate ${ab.enabled ? 'text-purple-300' : 'text-gray-400'}">${ab.shape}</span>
+                  <span class="text-[8px] px-1 rounded ${ab.enabled ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'}">
+                    ${ab.enabled ? `ON(${ab.trades})` : 'MUTE'}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-cyan-400 font-bold">${ab.win_rate}%</span>
+                  <span class="${ab.net_r >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">
+                    ${ab.net_r >= 0 ? '+' : ''}${ab.net_r}R
+                  </span>
+                </div>
+              </div>
+            `).join('');
           }
         }
 
@@ -797,15 +988,17 @@
           const t = q.technicals;
           const trendDir = q.spot_price < t.h1_ema200 ? 'BEAR' : 'BULL';
           document.getElementById('kpi-regime').textContent = `ADX ${t.adx14} (${trendDir})`;
-          document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${t.pdh} | PDL: $${t.pdl} | Asian: $${t.asian_low || '-'}-$${t.asian_high || '-'}`;
+          document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${t.pdh} | PDL: $${t.pdl}`;
         }
 
         if (data.backtest && data.backtest.best) {
           const bt = data.backtest.best;
-          document.getElementById('kpi-bt-wr').textContent = `${bt.win_rate}% / R-PF ${bt.r_profit_factor}`;
-          document.getElementById('kpi-bt-desc').textContent = `Sharpe: ${bt.sharpe} | Sortino: ${bt.sortino}`;
+          const scWr = (data.scalp && data.scalp.backtest) ? data.scalp.backtest.win_rate : 0;
+          const scNetR = (data.scalp && data.scalp.backtest) ? data.scalp.backtest.net_r : 0;
+          document.getElementById('kpi-bt-wr').textContent = `${bt.win_rate}% / ${scWr}%`;
+          document.getElementById('kpi-bt-desc').textContent = `Sharpe: ${bt.sharpe} | Scalp Net: ${scNetR >= 0 ? '+' : ''}${scNetR}R`;
           document.getElementById('bt-summary-badge').textContent = `Net: ${bt.net_r >= 0 ? '+' : ''}${bt.net_r}R (${bt.net_pnl >= 0 ? '+' : ''}$${bt.net_pnl}/oz) | Max DD: -${bt.max_dd_r}R`;
-          document.getElementById('bt-meta-sub').textContent = `Walk-Forward 67% Train / 33% OOS | OOS: ${bt.oos_trades} ไม้ (${bt.oos_net_r >= 0 ? '+' : ''}${bt.oos_net_r}R) | หัก Spread $${bt.total_fee_drag}/oz`;
+          document.getElementById('bt-meta-sub').textContent = `Walk-Forward 67% Train / 33% OOS | OOS: ${bt.oos_trades} ไม้ (${bt.oos_net_r >= 0 ? '+' : ''}${bt.oos_net_r}R)`;
 
           document.getElementById('m-sharpe').textContent = bt.sharpe;
           document.getElementById('m-sortino').textContent = bt.sortino;
@@ -848,25 +1041,43 @@
           `).join('');
         }
 
+        // Render Scalp Journal
+        if (data.scalp_journal) {
+          const sj = data.scalp_journal;
+          document.getElementById('scalp-wr-badge').textContent = `Scalp WR: ${sj.live_win_rate}% (${sj.wins}W/${sj.losses}L)`;
+          document.getElementById('scalp-pnl-sub').textContent = `Closed: ${sj.closed_trades} | Open: ${sj.open_trades} | Net: ${sj.net_live_pnl >= 0 ? '+' : ''}$${sj.net_live_pnl}`;
+          const sjBody = document.getElementById('scalp-journal-body');
+          if (sj.recent_trades && sj.recent_trades.length > 0) {
+            sjBody.innerHTML = sj.recent_trades.map(t => `
+              <tr class="hover:bg-gray-800/40">
+                <td class="py-1.5 pr-2 text-gray-400">${t.opened_at_th} <span class="text-purple-400">${t.factor}</span></td>
+                <td class="py-1.5 pr-2 font-bold ${t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
+                <td class="py-1.5 pr-2 text-right text-white">$${t.entry}</td>
+                <td class="py-1.5 text-right">
+                  ${t.status === 'WIN' ? `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold">WIN</span>` :
+                    t.status === 'LOSS' ? `<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 font-bold">LOSS</span>` :
+                    `<span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300">OPEN</span>`}
+                </td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        // Render Trend Journal
         if (data.journal) {
           const j = data.journal;
-          document.getElementById('live-wr-badge').textContent = `Live WR: ${j.live_win_rate}% (${j.wins}W/${j.losses}L)`;
+          document.getElementById('live-wr-badge').textContent = `Trend WR: ${j.live_win_rate}% (${j.wins}W/${j.losses}L)`;
           document.getElementById('live-pnl-sub').textContent = `Closed: ${j.closed_trades} | Open: ${j.open_trades} | Net: ${j.net_live_pnl >= 0 ? '+' : ''}$${j.net_live_pnl}`;
-          
           const jBody = document.getElementById('journal-table-body');
           if (j.recent_trades && j.recent_trades.length > 0) {
             jBody.innerHTML = j.recent_trades.map(t => `
               <tr class="hover:bg-gray-800/40">
-                <td class="py-2 pr-2 text-gray-400">
-                  <div>${t.opened_at_th}</div>
-                  <div class="text-[9px] text-amber-400/80">${t.factor || 'SETUP'}</div>
-                </td>
-                <td class="py-2 pr-2 font-bold ${t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
-                <td class="py-2 pr-2 text-right text-white">$${t.entry}</td>
-                <td class="py-2 pr-2 text-right text-gray-400">${t.sl} / ${t.tp}</td>
-                <td class="py-2 text-right">
-                  ${t.status === 'WIN' ? `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold">WIN (+$${t.pnl})</span>` :
-                    t.status === 'LOSS' ? `<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 font-bold">LOSS ($${t.pnl})</span>` :
+                <td class="py-1.5 pr-2 text-gray-400">${t.opened_at_th} <span class="text-amber-400/80">${t.factor || 'SETUP'}</span></td>
+                <td class="py-1.5 pr-2 font-bold ${t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
+                <td class="py-1.5 pr-2 text-right text-white">$${t.entry}</td>
+                <td class="py-1.5 text-right">
+                  ${t.status === 'WIN' ? `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold">WIN</span>` :
+                    t.status === 'LOSS' ? `<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 font-bold">LOSS</span>` :
                     `<span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-400">OPEN</span>`}
                 </td>
               </tr>
@@ -898,7 +1109,7 @@
         renderVolumeProfileChart(vp);
 
         if (data.ai_council) {
-          const kbCount = Array.isArray(data.ai_council.kb_files_loaded) ? data.ai_council.kb_files_loaded.length : 3;
+          const kbCount = Array.isArray(data.ai_council.kb_files_loaded) ? data.ai_council.kb_files_loaded.length : 4;
           document.getElementById('kb-badge').textContent = `KB: ${kbCount} Docs`;
           document.getElementById('agent1-audit').textContent = data.ai_council.quant_audit;
           document.getElementById('agent2-audit').textContent = data.ai_council.macro_audit;
