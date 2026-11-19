@@ -1,44 +1,44 @@
 {
-  "updated_at": "2026-11-19T06:45:25.769709+00:00",
+  "updated_at": "2026-11-19T09:06:58.025206+00:00",
   "quant": {
-    "spot_price": 3733.35,
-    "bid": 3733.005,
-    "ask": 3733.695,
-    "futures_price": 3738.1,
-    "spot_offset": -4.75,
-    "paxg_to_spot_offset": 6.12,
+    "spot_price": 3739.84,
+    "bid": 3739.506,
+    "ask": 3740.164,
+    "futures_price": 3738.2,
+    "spot_offset": 1.64,
+    "paxg_to_spot_offset": 0.0,
     "data_audit": {
       "source": "Hydra Local Vault + Yahoo Finance (GC=F) + Swissquote Spot",
-      "total_bars": 4422,
-      "vault_days": 48.1,
-      "date_range": "11/09/2026 - 19/11/2026 13:30",
-      "spot_offset": -4.75
+      "total_bars": 4528,
+      "vault_days": 49.2,
+      "date_range": "11/09/2026 - 19/11/2026 15:45",
+      "spot_offset": 1.64
     },
-    "mean_20_spot": 3964.62,
-    "std_20": 113.85,
+    "mean_20_spot": 3971.06,
+    "std_20": 113.76,
     "cme_open_interest": 180720,
     "z_score_price": -2.03,
     "z_score_volume": -0.49,
     "parkinson_vol_pct": 1.53,
-    "expected_move_usd": 57.23,
-    "cvd_6h_proxy": -4605.0,
-    "dxy_price": 103.86,
+    "expected_move_usd": 57.33,
+    "cvd_6h_proxy": 3837.0,
+    "dxy_price": 103.73,
     "us10y_yield": 5.07,
     "corr_gold_dxy_20d": -0.44,
     "technicals": {
-      "ema21": 3768.48,
-      "ema50": 3801.5,
-      "ema200": 3848.76,
-      "h1_ema50": 3851.25,
-      "h1_ema200": 3938.98,
-      "atr14": 12.33,
-      "rsi14": 17.2,
-      "adx14": 62.5,
-      "pdh": 3889.25,
-      "pdl": 3717.85,
-      "asian_high": 3740.85,
-      "asian_low": 3717.85,
-      "rsi_exhausted": true,
+      "ema21": 3736.88,
+      "ema50": 3740.25,
+      "ema200": 3787.22,
+      "h1_ema50": 3788.17,
+      "h1_ema200": 3902.5,
+      "atr14": 8.76,
+      "rsi14": 53.5,
+      "adx14": 41.1,
+      "pdh": 3794.54,
+      "pdl": 3696.14,
+      "asian_high": 3761.14,
+      "asian_low": 3696.14,
+      "rsi_exhausted": false,
       "in_killzone": true,
       "session_name": "LONDON / NY KILLZONE ACTIVE (เปิดวิเคราะห์และเทรด)"
     },
@@ -47,9 +47,9 @@
       "rr_mult": 3.2,
       "adx_thresh": 28.0,
       "enabled_factors": [
-        "MOMENTUM_BREAKOUT",
         "VALUE_AREA_FADE",
-        "LONDON_BREAKOUT"
+        "LONDON_BREAKOUT",
+        "MOMENTUM_BREAKOUT"
       ],
       "is_profitable_edge": true
     },
@@ -58,176 +58,176 @@
       "edge_ok": true,
       "proximity_ok": false,
       "all_passed": false,
-      "dist_to_entry": 35.13,
-      "verdict_text": "NO (ราคา Spot ปัจจุบันยังอยู่ห่างจุด Entry $35.13 ซึ่งเกินระยะยิงสัญญาณ $8.00)"
+      "dist_to_entry": 44.2,
+      "verdict_text": "NO (ราคา Spot ปัจจุบันยังอยู่ห่างจุด Entry $44.20 ซึ่งเกินระยะยิงสัญญาณ $8.00)"
     },
     "setup": {
-      "active_factor": "LIQUIDITY_SWEEP",
-      "regime": "OVERSOLD EXHAUSTION (ADX 62.5 | RSI 17.2 < 28)",
-      "bias": "ANTI-CHASE RETEST SHORT (RSI ตึงตัว ห้ามไล่ Short ใต้ PDL — รอเด้งชน PDL $3717.85 / EMA21 $3768.48)",
+      "active_factor": "LONDON_BREAKOUT",
+      "regime": "LONDON BREAKOUT BEAR (ADX 41.1 | Asian Low $3696.14)",
+      "bias": "LONDON BREAKDOWN SHORT (รอเบรกหลุด Asian Low $3696.14)",
       "direction": "SHORT",
-      "entry": 3768.48,
-      "sl": 3793.14,
-      "be_target": 3743.82,
-      "tp": 3689.57,
-      "sl_dist": 24.66,
-      "tp_dist": 78.91,
+      "entry": 3695.64,
+      "sl": 3713.16,
+      "be_target": 3678.12,
+      "tp": 3639.58,
+      "sl_dist": 17.52,
+      "tp_dist": 56.06,
       "rr": 3.2,
       "has_edge": true,
       "in_killzone": true,
       "session_name": "LONDON / NY KILLZONE ACTIVE (เปิดวิเคราะห์และเทรด)",
-      "position_context": "ระบบ RSI Exhaustion Guard ตรวจพบ RSI14 ต่ำสุดขีด (17.2) จึงบล็อกการไล่ Short ด้านล่าง และปรับแผนให้รอราคาดีดทดสอบแนวต้าน",
-      "invalidation_rule": "หากราคาดีดทะลุ Stop Loss $3793.14 กลับขึ้นไปยืนเหนือแนวต้านให้ยกเลิกแผนทันที"
+      "position_context": "อยู่ในช่วงเปิดตลาดลอนดอน เทรนด์ H1/M15 เป็นขาลง และ RSI (53.5) ยังมีพื้นที่ให้วิ่งลงต่อ",
+      "invalidation_rule": "หากราคาดีดทะลุ Stop Loss $3713.16 ให้ยกเลิกแผนทันที"
     }
   },
   "volume_profile": {
-    "poc": 3879.23,
-    "vah": 3913.46,
-    "val": 3835.22,
+    "poc": 3884.98,
+    "vah": 3962.74,
+    "val": 3814.63,
     "histogram": [
       {
-        "price": 4065.1,
-        "volume": 9426
+        "price": 3959.0,
+        "volume": 3260
       },
       {
-        "price": 4055.3,
-        "volume": 10699
+        "price": 3951.6,
+        "volume": 9087
       },
       {
-        "price": 4045.5,
-        "volume": 8059
+        "price": 3944.2,
+        "volume": 8334
       },
       {
-        "price": 4035.7,
-        "volume": 7108
+        "price": 3936.8,
+        "volume": 9360
       },
       {
-        "price": 4025.9,
-        "volume": 8224
-      },
-      {
-        "price": 4016.2,
-        "volume": 10418
-      },
-      {
-        "price": 4006.4,
-        "volume": 19748
-      },
-      {
-        "price": 3996.6,
-        "volume": 14984
-      },
-      {
-        "price": 3986.8,
-        "volume": 22141
-      },
-      {
-        "price": 3977.0,
-        "volume": 15893
-      },
-      {
-        "price": 3967.3,
-        "volume": 6651
-      },
-      {
-        "price": 3957.5,
-        "volume": 3132
-      },
-      {
-        "price": 3947.7,
-        "volume": 17397
-      },
-      {
-        "price": 3937.9,
-        "volume": 12483
-      },
-      {
-        "price": 3928.1,
-        "volume": 9359
-      },
-      {
-        "price": 3918.4,
-        "volume": 14262
-      },
-      {
-        "price": 3908.6,
-        "volume": 24052
-      },
-      {
-        "price": 3898.8,
-        "volume": 33556
-      },
-      {
-        "price": 3889.0,
-        "volume": 78193
-      },
-      {
-        "price": 3879.2,
-        "volume": 132437
-      },
-      {
-        "price": 3869.4,
-        "volume": 116669
-      },
-      {
-        "price": 3859.7,
-        "volume": 126500
-      },
-      {
-        "price": 3849.9,
-        "volume": 58435
-      },
-      {
-        "price": 3840.1,
-        "volume": 22881
-      },
-      {
-        "price": 3830.3,
-        "volume": 2595
-      },
-      {
-        "price": 3820.5,
-        "volume": 9417
-      },
-      {
-        "price": 3810.8,
-        "volume": 9892
-      },
-      {
-        "price": 3801.0,
-        "volume": 12479
-      },
-      {
-        "price": 3791.2,
-        "volume": 7509
-      },
-      {
-        "price": 3781.4,
-        "volume": 4456
-      },
-      {
-        "price": 3771.6,
+        "price": 3929.4,
         "volume": 0
       },
       {
-        "price": 3761.9,
+        "price": 3922.0,
+        "volume": 15446
+      },
+      {
+        "price": 3914.6,
+        "volume": 18577
+      },
+      {
+        "price": 3907.2,
+        "volume": 24037
+      },
+      {
+        "price": 3899.8,
+        "volume": 68776
+      },
+      {
+        "price": 3892.4,
+        "volume": 39551
+      },
+      {
+        "price": 3885.0,
+        "volume": 105464
+      },
+      {
+        "price": 3877.6,
+        "volume": 87808
+      },
+      {
+        "price": 3870.2,
+        "volume": 104255
+      },
+      {
+        "price": 3862.8,
+        "volume": 79416
+      },
+      {
+        "price": 3855.4,
+        "volume": 40777
+      },
+      {
+        "price": 3848.0,
+        "volume": 22877
+      },
+      {
+        "price": 3840.5,
+        "volume": 2596
+      },
+      {
+        "price": 3833.1,
         "volume": 0
       },
       {
-        "price": 3752.1,
+        "price": 3825.7,
+        "volume": 9416
+      },
+      {
+        "price": 3818.3,
+        "volume": 7397
+      },
+      {
+        "price": 3810.9,
+        "volume": 2494
+      },
+      {
+        "price": 3803.5,
+        "volume": 14629
+      },
+      {
+        "price": 3796.1,
+        "volume": 10013
+      },
+      {
+        "price": 3788.7,
+        "volume": 15004
+      },
+      {
+        "price": 3781.3,
+        "volume": 24622
+      },
+      {
+        "price": 3773.9,
+        "volume": 42329
+      },
+      {
+        "price": 3766.5,
+        "volume": 27911
+      },
+      {
+        "price": 3759.1,
+        "volume": 22739
+      },
+      {
+        "price": 3751.7,
+        "volume": 27111
+      },
+      {
+        "price": 3744.3,
+        "volume": 32166
+      },
+      {
+        "price": 3736.9,
+        "volume": 24692
+      },
+      {
+        "price": 3729.5,
+        "volume": 16881
+      },
+      {
+        "price": 3722.1,
+        "volume": 6477
+      },
+      {
+        "price": 3714.7,
+        "volume": 4064
+      },
+      {
+        "price": 3707.2,
+        "volume": 5808
+      },
+      {
+        "price": 3699.8,
         "volume": 0
-      },
-      {
-        "price": 3742.3,
-        "volume": 0
-      },
-      {
-        "price": 3732.5,
-        "volume": 7367
-      },
-      {
-        "price": 3722.7,
-        "volume": 1558
       }
     ]
   },
@@ -242,27 +242,27 @@
         "MOMENTUM_BREAKOUT"
       ],
       "trades": 14,
-      "win_rate": 71.4,
-      "profit_factor": 4.22,
-      "r_profit_factor": 3.76,
-      "net_pnl": 213.41,
-      "net_r": 11.48,
-      "max_dd": 53.06,
-      "max_dd_r": 3.16,
-      "sharpe": 7.61,
-      "sortino": 23.34,
-      "calmar": 64.92,
+      "win_rate": 78.6,
+      "profit_factor": 6.91,
+      "r_profit_factor": 5.3,
+      "net_pnl": 253.96,
+      "net_r": 13.48,
+      "max_dd": 42.94,
+      "max_dd_r": 3.13,
+      "sharpe": 9.4,
+      "sortino": 31.5,
+      "calmar": 76.84,
       "var_95_r": -1.04,
-      "mc_dd_95_r": 4.17,
-      "mc_prob_profit": 97.8,
+      "mc_dd_95_r": 3.21,
+      "mc_prob_profit": 99.0,
       "total_fee_drag": 8.4,
       "oos_trades": 3,
-      "oos_win_rate": 66.7,
-      "oos_profit_factor": 0.97,
-      "oos_net_r": -0.03,
-      "oos_net_pnl": -9.99,
+      "oos_win_rate": 100.0,
+      "oos_profit_factor": 2.0,
+      "oos_net_r": 1.97,
+      "oos_net_pnl": 30.41,
       "is_profitable_edge": true,
-      "score": 24.943,
+      "score": 24.939,
       "equity_curve_r": [
         0.0,
         0.97,
@@ -276,9 +276,9 @@
         13.6,
         12.55,
         11.51,
-        11.56,
+        11.55,
         12.51,
-        11.48
+        13.48
       ],
       "trade_r_list": [
         0.97,
@@ -294,7 +294,7 @@
         -1.04,
         0.04,
         0.95,
-        -1.03
+        0.97
       ]
     },
     "factor_breakdown": [
@@ -304,7 +304,7 @@
         "trades": 4,
         "win_rate": 100.0,
         "r_profit_factor": 2.0,
-        "net_pnl": 164.79,
+        "net_pnl": 164.88,
         "net_r": 7.33
       },
       {
@@ -319,20 +319,20 @@
       {
         "factor": "LONDON_BREAKOUT",
         "enabled": true,
-        "trades": 8,
-        "win_rate": 62.5,
-        "r_profit_factor": 2.64,
-        "net_pnl": 70.91,
-        "net_r": 5.13
+        "trades": 9,
+        "win_rate": 66.7,
+        "r_profit_factor": 2.95,
+        "net_pnl": 88.08,
+        "net_r": 6.1
       },
       {
         "factor": "MOMENTUM_BREAKOUT",
         "enabled": true,
-        "trades": 2,
-        "win_rate": 50.0,
-        "r_profit_factor": 0.05,
-        "net_pnl": -22.29,
-        "net_r": -0.97
+        "trades": 1,
+        "win_rate": 100.0,
+        "r_profit_factor": 2.0,
+        "net_pnl": 1.0,
+        "net_r": 0.05
       },
       {
         "factor": "HTF_TREND_PULLBACK",
@@ -355,27 +355,27 @@
           "MOMENTUM_BREAKOUT"
         ],
         "trades": 14,
-        "win_rate": 71.4,
-        "profit_factor": 4.22,
-        "r_profit_factor": 3.76,
-        "net_pnl": 213.41,
-        "net_r": 11.48,
-        "max_dd": 53.06,
-        "max_dd_r": 3.16,
-        "sharpe": 7.61,
-        "sortino": 23.34,
-        "calmar": 64.92,
+        "win_rate": 78.6,
+        "profit_factor": 6.91,
+        "r_profit_factor": 5.3,
+        "net_pnl": 253.96,
+        "net_r": 13.48,
+        "max_dd": 42.94,
+        "max_dd_r": 3.13,
+        "sharpe": 9.4,
+        "sortino": 31.5,
+        "calmar": 76.84,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 4.17,
-        "mc_prob_profit": 97.8,
+        "mc_dd_95_r": 3.21,
+        "mc_prob_profit": 99.0,
         "total_fee_drag": 8.4,
         "oos_trades": 3,
-        "oos_win_rate": 66.7,
-        "oos_profit_factor": 0.97,
-        "oos_net_r": -0.03,
-        "oos_net_pnl": -9.99,
+        "oos_win_rate": 100.0,
+        "oos_profit_factor": 2.0,
+        "oos_net_r": 1.97,
+        "oos_net_pnl": 30.41,
         "is_profitable_edge": true,
-        "score": 24.943
+        "score": 24.939
       },
       {
         "atr_sl_mult": 2.0,
@@ -387,27 +387,27 @@
           "MOMENTUM_BREAKOUT"
         ],
         "trades": 15,
-        "win_rate": 66.7,
-        "profit_factor": 3.22,
-        "r_profit_factor": 3.17,
-        "net_pnl": 189.39,
-        "net_r": 11.25,
-        "max_dd": 43.07,
+        "win_rate": 73.3,
+        "profit_factor": 4.72,
+        "r_profit_factor": 4.18,
+        "net_pnl": 229.81,
+        "net_r": 13.24,
+        "max_dd": 42.94,
         "max_dd_r": 3.13,
-        "sharpe": 7.27,
-        "sortino": 19.79,
-        "calmar": 59.88,
+        "sharpe": 8.98,
+        "sortino": 25.96,
+        "calmar": 70.48,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 5.05,
-        "mc_prob_profit": 97.4,
+        "mc_dd_95_r": 4.15,
+        "mc_prob_profit": 98.7,
         "total_fee_drag": 9.0,
         "oos_trades": 3,
-        "oos_win_rate": 66.7,
-        "oos_profit_factor": 2.53,
-        "oos_net_r": 1.57,
-        "oos_net_pnl": 11.11,
+        "oos_win_rate": 100.0,
+        "oos_profit_factor": 2.0,
+        "oos_net_r": 3.57,
+        "oos_net_pnl": 51.51,
         "is_profitable_edge": true,
-        "score": 19.316
+        "score": 19.313
       },
       {
         "atr_sl_mult": 2.0,
@@ -417,28 +417,28 @@
           "VALUE_AREA_FADE",
           "LONDON_BREAKOUT"
         ],
-        "trades": 11,
-        "win_rate": 72.7,
-        "profit_factor": 5.03,
-        "r_profit_factor": 3.97,
-        "net_pnl": 173.39,
-        "net_r": 9.29,
-        "max_dd": 43.07,
+        "trades": 12,
+        "win_rate": 75.0,
+        "profit_factor": 5.44,
+        "r_profit_factor": 4.27,
+        "net_pnl": 190.57,
+        "net_r": 10.25,
+        "max_dd": 42.94,
         "max_dd_r": 3.13,
-        "sharpe": 7.95,
-        "sortino": 24.49,
-        "calmar": 67.41,
+        "sharpe": 8.43,
+        "sortino": 25.88,
+        "calmar": 68.21,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 3.44,
-        "mc_prob_profit": 95.8,
-        "total_fee_drag": 6.6,
-        "oos_trades": 2,
+        "mc_dd_95_r": 4.08,
+        "mc_prob_profit": 97.5,
+        "total_fee_drag": 7.2,
+        "oos_trades": 3,
         "oos_win_rate": 100.0,
         "oos_profit_factor": 2.0,
-        "oos_net_r": 1.0,
-        "oos_net_pnl": 13.29,
+        "oos_net_r": 1.97,
+        "oos_net_pnl": 30.41,
         "is_profitable_edge": true,
-        "score": 17.278
+        "score": 17.275
       },
       {
         "atr_sl_mult": 2.0,
@@ -450,27 +450,27 @@
           "MOMENTUM_BREAKOUT"
         ],
         "trades": 16,
-        "win_rate": 68.8,
-        "profit_factor": 2.75,
-        "r_profit_factor": 2.71,
-        "net_pnl": 149.87,
-        "net_r": 8.87,
-        "max_dd": 43.07,
+        "win_rate": 75.0,
+        "profit_factor": 4.05,
+        "r_profit_factor": 3.61,
+        "net_pnl": 190.3,
+        "net_r": 10.87,
+        "max_dd": 42.94,
         "max_dd_r": 3.13,
-        "sharpe": 6.26,
-        "sortino": 15.11,
-        "calmar": 44.28,
+        "sharpe": 8.03,
+        "sortino": 20.63,
+        "calmar": 54.21,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 5.17,
-        "mc_prob_profit": 95.4,
+        "mc_dd_95_r": 4.17,
+        "mc_prob_profit": 97.9,
         "total_fee_drag": 9.6,
         "oos_trades": 3,
-        "oos_win_rate": 66.7,
-        "oos_profit_factor": 2.14,
-        "oos_net_r": 1.17,
-        "oos_net_pnl": 5.83,
+        "oos_win_rate": 100.0,
+        "oos_profit_factor": 2.0,
+        "oos_net_r": 3.17,
+        "oos_net_pnl": 46.23,
         "is_profitable_edge": true,
-        "score": 16.905
+        "score": 16.902
       },
       {
         "atr_sl_mult": 2.0,
@@ -480,31 +480,149 @@
           "VALUE_AREA_FADE",
           "LONDON_BREAKOUT"
         ],
-        "trades": 12,
-        "win_rate": 66.7,
-        "profit_factor": 3.6,
-        "r_profit_factor": 3.32,
-        "net_pnl": 161.17,
-        "net_r": 9.65,
-        "max_dd": 43.07,
+        "trades": 13,
+        "win_rate": 69.2,
+        "profit_factor": 3.88,
+        "r_profit_factor": 3.55,
+        "net_pnl": 178.23,
+        "net_r": 10.62,
+        "max_dd": 42.94,
         "max_dd_r": 3.13,
-        "sharpe": 7.67,
-        "sortino": 21.16,
-        "calmar": 64.24,
+        "sharpe": 8.13,
+        "sortino": 22.37,
+        "calmar": 65.22,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 4.18,
-        "mc_prob_profit": 96.5,
-        "total_fee_drag": 7.2,
-        "oos_trades": 2,
+        "mc_dd_95_r": 4.17,
+        "mc_prob_profit": 97.3,
+        "total_fee_drag": 7.8,
+        "oos_trades": 3,
         "oos_win_rate": 100.0,
         "oos_profit_factor": 2.0,
-        "oos_net_r": 2.6,
-        "oos_net_pnl": 34.39,
+        "oos_net_r": 3.57,
+        "oos_net_pnl": 51.51,
         "is_profitable_edge": true,
-        "score": 13.909
+        "score": 13.906
       }
     ],
-    "split_bar": 3114
+    "split_bar": 3185
+  },
+  "scalp": {
+    "anatomy": {
+      "shape": "DOUBLE_ZONE",
+      "title_th": "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)",
+      "desc_th": "มียอดโวลุ่มที่ 2 (>= 60% ของ POC) และมีหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง",
+      "rule_th": "ดัก BUY เมื่อเด้งขึ้นจากยอดโวลุ่มล่าง (Lower Peak) และดัก SELL ที่ยอดโวลุ่มบน (Upper Peak)",
+      "poc": 3740.73,
+      "vah": 3776.09,
+      "val": 3726.89,
+      "poc_pos_pct": 45.3,
+      "second_peak": 3774.55,
+      "valley": 3762.25,
+      "lower_peak": 3740.73,
+      "upper_peak": 3774.55
+    },
+    "backtest": {
+      "sl_usd": 5.0,
+      "sl_points": 500,
+      "tp_usd": 6.5,
+      "tp_points": 650,
+      "be_usd": 2.5,
+      "be_points": 250,
+      "trades": 26,
+      "win_rate": 46.2,
+      "r_profit_factor": 2.18,
+      "net_r": 7.8,
+      "net_pnl": 39.0,
+      "max_dd_r": 3.3,
+      "oos_trades": 9,
+      "oos_win_rate": 22.2,
+      "oos_r_pf": 0.73,
+      "oos_net_r": -0.9,
+      "has_edge": true,
+      "equity_curve_r": [
+        0.0,
+        1.2,
+        0.1,
+        1.3,
+        1.3,
+        2.5,
+        3.7,
+        4.9,
+        6.1,
+        7.3,
+        8.5,
+        9.7,
+        8.6,
+        7.5,
+        7.5,
+        7.5,
+        8.7,
+        8.7,
+        8.7,
+        9.9,
+        8.8,
+        8.8,
+        7.7,
+        7.7,
+        7.7,
+        6.6,
+        7.8
+      ],
+      "anatomy_breakdown": [
+        {
+          "shape": "D_SHAPED",
+          "enabled": false,
+          "trades": 0,
+          "win_rate": 0.0,
+          "net_r": 0.0
+        },
+        {
+          "shape": "B_SHAPED",
+          "enabled": true,
+          "trades": 26,
+          "win_rate": 46.2,
+          "net_r": 7.8
+        },
+        {
+          "shape": "P_SHAPED",
+          "enabled": false,
+          "trades": 0,
+          "win_rate": 0.0,
+          "net_r": 0.0
+        },
+        {
+          "shape": "DOUBLE_ZONE",
+          "enabled": false,
+          "trades": 0,
+          "win_rate": 0.0,
+          "net_r": 0.0
+        }
+      ]
+    },
+    "setup": {
+      "shape": "DOUBLE_ZONE",
+      "bias": "DOUBLE-ZONE LOWER PEAK BUY (ดักเด้งยอดโวลุ่มล่าง $3740.73)",
+      "direction": "LONG",
+      "entry": 3740.73,
+      "sl": 3735.73,
+      "sl_usd": 5.0,
+      "sl_points": 500,
+      "be_target": 3743.23,
+      "be_points": 250,
+      "tp": 3747.23,
+      "tp_usd": 6.5,
+      "tp_points": 650,
+      "rr": 1.3,
+      "dist_usd": 0.89,
+      "dist_points": 89
+    },
+    "gates": {
+      "session_ok": true,
+      "edge_ok": true,
+      "proximity_ok": true,
+      "all_passed": true,
+      "verdict_text": "YES (พร้อมยิง SCALP 500 จุด! ราคาเข้าใกล้ในระยะ 89 จุด)"
+    }
   },
   "journal": {
     "total_signals": 0,
@@ -516,6 +634,32 @@
     "net_live_pnl": 0,
     "recent_trades": []
   },
+  "scalp_journal": {
+    "total_signals": 1,
+    "closed_trades": 0,
+    "open_trades": 1,
+    "wins": 0,
+    "losses": 0,
+    "live_win_rate": 0.0,
+    "net_live_pnl": 0,
+    "recent_trades": [
+      {
+        "id": "SIG-11190906",
+        "opened_at": "2026-11-19T09:06:58.024901+00:00",
+        "opened_at_th": "19/11 16:06",
+        "factor": "DOUBLE_ZONE",
+        "direction": "LONG",
+        "bias": "DOUBLE-ZONE LOWER PEAK BUY (ดักเด้งยอดโวลุ่มล่าง $3740.73)",
+        "entry": 3740.73,
+        "sl": 3735.73,
+        "tp": 3747.23,
+        "rr": 1.3,
+        "status": "OPEN",
+        "pnl": 0.0,
+        "closed_at_th": "-"
+      }
+    ]
+  },
   "news": [
     {
       "time_th": "19/11 20:30 น.",
@@ -524,9 +668,9 @@
       "forecast": "20.6",
       "previous": "20.9",
       "actual": "-",
-      "hours_away": 6.7,
+      "hours_away": 4.4,
       "is_upcoming": true,
-      "status": "อีก 6.7 ชม."
+      "status": "อีก 4.4 ชม."
     },
     {
       "time_th": "19/11 20:30 น.",
@@ -535,9 +679,9 @@
       "forecast": "198K",
       "previous": "200K",
       "actual": "-",
-      "hours_away": 6.7,
+      "hours_away": 4.4,
       "is_upcoming": true,
-      "status": "อีก 6.7 ชม."
+      "status": "อีก 4.4 ชม."
     },
     {
       "time_th": "20/11 22:00 น.",
@@ -546,23 +690,24 @@
       "forecast": "51.7",
       "previous": "51.0",
       "actual": "-",
-      "hours_away": 32.2,
+      "hours_away": 29.9,
       "is_upcoming": true,
-      "status": "อีก 32.2 ชม."
+      "status": "อีก 29.9 ชม."
     }
   ],
-  "ai_analysis": "1. **Daily Outlook & Regime**:  \n   ราคา Spot XAU/USD ปัจจุบันอยู่ที่ $3733.35 ซึ่งใกล้แนวรับสำคัญ PDL $3717.85 และ M15 EMA21 $3768.48 ขณะที่ H1 EMA200 $3938.98 และ PDH $3889.25 ยังอยู่เหนือราคา แต่ RSI 17.2 บ่งชี้ Oversold Exhaustion ระบบ RSI Exhaustion Guard บล็อกการ Short ใต้ PDL จึงปรับแผนให้รอราคาดีดทดสอบแนวต้าน M15 EMA21 แทน บริบท: อยู่ในช่วง LONDON/NY KILLZONE ACTIVE ที่มีความผันผวนสูงจากข่าวเศรษฐกิจที่จะออกใน 6.7 ชั่วโมงข้างหน้า  \n\n2. **Walk-Forward & Monte Carlo Edge**:  \n   ผลทดสอบ Walk-Forward แสดง Net 11.48R (Sharpe 7.61, Sortino 23.34, Calmar 64.92) พร้อม Monte Carlo 95% DD -4.17R แสดงความเสี่ยงที่ควบคุมได้ แม้ OOS มี R-PF -0.03R แต่ภาพรวมยังแข็งแกร่ง ปัจจุบันใช้ Factor LIQUIDITY_SWEEP ซึ่งช่วยเพิ่มความแม่นยำในการจับจังหวะการดีดตัว  \n\n3. **Execution & Trailing Plan**:  \n   แผนเทรด ANTI-CHASE RETEST SHORT กำหนด Entry ที่ $3768.48 (M15 EMA21) รอราคาดีดทดสอบแนวต้าน ตั้ง SL ที่ $3793.14 (เหนือ PDL 16.35 จุด) และ BE (+1.0R) ที่ $3743.82 จุดเลื่อนบังทุนที่ +1.0R ช่วยลดความเสี่ยงหากราคาดีดตัว จุด TP ที่ $3689.57 (R:R 1:3.2) ให้ผลตอบแทนสูงเมื่อราคาปรับตัวลง  \n\n4. **Alert Trigger**:  \n   NO (ราคา Spot ปัจจุบันยังอยู่ห่างจุด Entry $35.13 ซึ่งเกินระยะยิงสัญญาณ $8.00)",
+  "ai_analysis": "1. **Daily Outlook & VP Anatomy**:  \n   ราคา XAU/USD อยู่ในช่วง KILLZONE ACTIVE ที่ $3739.84 โครงสร้าง Volume Profile 24H แสดงรูปทรง \"DOUBLE ZONE\" ซึ่งมี 2 ยอดโวลุ่ม (POC ที่ $3740.73 และ $3776.09) และหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง บ่งชี้ความหนาแน่นของแรงซื้อ-ขายสองจุด ขณะที่ $3726.89 เป็นจุดรับสำคัญ ตลาดมีแนวโน้มเคลื่อนไหวในกรอบแคบ แต่เสี่ยงผันผวนจากข่าว USD ใน 4.4 ชั่วโมงข้างหน้า  \n\n2. **Dual-Engine Edge**:  \n   - **Trend**: ระบบมีประสิทธิภาพสูง (Sharpe 9.4, Net 13.48R, DD -3.21R) พร้อมใช้งานเดี่ยว  \n   - **Scalp 500pt**: R-PF 2.18 และ Net 7.8R แต่ OOS R-PF 0.73 ต่ำกว่า 1 แสดงความเสี่ยงในอนาคต แนะนำใช้ Trend หลัก + Scalp รอง ควบคุมขนาดไม้ Scalp ต่ำกว่า 500 จุด  \n\n3. **Trend Execution Plan**:  \n   - **Entry**: $3695.64 (รอเบรกหลุด Asian Low $3696.14)  \n   - **SL**: $3713.16  \n   - **BE**: $3678.12  \n   - **TP**: $3639.58 (R:R 1:3.2)  \n\n4. **VP-Anatomy Scalp Plan (500 จุด)**:  \n   - **Entry**: $3740.73 (ดักเด้งยอดโวลุ่มล่าง)  \n   - **SL**: $3735.73 (500 จุด)  \n   - **BE**: +250 จุด ($3743.23)  \n   - **TP**: $3747.23 (650 จุด)  \n\n5. **Alert Trigger**:  \n   Trend: NO (ราคา Spot ปัจจุบันยังอยู่ห่างจุด Entry $44.20 ซึ่งเกินระยะยิงสัญญาณ $8.00) | Scalp 500pt: YES (พร้อมยิง SCALP 500 จุด! ราคาเข้าใกล้ในระยะ 89 จุด)",
   "ai_council": {
-    "final_report": "1. **Daily Outlook & Regime**:  \n   ราคา Spot XAU/USD ปัจจุบันอยู่ที่ $3733.35 ซึ่งใกล้แนวรับสำคัญ PDL $3717.85 และ M15 EMA21 $3768.48 ขณะที่ H1 EMA200 $3938.98 และ PDH $3889.25 ยังอยู่เหนือราคา แต่ RSI 17.2 บ่งชี้ Oversold Exhaustion ระบบ RSI Exhaustion Guard บล็อกการ Short ใต้ PDL จึงปรับแผนให้รอราคาดีดทดสอบแนวต้าน M15 EMA21 แทน บริบท: อยู่ในช่วง LONDON/NY KILLZONE ACTIVE ที่มีความผันผวนสูงจากข่าวเศรษฐกิจที่จะออกใน 6.7 ชั่วโมงข้างหน้า  \n\n2. **Walk-Forward & Monte Carlo Edge**:  \n   ผลทดสอบ Walk-Forward แสดง Net 11.48R (Sharpe 7.61, Sortino 23.34, Calmar 64.92) พร้อม Monte Carlo 95% DD -4.17R แสดงความเสี่ยงที่ควบคุมได้ แม้ OOS มี R-PF -0.03R แต่ภาพรวมยังแข็งแกร่ง ปัจจุบันใช้ Factor LIQUIDITY_SWEEP ซึ่งช่วยเพิ่มความแม่นยำในการจับจังหวะการดีดตัว  \n\n3. **Execution & Trailing Plan**:  \n   แผนเทรด ANTI-CHASE RETEST SHORT กำหนด Entry ที่ $3768.48 (M15 EMA21) รอราคาดีดทดสอบแนวต้าน ตั้ง SL ที่ $3793.14 (เหนือ PDL 16.35 จุด) และ BE (+1.0R) ที่ $3743.82 จุดเลื่อนบังทุนที่ +1.0R ช่วยลดความเสี่ยงหากราคาดีดตัว จุด TP ที่ $3689.57 (R:R 1:3.2) ให้ผลตอบแทนสูงเมื่อราคาปรับตัวลง  \n\n4. **Alert Trigger**:  \n   NO (ราคา Spot ปัจจุบันยังอยู่ห่างจุด Entry $35.13 ซึ่งเกินระยะยิงสัญญาณ $8.00)",
-    "quant_audit": "ความคุ้มเสี่ยงและเสถียรภาพพอร์ตอยู่ในเกณฑ์น่าเชื่อถือ ด้วย R-PF 3.76, Sharpe 7.61, Sortino 23.34, Calmar 64.92 และ Monte Carlo 97.8% กำไร แม้ OOS มี R-PF -0.03R แต่ภาพรวมยังแข็งแกร่ง",
-    "macro_audit": "ในช่วง LONDON/NY KILLZONE ACTIVE ที่เวลา 13:45 น. ราคา XAU/USD อยู่ที่ $3733.35 ซึ่งอยู่ในกรอบ Asian Range ($3717.85–$3740.85) ใกล้แนวต้านสำคัญที่ $3740.85 ขณะที่ DXY ที่ 103.86 และ US10Y ที่ 5.07% บ่งชี้ถึงแรงกดดันจากดอลลาร์ที่แข็งค่า ซึ่งอาจกดดันทองคำในระยะสั้น แต่ข่าวเศรษฐกิจที่จะออกใน 6.7 ชั่วโมงข้างหน้า (Philly Fed, Unemployment Claims) อาจสร้างความผันผวนสูง ทำให้กรอบราคาอาจขยายตัวสูงขึ้น แนะนำติดตามแนวรับที่ $3717.85 และแนวต้านที่ $3740.85 อย่างใกล้ชิด พร้อมพิจารณาเปิดออเดอร์ในช่วงที่มีข่าวสำคัญ",
-    "contrarian_audit": "แผนนี้เสี่ยงสูงเพราะ RSI 17.2 ต่ำเกินไป บ่งชี้ถึง oversold ที่อาจเกิดการ rebound แรง ไม่ใช่ breakdown จริง ทำให้การรอเด้งชน PDL อาจกลายเป็น False Breakout ได้ ถ้าราคาดีดกลับขึ้นมาที่ $3768.48 แล้วไม่ผ่าน อาจโดนกิน SL ที่ $3793.14 ทันที แถม ADX 62.5 บ่งชี้แนวโน้มแข็งแรง แต่ไม่ได้ยืนยันทิศทาง ทำให้การตั้ง SL แคบเกินไป อาจถูกดึงเข้ากับดักได้",
-    "active_recall_q": "ถ้าราคาดีดกลับขึ้นมาที่ $3768.48 แต่ไม่ผ่าน แผนจะเสี่ยงต่อ False Breakout หรือไม่?",
-    "active_recall_a": "มีความเสี่ยงสูง เนื่องจาก RSI 17.2 บ่งชี้ Oversold ที่อาจเกิด Rebound แรง แต่ ADX 62.5 บ่งชี้แนวโน้มแข็งแรง อาจทำให้ราคาดีดตัวแต่ไม่ผ่านแนวต้าน ทำให้ SL ที่ $3793.14 ถูกกินได้ง่าย ต้องติดตามการเคลื่อนไหวของราคาอย่างใกล้ชิด",
+    "final_report": "1. **Daily Outlook & VP Anatomy**:  \n   ราคา XAU/USD อยู่ในช่วง KILLZONE ACTIVE ที่ $3739.84 โครงสร้าง Volume Profile 24H แสดงรูปทรง \"DOUBLE ZONE\" ซึ่งมี 2 ยอดโวลุ่ม (POC ที่ $3740.73 และ $3776.09) และหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง บ่งชี้ความหนาแน่นของแรงซื้อ-ขายสองจุด ขณะที่ $3726.89 เป็นจุดรับสำคัญ ตลาดมีแนวโน้มเคลื่อนไหวในกรอบแคบ แต่เสี่ยงผันผวนจากข่าว USD ใน 4.4 ชั่วโมงข้างหน้า  \n\n2. **Dual-Engine Edge**:  \n   - **Trend**: ระบบมีประสิทธิภาพสูง (Sharpe 9.4, Net 13.48R, DD -3.21R) พร้อมใช้งานเดี่ยว  \n   - **Scalp 500pt**: R-PF 2.18 และ Net 7.8R แต่ OOS R-PF 0.73 ต่ำกว่า 1 แสดงความเสี่ยงในอนาคต แนะนำใช้ Trend หลัก + Scalp รอง ควบคุมขนาดไม้ Scalp ต่ำกว่า 500 จุด  \n\n3. **Trend Execution Plan**:  \n   - **Entry**: $3695.64 (รอเบรกหลุด Asian Low $3696.14)  \n   - **SL**: $3713.16  \n   - **BE**: $3678.12  \n   - **TP**: $3639.58 (R:R 1:3.2)  \n\n4. **VP-Anatomy Scalp Plan (500 จุด)**:  \n   - **Entry**: $3740.73 (ดักเด้งยอดโวลุ่มล่าง)  \n   - **SL**: $3735.73 (500 จุด)  \n   - **BE**: +250 จุด ($3743.23)  \n   - **TP**: $3747.23 (650 จุด)  \n\n5. **Alert Trigger**:  \n   Trend: NO (ราคา Spot ปัจจุบันยังอยู่ห่างจุด Entry $44.20 ซึ่งเกินระยะยิงสัญญาณ $8.00) | Scalp 500pt: YES (พร้อมยิง SCALP 500 จุด! ราคาเข้าใกล้ในระยะ 89 จุด)",
+    "quant_audit": "ระบบ Trend มีประสิทธิภาพสูง (Sharpe 9.4, Net 13.48R, DD -3.21R) พร้อมใช้งานเดี่ยว ระบบ Scalp แม้ R-PF 2.18 และ Net 7.8R แต่ OOS R-PF 0.73 ต่ำกว่า 1 แสดงความเสี่ยงในอนาคต แนะนำใช้ Trend หลัก + Scalp รอง แต่ต้องควบคุมขนาดไม้ Scalp ให้ต่ำกว่า 500 จุดเพื่อลดความเสี่ยงรวม",
+    "macro_audit": "โครงสร้าง Volume Profile 24H ของ XAU/USD แสดง \"Double Zone\" ที่มี POC อยู่ที่ 45.3% ของช่วง 24 ชั่วโมง บ่งชี้ว่ามีแรงซื้อ-ขายหนาแน่นสองจุด คือ บริเวณ $3740.73 (POC) และ $3776.09 (VAH) ซึ่งเป็นจุดต้านหลัก ขณะที่ $3726.89 เป็นจุดรับสำคัญ ทำให้ตลาดมีแนวโน้มเคลื่อนไหวในกรอบแคบ แต่หากข่าว USD ที่จะออกใน 4.4 ชั่วโมงข้างหน้า (Philly Fed, Unemployment Claims) หรือ 29.9 ชั่วโมง (UoM Sentiment) สร้างความผันผวน อาจดันราคาขึ้นหรือลงผ่านโซนนี้ได้ ซึ่งอาจทำให้เกิดการเปลี่ยนแปลงของ POC และทำลายโครงสร้างเดิม จึงต้องระวังการเคลื่อนไหวในช่วง KILLZONE นี้อย่างใกล้ชิด.",
+    "contrarian_audit": "แผน Trend: รอเบรกหลุด $3696.14 แต่ราคาแค่ $3695.64 ห่างแค่ 44 จุด อาจเป็นแค่ \"การดีดตัวชั่วคราว\" ไม่ใช่ Breakdown จริง ทำให้เสี่ยงโดนกิน Stop Loss ถ้าตลาดกลับมาปิดช่องว่างที่ $3696 ได้\n\nแผน Scalp 500 จุด: ดักเด้งที่ $3740.73 แต่ SL แค่ $3735.73 ห่าง 89 จุด ถือว่าต่ำเกินไป ถ้าตลาดไม่กลับตัวจริง อาจโดนกิน Stop ทันที แถม RSI 53.5 อยู่ในโซนโอเวอร์บูท บ่งชี้แรงซื้อเริ่มอ่อน อาจเกิด False Breakout ได้",
+    "active_recall_q": "รูปทรง Volume Profile \"DOUBLE ZONE\" บ่งชี้อะไรในแผน Scalp 500 จุด?",
+    "active_recall_a": "บ่งชี้มีสองจุดซื้อ-ขายหนาแน่น (POC) ที่ $3740.73 และ $3776.09 ใช้เป็นจุดเข้าและตัดขาดทุนในแผน Scalp 500 จุด",
     "kb_files_loaded": [
       "01_market_maker_liquidity.md",
       "02_factorbench_investability.md",
-      "03_macro_gold_regime.md"
+      "03_macro_gold_regime.md",
+      "04_vp_anatomy_scalp_500pt.md"
     ],
     "models_used": {
       "quant_auditor": "pathumma-thaillm-qwen3-8b-think-3.0.0",
