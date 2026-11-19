@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XAU/USD Spot Institutional Quant & 4-Agent Swarm Terminal V9</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'IBM Plex Sans Thai', sans-serif;
+      background-color: #090d16;
+      color: #e2e8f0;
+    }
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .card {
+      background-color: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 0.75rem;
+    }
+    @keyframes flashGreen {
+      0% { color: #34d399; text-shadow: 0 0 12px rgba(52, 211, 153, 0.5); }
+      100% { color: #fbbf24; text-shadow: none; }
+    }
+    @keyframes flashRed {
+      0% { color: #fb7185; text-shadow: 0 0 12px rgba(251, 113, 133, 0.5); }
+      100% { color: #fbbf24; text-shadow: none; }
+    }
+    .tick-up { animation: flashGreen 0.6s ease-out; }
+    .tick-down { animation: flashRed 0.6s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-6">
+  <div class="max-w-7xl mx-auto space-y-5">
+    
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-800 pb-4">
+      <div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Institutional Quant & 4-Agent Swarm Terminal V9</h1>
+          <span id="live-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE TICK
+          </span>
+          <span id="session-gate-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-gray-800 text-gray-300 border border-gray-700 rounded-full">
+            CHECKING SESSION...
+          </span>
+        </div>
+        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังตรวจสอบ Hydra Local Data Vault...</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <span id="last-updated" class="text-xs text-gray-400 font-mono-num mr-1">กำลังโหลดข้อมูล...</span>
+        <button id="btn-test-ntfy" onclick="testNtfyAlert()" class="px-3 py-1.5 text-xs font-medium bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/40 rounded-lg transition active:scale-95">
+          ทดสอบ ntfy
+        </button>
+        <button onclick="manualRefresh()" class="px-3 py-1.5 text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-lg transition active:scale-95">
+          รีเฟรชข้อมูล
+        </button>
+      </div>
+    </header>
+
+    <!-- 3-Gate Execution Readiness Banner -->
+    <div id="session-banner" class="card p-3.5 border-amber-600/40 bg-amber-950/20 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2.5">
+        <span id="session-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+        <span id="session-banner-title" class="text-xs font-bold text-amber-300">กำลังตรวจสอบประตูความพร้อม 3 ชั้น...</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-[11px] font-mono-num">
+        <span id="gate-1-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">1. Session: -</span>
+        <span id="gate-2-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">2. Quant Edge: -</span>
+        <span id="gate-3-pill" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">3. Proximity (<=$8): -</span>
+      </div>
+    </div>
+
+    <!-- Top KPI Cards -->
+    <section class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="card p-4 border-amber-500/30">
+        <div class="flex items-center justify-between">
+          <p class="text-xs text-gray-400">ราคาทองคำ Spot (XAU/USD)</p>
+          <span id="live-tick-time" class="text-[10px] text-emerald-400 font-mono-num">--:--:--</span>
+        </div>
+        <p id="kpi-price" class="text-2xl font-bold text-amber-400 font-mono-num mt-1">$0.00</p>
+        <p id="kpi-bidask" class="text-[11px] text-gray-400 font-mono-num mt-1">Bid: - | Ask: -</p>
+      </div>
+
+      <div class="card p-4">
+        <p class="text-xs text-gray-400">MTF Regime & Asian Range</p>
+        <p id="kpi-regime" class="text-lg font-bold text-white font-mono-num mt-1">ADX -</p>
+        <p id="kpi-pdh-pdl" class="text-[11px] text-gray-400 font-mono-num mt-1">PDH: - | PDL: -</p>
+      </div>
+
+      <div class="card p-4">
+        <p class="text-xs text-gray-400">Walk-Forward WR / R-PF</p>
+        <p id="kpi-bt-wr" class="text-2xl font-bold text-cyan-400 font-mono-num mt-1">0.0% / 0.00</p>
+        <p id="kpi-bt-desc" class="text-[11px] text-gray-400 font-mono-num mt-1">Sharpe: - | Sortino: -</p>
+      </div>
+
+      <div class="card p-4">
+        <p class="text-xs text-gray-400">6H CVD & RSI / Z-Score</p>
+        <p id="kpi-cvd" class="text-2xl font-bold text-emerald-400 font-mono-num mt-1">0</p>
+        <p id="kpi-zscore" class="text-[11px] text-gray-400 font-mono-num mt-1">RSI: - | Price Z: -</p>
+      </div>
+
+      <div class="card p-4 col-span-2 lg:col-span-1">
+        <p class="text-xs text-gray-400">Macro Drivers (DXY / 10Y)</p>
+        <p id="kpi-macro" class="text-xl font-bold text-white font-mono-num mt-1">0.00 / 0.00%</p>
+        <p id="kpi-corr" class="text-[11px] text-gray-400 font-mono-num mt-1">Gold-DXY Corr: 0.00</p>
+      </div>
+    </section>
+
+    <!-- Interactive Position Sizing, Portfolio Simulator & Monte Carlo 95% DD -->
+    <section class="card p-4 border-cyan-800/40 bg-gradient-to-r from-gray-900 via-gray-900 to-cyan-950/20">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+        <div class="lg:col-span-4 flex flex-wrap items-center gap-3">
+          <div>
+            <label class="block text-[10px] text-gray-400 uppercase tracking-wider">พอร์ต (USD)</label>
+            <input id="input-balance" type="number" value="5000" min="100" step="100" oninput="recalcPortfolioMath()"
+              class="w-24 mt-1 px-2.5 py-1 text-sm font-mono-num font-bold bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="block text-[10px] text-gray-400 uppercase tracking-wider">เสี่ยง/ไม้ (%)</label>
+            <input id="input-risk-pct" type="number" value="1.5" min="0.2" max="10" step="0.1" oninput="recalcPortfolioMath()"
+              class="w-20 mt-1 px-2.5 py-1 text-sm font-mono-num font-bold bg-gray-800 border border-gray-700 rounded text-amber-400 focus:outline-none focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="block text-[10px] text-gray-400 uppercase tracking-wider">เรทบาท</label>
+            <input id="input-thb-rate" type="number" value="31.1" min="20" max="50" step="0.1" oninput="recalcPortfolioMath()"
+              class="w-20 mt-1 px-2.5 py-1 text-sm font-mono-num font-bold bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono-num text-center">
+          <div class="bg-gray-800/80 border border-gray-700/80 rounded-lg p-2">
+            <span class="block text-[10px] text-gray-400">ขนาดออเดอร์ (Lot)</span>
+            <span id="calc-lot" class="text-sm font-bold text-cyan-400">0.00 Lot</span>
+            <span id="calc-risk-usd" class="block text-[10px] text-rose-400">เสี่ยง -$0</span>
+          </div>
+          <div class="bg-gray-800/80 border border-gray-700/80 rounded-lg p-2">
+            <span class="block text-[10px] text-gray-400">เป้ากำไรไม้นี้ (TP)</span>
+            <span id="calc-reward-usd" class="text-sm font-bold text-emerald-400">+$0.00</span>
+            <span id="calc-reward-thb" class="block text-[10px] text-emerald-300">+0 บ.</span>
+          </div>
+          <div class="bg-gray-800/80 border border-cyan-800/50 rounded-lg p-2">
+            <span class="block text-[10px] text-gray-400">กำไรจำลอง (ตามพอร์ต)</span>
+            <span id="calc-60d-usd" class="text-sm font-bold text-amber-400">+$0.00</span>
+            <span id="calc-60d-thb" class="block text-[10px] text-amber-300">+0 บ. (0%)</span>
+          </div>
+          <div class="bg-gray-800/80 border border-rose-900/50 rounded-lg p-2">
+            <span class="block text-[10px] text-gray-400">MC 95% Worst DD</span>
+            <span id="calc-mc-dd" class="text-sm font-bold text-rose-400">-$0.00</span>
+            <span id="calc-mc-prob" class="block text-[10px] text-emerald-300">Prob Profit: -%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid: Volume Profile + 4-Agent Swarm Debate Council -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left: Volume Profile Histogram (5 Cols) -->
+      <div class="card p-5 lg:col-span-5 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-base font-bold text-white">5D Spot Volume Profile</h2>
+            <p class="text-xs text-gray-400">โครงสร้างการสะสม Volume (ฐานราคา Spot XAU/USD)</p>
+          </div>
+          <span id="live-poc-dist" class="text-[11px] font-mono-num text-amber-400 bg-amber-950/50 border border-amber-800/50 px-2 py-0.5 rounded">
+            ห่าง POC: -
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mb-4 text-center font-mono-num">
+          <div class="bg-blue-950/50 border border-blue-800/60 rounded p-2">
+            <span class="block text-[10px] text-blue-300">VAH (ต้านบน)</span>
+            <span id="vp-vah" class="text-sm font-bold text-blue-400">$0.00</span>
+          </div>
+          <div class="bg-amber-950/50 border border-amber-600/60 rounded p-2">
+            <span class="block text-[10px] text-amber-300">POC (จุดสมดุล)</span>
+            <span id="vp-poc" class="text-sm font-bold text-amber-400">$0.00</span>
+          </div>
+          <div class="bg-blue-950/50 border border-blue-800/60 rounded p-2">
+            <span class="block text-[10px] text-blue-300">VAL (รับล่าง)</span>
+            <span id="vp-val" class="text-sm font-bold text-blue-400">$0.00</span>
+          </div>
+        </div>
+
+        <div class="relative flex-1 min-h-[380px]">
+          <canvas id="vpChart"></canvas>
+        </div>
+        <div class="flex items-center justify-center gap-4 mt-3 text-[11px] text-gray-400">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block"></span> POC</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span> Value Area (70%)</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-slate-700 inline-block"></span> Low Volume Node</span>
+        </div>
+      </div>
+
+      <!-- Right: 4-Agent Swarm Debate Council & News (7 Cols) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- AI Council Synthesis Box -->
+        <div class="card p-5 border-amber-500/20">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h2 class="text-base font-bold text-white">4-Agent ThaiLLM Swarm Debate Council</h2>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-mono-num">
+              <span id="kb-badge" class="px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/50">KB: 3 Docs</span>
+              <span class="px-2 py-0.5 rounded bg-purple-950/70 text-purple-300 border border-purple-800/50">1.Quant</span>
+              <span class="px-2 py-0.5 rounded bg-cyan-950/70 text-cyan-300 border border-cyan-800/50">2.Macro</span>
+              <span class="px-2 py-0.5 rounded bg-rose-950/70 text-rose-300 border border-rose-800/50">3.Critic</span>
+              <span class="px-2 py-0.5 rounded bg-amber-950/70 text-amber-300 border border-amber-800/50">4.Chief</span>
+            </div>
+          </div>
+
+          <!-- Spot Trade Setup Bar -->
+          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3 mb-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <span id="setup-factor-tag" class="text-[10px] font-mono-num font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">FACTOR</span>
+                <span id="setup-bias" class="text-xs font-bold text-amber-400">กำลังคำนวณแผนเทรด Spot...</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="live-entry-dist" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-gray-800 text-gray-300">ห่าง Entry: -</span>
+                <span id="setup-rr" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60">R:R 1:0.0</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
+              <div class="bg-gray-800/70 rounded p-1.5">
+                <span class="block text-[10px] text-gray-400">Entry (Spot)</span>
+                <span id="setup-entry" class="font-bold text-white">$0.00</span>
+              </div>
+              <div class="bg-rose-950/40 border border-rose-900/50 rounded p-1.5">
+                <span class="block text-[10px] text-rose-300">Stop Loss</span>
+                <span id="setup-sl" class="font-bold text-rose-400">$0.00</span>
+              </div>
+              <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-1.5">
+                <span class="block text-[10px] text-cyan-300">BE บังทุน (+1.0R)</span>
+                <span id="setup-be-target" class="font-bold text-cyan-300">$0.00</span>
+              </div>
+              <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-1.5">
+                <span class="block text-[10px] text-emerald-300">Final TP</span>
+                <span id="setup-tp" class="font-bold text-emerald-400">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3 Sub-Agents Debate Strip (Quant + Macro + Contrarian Devil's Advocate) -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-4">
+            <div class="bg-purple-950/20 border border-purple-900/40 rounded-lg p-2.5">
+              <p class="text-[11px] font-bold text-purple-300 mb-1">Agent 1: Quant & MC Auditor</p>
+              <p id="agent1-audit" class="text-[11px] text-gray-300 leading-relaxed">กำลังตรวจสอบสถิติ...</p>
+            </div>
+            <div class="bg-cyan-950/20 border border-cyan-900/40 rounded-lg p-2.5">
+              <p class="text-[11px] font-bold text-cyan-300 mb-1">Agent 2: Macro & Session</p>
+              <p id="agent2-audit" class="text-[11px] text-gray-300 leading-relaxed">กำลังประเมินมหภาค...</p>
+            </div>
+            <div class="bg-rose-950/20 border border-rose-900/40 rounded-lg p-2.5">
+              <p class="text-[11px] font-bold text-rose-300 mb-1">Agent 3: Devil's Advocate</p>
+              <p id="agent3-audit" class="text-[11px] text-gray-300 leading-relaxed">กำลังจับผิดความเสี่ยง...</p>
+            </div>
+          </div>
+
+          <!-- Chief Strategist Final Report -->
+          <div id="ai-content" class="text-sm text-gray-200 leading-relaxed space-y-3 whitespace-pre-line">
+            กำลังรอข้อมูลจาก engine.py...
+          </div>
+
+          <!-- Jane Street Active Recall Coach Box -->
+          <div class="mt-4 bg-amber-950/20 border border-amber-700/40 rounded-lg p-3">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[10px] font-mono-num font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">JANE STREET ACTIVE RECALL COACH</span>
+            </div>
+            <p id="recall-question" class="text-xs font-medium text-amber-200 leading-relaxed">กำลังสร้างคำถามทบทวน...</p>
+            <details class="mt-2">
+              <summary class="text-[11px] text-cyan-400 cursor-pointer hover:underline select-none">คลิกเพื่อดูเฉลยและหลักคิด</summary>
+              <p id="recall-answer" class="text-xs text-gray-300 mt-1.5 pl-2 border-l-2 border-cyan-500 leading-relaxed">-</p>
+            </details>
+          </div>
+        </div>
+
+        <!-- USD News Table -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-bold text-white">ปฏิทินข่าว USD ประจำสัปดาห์ (เวลาไทย)</h2>
+            <span class="text-xs text-rose-400 font-medium">USD High / Medium Impact</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-gray-800 text-gray-400">
+                  <th class="py-2 pr-3">วัน-เวลา (ไทย)</th>
+                  <th class="py-2 pr-3">ตัวเลขเศรษฐกิจ</th>
+                  <th class="py-2 pr-3 text-right">คาดการณ์</th>
+                  <th class="py-2 pr-3 text-right">ครั้งก่อน</th>
+                  <th class="py-2 text-right">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="news-table-body" class="divide-y divide-gray-800/60 font-mono-num">
+                <tr><td colspan="5" class="py-3 text-gray-500 text-center">กำลังโหลดปฏิทินข่าว...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Bottom Section: Institutional Walk-Forward Backtest & Live Signal Journal -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left: Walk-Forward Backtest & 5-Factor Auto-Mute Breakdown (7 Cols) -->
+      <div class="card p-5 lg:col-span-7 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-bold text-white">Institutional Walk-Forward & 5-Factor Engine</h2>
+            <p id="bt-meta-sub" class="text-xs text-gray-400">Sharpe / Sortino / Calmar / VaR 95% + Auto-Mute</p>
+          </div>
+          <span id="bt-summary-badge" class="text-xs font-mono-num px-2.5 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60">
+            Net: 0.0R | Max DD: 0.0R
+          </span>
+        </div>
+
+        <!-- Institutional Metrics Strip -->
+        <div id="inst-metrics-strip" class="grid grid-cols-4 gap-2 text-center font-mono-num text-xs">
+          <div class="bg-gray-900/80 border border-gray-800 rounded p-2">
+            <span class="block text-[10px] text-gray-400">Sharpe Ratio</span>
+            <span id="m-sharpe" class="font-bold text-cyan-400">0.00</span>
+          </div>
+          <div class="bg-gray-900/80 border border-gray-800 rounded p-2">
+            <span class="block text-[10px] text-gray-400">Sortino Ratio</span>
+            <span id="m-sortino" class="font-bold text-emerald-400">0.00</span>
+          </div>
+          <div class="bg-gray-900/80 border border-gray-800 rounded p-2">
+            <span class="block text-[10px] text-gray-400">Calmar Ratio</span>
+            <span id="m-calmar" class="font-bold text-amber-400">0.00</span>
+          </div>
+          <div class="bg-gray-900/80 border border-gray-800 rounded p-2">
+            <span class="block text-[10px] text-gray-400">VaR (95% / Trade)</span>
+            <span id="m-var95" class="font-bold text-rose-400">-1.00R</span>
+          </div>
+        </div>
+
+        <!-- 5-Factor Performance Cards (with Auto-Mute Status) -->
+        <div id="factor-cards-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 font-mono-num text-xs"></div>
+
+        <!-- Cumulative R Equity Curve Chart -->
+        <div class="h-[145px] bg-gray-900/60 border border-gray-800/80 rounded-lg p-2">
+          <canvas id="equityChart"></canvas>
+        </div>
+
+        <!-- Top 5 Parameter Sets Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono-num">
+            <thead>
+              <tr class="border-b border-gray-800 text-gray-400">
+                <th class="py-2 pr-2">Rank</th>
+                <th class="py-2 pr-2">SL / RR</th>
+                <th class="py-2 pr-2">ADX</th>
+                <th class="py-2 pr-2 text-right">WR</th>
+                <th class="py-2 pr-2 text-right">R-PF</th>
+                <th class="py-2 pr-2 text-right">Sharpe</th>
+                <th class="py-2 pr-2 text-right">OOS R-PF</th>
+                <th class="py-2 text-right">Net R</th>
+              </tr>
+            </thead>
+            <tbody id="bt-table-body" class="divide-y divide-gray-800/60">
+              <tr><td colspan="8" class="py-3 text-gray-500 text-center">กำลังรอผล Backtest...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right: Live Signal Journal & Real Win-Rate (5 Cols) -->
+      <div class="card p-5 lg:col-span-5 flex flex-col justify-between space-y-4">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h2 class="text-base font-bold text-white">Live Signal Win-Rate Journal</h2>
+              <p class="text-xs text-gray-400">บันทึกสัญญาณและสรุปบทเรียนเข้า Knowledge Base</p>
+            </div>
+            <div class="text-right font-mono-num">
+              <span id="live-wr-badge" class="text-sm font-bold text-emerald-400">Live WR: 0.0%</span>
+              <span id="live-pnl-sub" class="block text-[11px] text-gray-400">Closed: 0 | Open: 0</span>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto mt-3">
+            <table class="w-full text-left text-xs font-mono-num">
+              <thead>
+                <tr class="border-b border-gray-800 text-gray-400">
+                  <th class="py-2 pr-2">เวลา / Factor</th>
+                  <th class="py-2 pr-2">ฝั่ง</th>
+                  <th class="py-2 pr-2 text-right">Entry</th>
+                  <th class="py-2 pr-2 text-right">SL / TP</th>
+                  <th class="py-2 text-right">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="journal-table-body" class="divide-y divide-gray-800/60">
+                <tr><td colspan="5" class="py-4 text-gray-500 text-center font-sans">ยังไม่มีประวัติสัญญาณที่ถูกบันทึก</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-gray-500 border-t border-gray-800 pt-2">
+          * ฐานข้อมูลสะสมอัตโนมัติผ่าน Hydra Local Vault | ตรวจสอบ RSI Exhaustion Guard และ Monte Carlo 1,000 รอบ
+        </p>
+      </div>
+
+    </section>
+
+  </div>
+
+  <script>
+    const NTFY_TOPIC = "pansakorn888";
+    let vpChartInstance = null;
+    let equityChartInstance = null;
+    let cachedState = null;
+    let lastChartSignature = null;
+    let lastEquitySignature = null;
+    let lastLivePrice = null;
+    let goldWs = null;
+
+    (function restoreUserPrefs() {
+      const savedBal = localStorage.getItem('xau_balance');
+      const savedRisk = localStorage.getItem('xau_risk_pct');
+      const savedThb = localStorage.getItem('xau_thb_rate');
+      if (savedBal) document.getElementById('input-balance').value = savedBal;
+      if (savedRisk) document.getElementById('input-risk-pct').value = savedRisk;
+      if (savedThb) document.getElementById('input-thb-rate').value = savedThb;
+    })();
+
+    function formatAIResponse(text) {
+      return text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-400 font-semibold">$1</strong>');
+    }
+
+    function recalcPortfolioMath() {
+      const balance = Math.max(10, parseFloat(document.getElementById('input-balance').value) || 5000);
+      const riskPct = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct').value) || 1.5);
+      const thbRate = Math.max(1, parseFloat(document.getElementById('input-thb-rate').value) || 31.1);
+
+      localStorage.setItem('xau_balance', balance);
+      localStorage.setItem('xau_risk_pct', riskPct);
+      localStorage.setItem('xau_thb_rate', thbRate);
+
+      if (!cachedState || !cachedState.quant || !cachedState.quant.setup) return;
+
+      const setup = cachedState.quant.setup;
+      const slDist = Math.max(0.5, parseFloat(setup.sl_dist) || Math.abs(setup.entry - setup.sl));
+      const tpDist = Math.max(0.5, parseFloat(setup.tp_dist) || Math.abs(setup.tp - setup.entry));
+
+      const riskBudgetUsd = balance * (riskPct / 100.0);
+      const rawLot = riskBudgetUsd / (slDist * 100.0);
+      const recLot = Math.max(0.01, Math.round(rawLot * 100) / 100);
+
+      const actualRiskUsd = recLot * 100.0 * slDist;
+      const expectedRewardUsd = recLot * 100.0 * tpDist;
+      const expectedRewardThb = expectedRewardUsd * thbRate;
+
+      document.getElementById('calc-lot').textContent = `${recLot.toFixed(2)} Lot`;
+      document.getElementById('calc-risk-usd').textContent = `เสี่ยง -$${actualRiskUsd.toFixed(2)}`;
+      document.getElementById('calc-reward-usd').textContent = `+$${expectedRewardUsd.toFixed(2)}`;
+      document.getElementById('calc-reward-thb').textContent = `+${Math.round(expectedRewardThb).toLocaleString()} บ.`;
+
+      if (cachedState.backtest && cachedState.backtest.best && Array.isArray(cachedState.backtest.best.trade_r_list)) {
+        const bt = cachedState.backtest.best;
+        const rList = bt.trade_r_list;
+        const totalNetR = rList.reduce((acc, r) => acc + r, 0);
+        const sim60dUsd = totalNetR * riskBudgetUsd;
+        const sim60dThb = sim60dUsd * thbRate;
+        const sim60dPct = (sim60dUsd / balance) * 100.0;
+
+        const el60Usd = document.getElementById('calc-60d-usd');
+        el60Usd.textContent = `${sim60dUsd >= 0 ? '+' : ''}$${sim60dUsd.toFixed(2)}`;
+        el60Usd.className = `text-sm font-bold ${sim60dUsd >= 0 ? 'text-amber-400' : 'text-rose-400'}`;
+        document.getElementById('calc-60d-thb').textContent = `${sim60dThb >= 0 ? '+' : ''}${Math.round(sim60dThb).toLocaleString()} บ. (${sim60dPct >= 0 ? '+' : ''}${sim60dPct.toFixed(1)}%)`;
+
+        const mcDdR = parseFloat(bt.mc_dd_95_r) || 4.0;
+        const mcDdUsd = mcDdR * riskBudgetUsd;
+        document.getElementById('calc-mc-dd').textContent = `-$${mcDdUsd.toFixed(0)} (-${mcDdR}R)`;
+        document.getElementById('calc-mc-prob').textContent = `Prob Profit: ${bt.mc_prob_profit || 0}%`;
+      }
+    }
+
+    async function testNtfyAlert() {
+      const btn = document.getElementById('btn-test-ntfy');
+      const origText = btn.textContent;
+      btn.textContent = "กำลังส่ง...";
+      try {
+        const res = await fetch("https://ntfy.sh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: NTFY_TOPIC,
+            title: "ทดสอบ XAU/USD Quant Terminal V9",
+            message: `เชื่อมต่อแจ้งเตือนเข้ามือถือ (${NTFY_TOPIC}) สำเร็จ! ราคาปัจจุบัน $${lastLivePrice || '-'}`,
+            priority: 4,
+            tags: ["white_check_mark", "coin"]
+          })
+        });
+        if (res.ok) {
+          btn.textContent = "ส่งแล้ว! เช็กมือถือ";
+          btn.classList.replace("text-amber-400", "text-emerald-400");
+        } else {
+          btn.textContent = "ส่งไม่สำเร็จ";
+        }
+      } catch (e) {
+        btn.textContent = "เชื่อมต่อไม่ได้";
+      }
+      setTimeout(() => {
+        btn.textContent = origText;
+        btn.classList.replace("text-emerald-400", "text-amber-400");
+      }, 3000);
+    }
+
+    function updateLiveMetrics(rawBid, rawAsk) {
+      const offset = (cachedState && cachedState.quant && typeof cachedState.quant.paxg_to_spot_offset === 'number')
+        ? cachedState.quant.paxg_to_spot_offset
+        : 0;
+
+      const bid = parseFloat((rawBid + offset).toFixed(2));
+      const ask = parseFloat((rawAsk + offset).toFixed(2));
+      const spotPrice = parseFloat(((bid + ask) / 2).toFixed(2));
+
+      const priceEl = document.getElementById('kpi-price');
+      priceEl.textContent = `$${spotPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      if (lastLivePrice !== null && spotPrice !== lastLivePrice) {
+        priceEl.classList.remove('tick-up', 'tick-down');
+        void priceEl.offsetWidth;
+        priceEl.classList.add(spotPrice > lastLivePrice ? 'tick-up' : 'tick-down');
+      }
+      lastLivePrice = spotPrice;
+
+      document.getElementById('live-tick-time').textContent = new Date().toLocaleTimeString('th-TH');
+      const spread = Math.max(0.01, ask - bid).toFixed(2);
+      document.getElementById('kpi-bidask').textContent = `Bid: $${bid.toFixed(2)} | Ask: $${ask.toFixed(2)} (Spd: $${spread})`;
+
+      if (!cachedState) return;
+      const q = cachedState.quant;
+      const vp = cachedState.volume_profile;
+
+      if (q.mean_20_spot && q.std_20 > 0) {
+        const liveZ = (spotPrice - q.mean_20_spot) / q.std_20;
+        const rsiTxt = q.technicals ? `${q.technicals.rsi14}` : '-';
+        document.getElementById('kpi-zscore').textContent = `RSI14: ${rsiTxt} | Price Z: ${(liveZ > 0 ? '+' : '') + liveZ.toFixed(2)}`;
+      }
+
+      if (vp && vp.poc) {
+        const distPoc = (spotPrice - vp.poc).toFixed(2);
+        document.getElementById('live-poc-dist').textContent = `ห่าง POC: ${distPoc > 0 ? '+' : ''}$${distPoc}`;
+      }
+
+      if (q.setup && q.setup.entry) {
+        const distEntry = Math.abs(spotPrice - q.setup.entry);
+        const distEl = document.getElementById('live-entry-dist');
+        const g3Pill = document.getElementById('gate-3-pill');
+
+        if (!q.setup.in_killzone) {
+          distEl.textContent = `NO TRADE (รอ 13:00 น.)`;
+          distEl.className = 'text-[11px] font-mono-num px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/60';
+        } else {
+          distEl.textContent = `ห่าง Entry: $${distEntry.toFixed(2)}`;
+          if (distEntry <= 8.0 && q.setup.has_edge) {
+            distEl.className = 'text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-600 text-white font-bold animate-pulse';
+            g3Pill.textContent = `3. Proximity: READY ($${distEntry.toFixed(1)})`;
+            g3Pill.className = 'px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60';
+          } else if (distEntry <= 15.0) {
+            distEl.className = 'text-[11px] font-mono-num px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/60';
+            g3Pill.textContent = `3. Proximity: WATCH ($${distEntry.toFixed(1)})`;
+            g3Pill.className = 'px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/60';
+          } else {
+            distEl.className = 'text-[11px] font-mono-num px-2 py-0.5 rounded bg-gray-800 text-gray-300';
+            g3Pill.textContent = `3. Proximity: FAR ($${distEntry.toFixed(1)})`;
+            g3Pill.className = 'px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700';
+          }
+        }
+      }
+    }
+
+    async function fetchRestSnapshot() {
+      try {
+        const res = await fetch(`https://api.binance.com/api/v3/ticker/bookTicker?symbol=PAXGUSDT`);
+        if (res.ok) {
+          const data = await res.json();
+          updateLiveMetrics(parseFloat(data.bidPrice), parseFloat(data.askPrice));
+        }
+      } catch (e) {}
+    }
+
+    function connectGoldWebSocket() {
+      if (goldWs) {
+        try { goldWs.close(); } catch (e) {}
+      }
+      goldWs = new WebSocket('wss://stream.binance.com:9443/ws/paxgusdt@bookTicker');
+
+      goldWs.onopen = () => {
+        const badge = document.getElementById('live-badge');
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE TICK`;
+      };
+
+      goldWs.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.b && msg.a) {
+            updateLiveMetrics(parseFloat(msg.b), parseFloat(msg.a));
+          }
+        } catch (e) {}
+      };
+
+      goldWs.onclose = () => {
+        const badge = document.getElementById('live-badge');
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> RECONNECTING`;
+        setTimeout(connectGoldWebSocket, 3000);
+      };
+    }
+
+    function renderVolumeProfileChart(vpData) {
+      const signature = `${vpData.poc}_${vpData.vah}_${vpData.val}_${vpData.histogram.length}`;
+      if (signature === lastChartSignature && vpChartInstance) {
+        return;
+      }
+      lastChartSignature = signature;
+
+      const ctx = document.getElementById('vpChart').getContext('2d');
+      const labels = vpData.histogram.map(item => '$' + item.price.toFixed(1));
+      const volumes = vpData.histogram.map(item => item.volume);
+      
+      const bgColors = vpData.histogram.map(item => {
+        if (Math.abs(item.price - vpData.poc) <= (vpData.vah - vpData.val) / 25) {
+          return '#f59e0b';
+        }
+        if (item.price >= vpData.val && item.price <= vpData.vah) {
+          return '#3b82f6';
+        }
+        return '#334155';
+      });
+
+      if (vpChartInstance) {
+        vpChartInstance.destroy();
+      }
+
+      vpChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Volume Density',
+            data: volumes,
+            backgroundColor: bgColors,
+            borderRadius: 2,
+            barPercentage: 0.9,
+            categoryPercentage: 0.95
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `Volume: ${ctx.raw.toLocaleString()} contracts`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: '#1f2937' },
+              ticks: { color: '#6b7280', font: { size: 10 } }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#9ca3af', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 14 }
+            }
+          }
+        }
+      });
+    }
+
+    function renderEquityCurve(equityCurveR) {
+      if (!equityCurveR || equityCurveR.length < 2) return;
+      const sig = `${equityCurveR.length}_${equityCurveR[equityCurveR.length - 1]}`;
+      if (sig === lastEquitySignature && equityChartInstance) return;
+      lastEquitySignature = sig;
+
+      const ctx = document.getElementById('equityChart').getContext('2d');
+      const labels = equityCurveR.map((_, idx) => idx === 0 ? 'Start' : `#${idx}`);
+      const isPositive = equityCurveR[equityCurveR.length - 1] >= 0;
+
+      if (equityChartInstance) {
+        equityChartInstance.destroy();
+      }
+
+      equityChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Cumulative R-Multiple (R)',
+            data: equityCurveR,
+            borderColor: isPositive ? '#10b981' : '#f43f5e',
+            backgroundColor: isPositive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(244, 63, 94, 0.12)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.25,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#6b7280', font: { size: 9 }, maxTicksLimit: 10 }
+            },
+            y: {
+              grid: { color: '#1f2937' },
+              ticks: {
+                color: '#9ca3af',
+                font: { size: 10, family: 'JetBrains Mono' },
+                callback: (val) => `${val}R`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    async function loadDashboardData() {
+      try {
+        const res = await fetch(`./data/state.json?t=${Date.now()}`);
+        if (!res.ok) throw new Error('ยังไม่มีไฟล์ state.json');
+        const data = await res.json();
+        cachedState = data;
+
+        const dateObj = new Date(data.updated_at);
+        document.getElementById('last-updated').textContent = `AI อัปเดต: ${dateObj.toLocaleTimeString('th-TH')}`;
+
+        const q = data.quant;
+        if (q.data_audit) {
+          document.getElementById('data-audit-line').textContent =
+            `Hydra Vault: ${q.data_audit.total_bars.toLocaleString()} แท่ง M15 (~${q.data_audit.vault_days || 60} วัน | ${q.data_audit.date_range}) | Spot Offset: ${q.data_audit.spot_offset >= 0 ? '+' : ''}$${q.data_audit.spot_offset}`;
+        }
+
+        if (lastLivePrice === null) {
+          updateLiveMetrics(q.bid - (q.paxg_to_spot_offset || 0), q.ask - (q.paxg_to_spot_offset || 0));
+        }
+
+        if (q.setup && q.gates) {
+          const sBadge = document.getElementById('session-gate-badge');
+          const sBanner = document.getElementById('session-banner');
+          const sDot = document.getElementById('session-dot');
+          const sTitle = document.getElementById('session-banner-title');
+          const g1 = document.getElementById('gate-1-pill');
+          const g2 = document.getElementById('gate-2-pill');
+
+          g1.textContent = q.gates.session_ok ? '1. Session: OPEN' : '1. Session: LOCKED';
+          g1.className = q.gates.session_ok
+            ? 'px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60'
+            : 'px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-700/60';
+
+          g2.textContent = q.gates.edge_ok ? '2. Quant Edge: PASS' : '2. Quant Edge: WEAK';
+          g2.className = q.gates.edge_ok
+            ? 'px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/60'
+            : 'px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700/60';
+
+          if (q.setup.in_killzone) {
+            sBadge.textContent = "KILLZONE ACTIVE (13:00-00:30)";
+            sBadge.className = "px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full";
+            sBanner.className = "card p-3.5 border-emerald-700/40 bg-emerald-950/20 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5";
+            sDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
+            sTitle.textContent = q.gates.all_passed
+              ? "ALL 3 GATES PASSED — สัญญาณเข้าเทรดพร้อมยิง!"
+              : "KILLZONE ACTIVE — ระบบเปิดทำงานและกำลังรอราคาเข้าใกล้จุด Entry (<=$8)";
+            sTitle.className = "text-xs font-bold text-emerald-300";
+          } else {
+            sBadge.textContent = "NO TRADE ZONE (ปลดล็อก 13:00 น.)";
+            sBadge.className = "px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-rose-950 text-rose-400 border border-rose-700/60 rounded-full";
+            sBanner.className = "card p-3.5 border-rose-800/40 bg-rose-950/20 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5";
+            sDot.className = "w-2.5 h-2.5 rounded-full bg-rose-400";
+            sTitle.textContent = "NO TRADE ZONE (ช่วงเช้า) — บล็อกการออกออเดอร์ชั่วคราว (ส่งแผนรายวันแล้ว รอ 13:00 น.)";
+            sTitle.className = "text-xs font-bold text-rose-300";
+          }
+        }
+
+        if (q.technicals) {
+          const t = q.technicals;
+          const trendDir = q.spot_price < t.h1_ema200 ? 'BEAR' : 'BULL';
+          document.getElementById('kpi-regime').textContent = `ADX ${t.adx14} (${trendDir})`;
+          document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${t.pdh} | PDL: $${t.pdl} | Asian: $${t.asian_low || '-'}-$${t.asian_high || '-'}`;
+        }
+
+        if (data.backtest && data.backtest.best) {
+          const bt = data.backtest.best;
+          document.getElementById('kpi-bt-wr').textContent = `${bt.win_rate}% / R-PF ${bt.r_profit_factor}`;
+          document.getElementById('kpi-bt-desc').textContent = `Sharpe: ${bt.sharpe} | Sortino: ${bt.sortino}`;
+          document.getElementById('bt-summary-badge').textContent = `Net: ${bt.net_r >= 0 ? '+' : ''}${bt.net_r}R (${bt.net_pnl >= 0 ? '+' : ''}$${bt.net_pnl}/oz) | Max DD: -${bt.max_dd_r}R`;
+          document.getElementById('bt-meta-sub').textContent = `Walk-Forward 67% Train / 33% OOS | OOS: ${bt.oos_trades} ไม้ (${bt.oos_net_r >= 0 ? '+' : ''}${bt.oos_net_r}R) | หัก Spread $${bt.total_fee_drag}/oz`;
+
+          document.getElementById('m-sharpe').textContent = bt.sharpe;
+          document.getElementById('m-sortino').textContent = bt.sortino;
+          document.getElementById('m-calmar').textContent = bt.calmar;
+          document.getElementById('m-var95').textContent = `${bt.var_95_r}R`;
+
+          renderEquityCurve(bt.equity_curve_r);
+
+          if (Array.isArray(data.backtest.factor_breakdown)) {
+            document.getElementById('factor-cards-grid').innerHTML = data.backtest.factor_breakdown.map(fb => `
+              <div class="bg-gray-900/80 border ${fb.enabled ? 'border-gray-800' : 'border-rose-900/50 opacity-55'} rounded-lg p-2">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                  <span class="text-[9px] font-bold truncate ${fb.enabled ? 'text-amber-300' : 'text-gray-400'}">${fb.factor}</span>
+                  <span class="text-[8px] px-1 py-0.2 rounded shrink-0 ${fb.enabled ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'}">
+                    ${fb.enabled ? `ON(${fb.trades})` : 'MUTE'}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-cyan-400 font-bold">${fb.win_rate}%</span>
+                  <span class="${fb.net_r >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">
+                    ${fb.net_r >= 0 ? '+' : ''}${fb.net_r}R
+                  </span>
+                </div>
+              </div>
+            `).join('');
+          }
+
+          const btBody = document.getElementById('bt-table-body');
+          btBody.innerHTML = data.backtest.top_5.map((row, i) => `
+            <tr class="${i === 0 ? 'bg-amber-500/10 text-amber-300 font-semibold' : 'hover:bg-gray-800/40 text-gray-300'}">
+              <td class="py-2 pr-2">${i === 0 ? '★ #1' : '#' + (i + 1)}</td>
+              <td class="py-2 pr-2">${row.atr_sl_mult}x / 1:${row.rr_mult}</td>
+              <td class="py-2 pr-2">ADX ${row.adx_thresh}</td>
+              <td class="py-2 pr-2 text-right text-cyan-400">${row.win_rate}%</td>
+              <td class="py-2 pr-2 text-right text-emerald-400">${row.r_profit_factor}</td>
+              <td class="py-2 pr-2 text-right text-purple-300">${row.sharpe}</td>
+              <td class="py-2 pr-2 text-right text-amber-300">${row.oos_profit_factor}</td>
+              <td class="py-2 text-right font-bold ${row.net_r >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${row.net_r >= 0 ? '+' : ''}${row.net_r}R</td>
+            </tr>
+          `).join('');
+        }
+
+        if (data.journal) {
+          const j = data.journal;
+          document.getElementById('live-wr-badge').textContent = `Live WR: ${j.live_win_rate}% (${j.wins}W/${j.losses}L)`;
+          document.getElementById('live-pnl-sub').textContent = `Closed: ${j.closed_trades} | Open: ${j.open_trades} | Net: ${j.net_live_pnl >= 0 ? '+' : ''}$${j.net_live_pnl}`;
+          
+          const jBody = document.getElementById('journal-table-body');
+          if (j.recent_trades && j.recent_trades.length > 0) {
+            jBody.innerHTML = j.recent_trades.map(t => `
+              <tr class="hover:bg-gray-800/40">
+                <td class="py-2 pr-2 text-gray-400">
+                  <div>${t.opened_at_th}</div>
+                  <div class="text-[9px] text-amber-400/80">${t.factor || 'SETUP'}</div>
+                </td>
+                <td class="py-2 pr-2 font-bold ${t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.direction}</td>
+                <td class="py-2 pr-2 text-right text-white">$${t.entry}</td>
+                <td class="py-2 pr-2 text-right text-gray-400">${t.sl} / ${t.tp}</td>
+                <td class="py-2 text-right">
+                  ${t.status === 'WIN' ? `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold">WIN (+$${t.pnl})</span>` :
+                    t.status === 'LOSS' ? `<span class="px-1.5 py-0.5 rounded bg-rose-950 text-rose-400 font-bold">LOSS ($${t.pnl})</span>` :
+                    `<span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-400">OPEN</span>`}
+                </td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        const cvdEl = document.getElementById('kpi-cvd');
+        cvdEl.textContent = (q.cvd_6h_proxy > 0 ? '+' : '') + q.cvd_6h_proxy.toLocaleString();
+        cvdEl.className = `text-2xl font-bold font-mono-num mt-1 ${q.cvd_6h_proxy >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+        document.getElementById('kpi-macro').textContent = `${q.dxy_price} / ${q.us10y_yield}%`;
+        document.getElementById('kpi-corr').textContent = `Gold-DXY Corr: ${q.corr_gold_dxy_20d}`;
+
+        if (q.setup) {
+          document.getElementById('setup-factor-tag').textContent = q.setup.active_factor;
+          document.getElementById('setup-bias').textContent = q.setup.bias;
+          document.getElementById('setup-rr').textContent = `R:R 1:${q.setup.rr}`;
+          document.getElementById('setup-entry').textContent = `$${q.setup.entry.toLocaleString()}`;
+          document.getElementById('setup-sl').textContent = `$${q.setup.sl.toLocaleString()}`;
+          document.getElementById('setup-be-target').textContent = `$${(q.setup.be_target || q.setup.entry).toLocaleString()}`;
+          document.getElementById('setup-tp').textContent = `$${q.setup.tp.toLocaleString()}`;
+        }
+
+        const vp = data.volume_profile;
+        document.getElementById('vp-vah').textContent = `$${vp.vah}`;
+        document.getElementById('vp-poc').textContent = `$${vp.poc}`;
+        document.getElementById('vp-val').textContent = `$${vp.val}`;
+        renderVolumeProfileChart(vp);
+
+        if (data.ai_council) {
+          const kbCount = Array.isArray(data.ai_council.kb_files_loaded) ? data.ai_council.kb_files_loaded.length : 3;
+          document.getElementById('kb-badge').textContent = `KB: ${kbCount} Docs`;
+          document.getElementById('agent1-audit').textContent = data.ai_council.quant_audit;
+          document.getElementById('agent2-audit').textContent = data.ai_council.macro_audit;
+          document.getElementById('agent3-audit').textContent = data.ai_council.contrarian_audit || 'กำลังจับผิดความเสี่ยง...';
+          document.getElementById('recall-question').textContent = data.ai_council.active_recall_q || '-';
+          document.getElementById('recall-answer').textContent = data.ai_council.active_recall_a || '-';
+        }
+        document.getElementById('ai-content').innerHTML = formatAIResponse(data.ai_analysis);
+
+        const newsBody = document.getElementById('news-table-body');
+        if (data.news && data.news.length > 0) {
+          newsBody.innerHTML = data.news.map(n => `
+            <tr class="hover:bg-gray-800/40">
+              <td class="py-2.5 pr-3 text-gray-400 whitespace-nowrap">${n.time_th}</td>
+              <td class="py-2.5 pr-3 text-gray-200 font-sans font-medium">
+                ${n.title}
+                <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded ${n.impact === 'High' ? 'bg-rose-950 text-rose-400' : 'bg-amber-950 text-amber-400'}">${n.impact}</span>
+              </td>
+              <td class="py-2.5 pr-3 text-right text-amber-400">${n.forecast || '-'}</td>
+              <td class="py-2.5 pr-3 text-right text-gray-400">${n.previous || '-'}</td>
+              <td class="py-2.5 text-right ${n.is_upcoming && n.hours_away <= 2 ? 'text-rose-400 font-bold' : (n.is_upcoming ? 'text-cyan-400' : 'text-gray-500')}">${n.status || '-'}</td>
+            </tr>
+          `).join('');
+        } else {
+          newsBody.innerHTML = `<tr><td colspan="5" class="py-3 text-gray-500 text-center">ไม่มีข่าวสำคัญ USD ในช่วงนี้</td></tr>`;
+        }
+
+        recalcPortfolioMath();
+
+      } catch (err) {
+        document.getElementById('last-updated').textContent = 'รอการรัน engine.py ครั้งแรก';
+        document.getElementById('ai-content').innerHTML = 
+          `<span class="text-amber-400">ยังพบไฟล์ data/state.json ไม่เจอ:</span> กรุณาสั่งรัน <code>python backend/engine.py</code> เพื่อสร้างข้อมูลชุดแรกครับ`;
+      }
+    }
+
+    async function manualRefresh() {
+      await fetchRestSnapshot();
+      await loadDashboardData();
+    }
+
+    loadDashboardData().then(() => {
+      fetchRestSnapshot();
+      connectGoldWebSocket();
+    });
+    setInterval(loadDashboardData, 30000);
+  </script>
+</body>
+</html>
