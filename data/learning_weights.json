@@ -1,0 +1,25 @@
+{
+  "updated_at": "2026-11-19T16:53:38.483392+00:00",
+  "total_closed": 1,
+  "overall_wins": 0,
+  "overall_losses": 1,
+  "overall_pnl": -5.45,
+  "muted_trend_factors": [],
+  "muted_scalp_shapes": [],
+  "breakdown": [
+    {
+      "mode": "SCALP_500PT",
+      "name": "DOUBLE_ZONE",
+      "w": 0,
+      "l": 1,
+      "pnl": -5.45,
+      "net_r": -1.09,
+      "recent": [
+        "LOSS"
+      ],
+      "consec_losses": 1,
+      "wr": 0.0,
+      "auto_muted": false
+    }
+  ]
+}
