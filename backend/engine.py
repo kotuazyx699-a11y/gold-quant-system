@@ -2068,7 +2068,7 @@ def send_cycle_pulse_notification(quant_data, scalp_data, learning_state, is_sta
         f"**Trend Setup:** {setup['direction']} @ ${setup['entry']} (**{trend_stat}**)\n"
         f"**Live Journal:** {learning_state['overall_wins']}W / {learning_state['overall_losses']}L (Net ${learning_state['overall_pnl']})"
     )
-    send_ntfy_alert(title, msg, priority=3, tags=["clock3", "bar_chart"])
+    send_ntfy_alert(title, msg, priority=4, tags=["clock3", "bar_chart"])
 
 def local_git_push():
     if IS_GITHUB_ACTIONS or not os.path.isdir(".git"):
@@ -2187,3 +2187,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
