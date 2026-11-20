@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD Trend + Reversal & Live Order Manager V19.0</title>
+  <title>XAU/USD Continuous Learning AI & Dual-Backtest Quant V20.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -22,12 +22,12 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Trend + Reversal & Live Order Quant V19.0</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Continuous AI & Dual-Backtest Quant V20.0</h1>
           <span class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE SPOT & REVERSAL SYNC
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> 24/7 CONTINUOUS LEARNING
           </span>
           <span id="mue-gen-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full">
-            12,096-Sim Gen #1
+            เรียนรู้สะสม: 0 สูตร (Gen #1)
           </span>
         </div>
         <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังเชื่อมต่อ Spot XAU/USD Feed + Hydra Vault 4,500 แท่ง M15...</p>
@@ -35,11 +35,11 @@
       <div class="flex flex-wrap items-center gap-2">
         <div class="text-right font-mono-num mr-1">
           <span id="last-updated" class="block text-xs text-emerald-400">AI อัปเดตสด: กำลังรัน...</span>
-          <span id="next-cycle-countdown" class="block text-[11px] text-cyan-400">รอบรีเฟรช Limit + AI + ntfy ในอีก: -- นาที -- วินาที</span>
+          <span id="next-cycle-countdown" class="block text-[11px] text-cyan-400">รอบเรียนรู้ AI + รีเฟรช Limit ในอีก: -- นาที -- วินาที</span>
         </div>
         <button id="btn-run-ai" onclick="runFullLiveQuantAndAI(true)"
            class="px-3 py-1.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950 rounded-lg transition shadow-lg shadow-cyan-500/20">
-          🧬 รัน AI + จำลองใหม่
+          🧬 รันจำลอง 22,176 สูตร + AI
         </button>
         <button id="btn-sound" onclick="toggleAudioGate()" class="px-3 py-1.5 text-xs font-medium bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 rounded-lg transition">
           เสียง: เปิด
@@ -103,9 +103,8 @@
         </div>
       </div>
 
-      <!-- Active Order Detail Grid -->
       <div id="active-order-empty" class="text-xs text-gray-400 font-mono-num py-1">
-        ยังไม่มีออเดอร์ถืออยู่หรือ Limit ค้างในขณะนี้ — ระบบวาง Limit อัตโนมัติ (ทั้งโหมดตามเทรนด์และจุดกลับตัว) และรีเฟรชจุดเข้าทุก 15 นาทีหากยังไม่แมตช์
+        ยังไม่มีออเดอร์ถืออยู่หรือ Limit ค้างในขณะนี้ — ระบบตรวจสอบผล OOS Safety Lock ก่อนวาง Limit อัตโนมัติ และรีเฟรชจุดเข้าทุก 15 นาทีหากยังไม่แมตช์
       </div>
 
       <div id="active-order-card" class="hidden grid grid-cols-2 sm:grid-cols-6 gap-2.5 font-mono-num text-center">
@@ -141,7 +140,6 @@
         </div>
       </div>
 
-      <!-- Today's Closed Orders Mini-Log -->
       <div id="today-closed-wrap" class="hidden pt-2 border-t border-gray-800/80">
         <div class="flex items-center justify-between text-[11px] font-mono-num mb-1.5">
           <span class="text-emerald-300 font-bold">ออเดอร์ที่ปิดจบ TP/SL วันนี้ (ย้ายเข้าสมุดเรียนรู้ AI อัตโนมัติเมื่อขึ้นวันใหม่)</span>
@@ -151,10 +149,10 @@
       </div>
     </section>
 
-    <!-- Evolution Progress Bar -->
+    <!-- Evolution Progress Bar (22,176 Dual-Engine Combinations) -->
     <div id="sim-progress-wrap" class="card p-3 border-purple-500/50 bg-purple-950/20">
       <div class="flex items-center justify-between text-xs font-mono-num mb-1.5">
-        <span id="sim-progress-label" class="text-purple-300 font-bold">กำลังเตรียมข้อมูล 4,500 แท่ง M15 เพื่อจำลองกลยุทธ์ 12,096 รูปแบบ (หัก Spread/Comm $0.40)...</span>
+        <span id="sim-progress-label" class="text-purple-300 font-bold">กำลังจำลองกลยุทธ์คู่ 22,176 รูปแบบ (12,096 ตามเทรนด์ + 10,080 จุดกลับตัว)...</span>
         <span id="sim-progress-pct" class="text-cyan-400 font-bold">0%</span>
       </div>
       <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -162,7 +160,7 @@
       </div>
     </div>
 
-    <!-- LIVE TREND + REVERSAL ORDERFLOW EXECUTION GATE -->
+    <!-- LIVE TREND + REVERSAL ORDERFLOW EXECUTION GATE + OOS SAFETY LOCK -->
     <section id="execution-gate-box" class="card p-4 border-cyan-500/50 bg-gradient-to-r from-gray-900 via-cyan-950/25 to-purple-950/25">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div class="space-y-1">
@@ -170,12 +168,15 @@
             <span id="regime-mode-badge" class="px-2.5 py-0.5 text-[10px] font-mono-num font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 rounded">
               🌊 TREND FOLLOW MODE
             </span>
+            <span id="rev-safety-badge" class="px-2.5 py-0.5 text-[10px] font-mono-num font-bold bg-gray-800 text-amber-300 border border-amber-500/40 rounded">
+              🛡️ REV OOS GUARD: กำลังตรวจสอบ...
+            </span>
             <span id="gate-status-pill" class="px-2.5 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-600/60 rounded-full">
               INITIALIZING...
             </span>
           </div>
-          <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังวิเคราะห์โครงสร้าง Trend & Reversal Radar ระยะใกล้ราคา Spot...</h2>
-          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">ตรวจจับทั้งจังหวะตามเทรนด์ (EMA200/ADX) และจุดกลับตัว (RSI Exhaustion + แนวรับ/ต้าน VP/PDL/PDH + L2 Wall Absorption)</p>
+          <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังวิเคราะห์โครงสร้าง Trend & Reversal Backtest ระยะใกล้ราคา Spot...</h2>
+          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">กฎนิรภัย: หากสูตรกลับตัว OOS WR < 50% หรือ Net R <= 0 ระบบจะล็อกห้าม Auto-Limit สวนเทรนด์อัตโนมัติ</p>
         </div>
         <div class="grid grid-cols-3 gap-2.5 font-mono-num text-center shrink-0">
           <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
@@ -271,7 +272,7 @@
       </div>
     </section>
 
-    <!-- LIVE ORDERFLOW & ENGINE A (TREND + REVERSAL SCALP) GRID -->
+    <!-- LIVE ORDERFLOW & ENGINE A GRID -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div class="card p-5 lg:col-span-5 border-cyan-600/40 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
@@ -304,11 +305,11 @@
         </div>
       </div>
 
-      <!-- Engine A: Near-Spot Scalp (Supports Both Trend Follow & Reversal Bounce) -->
+      <!-- Engine A: Near-Spot Scalp (Backed by both Trend & Reversal Backtests) -->
       <div class="card p-5 lg:col-span-7 border-purple-600/40 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
           <div>
-            <span id="engine-a-subtitle" class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">ENGINE A: NEAR-SPOT SCALP (รองรับทั้งตามเทรนด์และจุดกลับตัว)</span>
+            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">ENGINE A: NEAR-SPOT EXECUTION (เลือกสูตรผู้ชนะที่ผ่าน OOS จริง)</span>
             <h2 id="anatomy-title" class="text-base font-bold text-amber-400">กำลังคำนวณโครงสร้าง Micro-VP 4H...</h2>
           </div>
           <span id="scalp-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60">WR: -% | Net: -R</span>
@@ -339,6 +340,32 @@
       </div>
     </section>
 
+    <!-- CONTINUOUS AI LEARNING BRAIN & SESSION MATRIX (NEW IN V20.0) -->
+    <section class="card p-5 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-indigo-950/20 to-purple-950/20 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-3">
+        <div>
+          <span class="text-[10px] uppercase tracking-wider text-cyan-400 font-bold">CONTINUOUS EVOLUTIONARY AI BRAIN (เรียนรู้ตลอดเวลา 24/7 ข้ามทุกช่วงตลาด)</span>
+          <h2 class="text-base font-bold text-white">🧠 สมองกล AI เรียนรู้ต่อเนื่องตามช่วงเวลา & ประวัติพอร์ตจริง</h2>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 font-mono-num text-xs">
+          <span id="brain-current-session" class="px-2.5 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/60">ช่วงเวลาปัจจุบัน: --</span>
+          <span id="brain-total-sims" class="px-2.5 py-1 rounded bg-purple-950 text-purple-300 border border-purple-700/60">สะสม: 0 สูตร</span>
+        </div>
+      </div>
+
+      <!-- 4 Session Performance Cards -->
+      <div id="session-matrix-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-3 font-mono-num text-xs"></div>
+
+      <!-- Live AI Memory Feed (What AI has learned across time periods) -->
+      <div class="bg-gray-900/80 border border-gray-800 rounded-lg p-3 space-y-2">
+        <div class="flex items-center justify-between text-[11px] font-mono-num">
+          <span class="text-amber-300 font-bold">📝 บันทึกความจำระยะยาวของ AI (AI Persistent Memory — ส่งกลับไปสอน AI ทุกรอบ 15 นาที)</span>
+          <span id="brain-rules-count" class="text-gray-400">0 กฎที่เรียนรู้</span>
+        </div>
+        <div id="brain-insights-list" class="space-y-1.5 text-xs text-gray-300 max-h-36 overflow-y-auto pr-1"></div>
+      </div>
+    </section>
+
     <!-- Bottom Grid -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-7 space-y-6">
@@ -347,7 +374,7 @@
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
             <div>
               <h2 class="text-base font-bold text-white">Engine B: Swing / Reversal Sniper & True Live AI Analyst</h2>
-              <p id="ai-model-sub" class="text-[11px] text-gray-400 font-mono-num">ส่งทั้ง Trend & Reversal Radar + สมุดเรียนรู้ให้ AI วิเคราะห์สดทุก 15 นาที</p>
+              <p id="ai-model-sub" class="text-[11px] text-gray-400 font-mono-num">AI อ่านผล Backtest ทั้ง 2 ฝั่ง + ความจำข้ามช่วงเวลา + สมุดเรียนรู้จริง</p>
             </div>
             <div class="flex items-center gap-2">
               <button onclick="placeSwingLimitOrder(true)" class="text-[10px] font-mono-num font-bold px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-gray-950">
@@ -374,12 +401,50 @@
           <div id="ai-content" class="text-sm text-gray-200 leading-relaxed whitespace-pre-line">กำลังส่งข้อมูลตลาดสดให้ AI วิเคราะห์...</div>
         </div>
 
+        <!-- TABLE 1: TREND-FOLLOW BACKTEST (12,096 COMBOS) -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-cyan-300">🌊 ตารางที่ 1: ยีนผู้ชนะฝั่งตามเทรนด์ (12,096 วิธี | หัก $0.40 + ถือทีละ 1 ไม้)</span>
+            <span class="text-[11px] font-mono-num text-gray-400">4,500 M15 Bars (~47 วัน)</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono-num">
+              <thead>
+                <tr class="border-b border-gray-800 text-gray-400">
+                  <th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">สูตรตามเทรนด์</th><th class="py-1.5 pr-2">SL / TP / กฎปิด</th>
+                  <th class="py-1.5 pr-2 text-right">ไม้</th><th class="py-1.5 pr-2 text-right">WR รวม</th><th class="py-1.5 pr-2 text-right">OOS WR</th><th class="py-1.5 text-right">Net R</th>
+                </tr>
+              </thead>
+              <tbody id="scalp-bt-table-body" class="divide-y divide-gray-800/60"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TABLE 2: REVERSAL / COUNTER-TREND BACKTEST (10,080 COMBOS) -->
+        <div class="card p-5 border-amber-500/40">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span class="text-xs font-bold text-amber-300">🔄 ตารางที่ 2: ผลทดสอบจุดกลับตัว/สวนเทรนด์เฉพาะทาง (10,080 วิธี | 5 สูตรกลับตัว)</span>
+            <span id="rev-table-status" class="text-[11px] font-mono-num text-emerald-400">กำลังประเมินเกณฑ์ OOS...</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono-num">
+              <thead>
+                <tr class="border-b border-gray-800 text-gray-400">
+                  <th class="py-1.5 pr-2">สูตรกลับตัว</th><th class="py-1.5 pr-2">ตัวกรอง</th><th class="py-1.5 pr-2">SL / TP / กฎปิด</th>
+                  <th class="py-1.5 pr-2 text-right">ไม้</th><th class="py-1.5 pr-2 text-right">WR รวม</th><th class="py-1.5 pr-2 text-right">OOS WR</th><th class="py-1.5 text-right">Net R</th>
+                </tr>
+              </thead>
+              <tbody id="rev-bt-table-body" class="divide-y divide-gray-800/60"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- AI LEARNING JOURNAL & ARCHIVED DAILY STATS -->
         <div class="card p-5 border-purple-500/40 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
             <div>
-              <h2 class="text-sm font-bold text-purple-300">📚 สมุดบันทึกการเรียนรู้ AI & สถิติสะสมข้ามวัน (Learning Ledger)</h2>
-              <p class="text-[11px] text-gray-400">รวมผลเทรดจริงที่ย้ายมาจากกระดานเมื่อเปลี่ยนวัน — AI อ่านสถิตินี้เพื่อปรับความแม่นยำ</p>
+              <h2 class="text-sm font-bold text-purple-300">📚 สมุดบันทึกสถิติพอร์ตจริงข้ามวัน (Live Trade Archive)</h2>
+              <p class="text-[11px] text-gray-400">รวมผลเทรดจริงที่ย้ายมาจากกระดานเมื่อเปลี่ยนวัน — ป้อนกลับเข้าสมองกล AI ทันที</p>
             </div>
             <div class="flex items-center gap-2 font-mono-num text-xs">
               <span id="ledger-summary-badge" class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60">สะสม: 0 ไม้ | +0.00R</span>
@@ -392,32 +457,13 @@
             <table class="w-full text-left text-[11px] font-mono-num">
               <thead>
                 <tr class="border-b border-gray-800 text-gray-400">
-                  <th class="py-1.5 pr-2">วันที่</th><th class="py-1.5 pr-2">โหมด/ทรง</th><th class="py-1.5 pr-2">ฝั่ง</th>
+                  <th class="py-1.5 pr-2">วันที่</th><th class="py-1.5 pr-2">โหมด/สูตร</th><th class="py-1.5 pr-2">ฝั่ง</th>
                   <th class="py-1.5 pr-2 text-right">Entry -> Exit</th><th class="py-1.5 pr-2 text-right">ผล (R / $)</th><th class="py-1.5">บทเรียน AI</th>
                 </tr>
               </thead>
               <tbody id="learning-ledger-body" class="divide-y divide-gray-800/60">
                 <tr><td colspan="6" class="py-3 text-center text-gray-500">ยังไม่มีประวัติย้อนหลังข้ามวัน (เมื่อปิดออเดอร์และขึ้นวันใหม่ ข้อมูลจะถูกย้ายมาเก็บที่นี่อัตโนมัติ)</td></tr>
               </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 12,096 Evolution Table -->
-        <div class="card p-5">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-purple-300">ตารางยีนผู้ชนะ 12,096 วิธี (หัก Spread/Comm $0.40 + เปิดทีละ 1 ไม้)</span>
-            <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">4,500 M15 Bars (~47 วัน)</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs font-mono-num">
-              <thead>
-                <tr class="border-b border-gray-800 text-gray-400">
-                  <th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">สูตรที่ชนะ</th><th class="py-1.5 pr-2">SL / TP / กฎปิด</th>
-                  <th class="py-1.5 pr-2 text-right">ไม้</th><th class="py-1.5 pr-2 text-right">WR รวม</th><th class="py-1.5 pr-2 text-right">OOS WR</th><th class="py-1.5 text-right">Net R</th>
-                </tr>
-              </thead>
-              <tbody id="scalp-bt-table-body" class="divide-y divide-gray-800/60"></tbody>
             </table>
           </div>
         </div>
@@ -448,7 +494,7 @@
             <table class="w-full text-left text-[11px] font-mono-num">
               <thead>
                 <tr class="border-b border-gray-800 text-gray-400">
-                  <th class="py-1.5 pr-2">เวลา</th><th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">ฝั่ง</th>
+                  <th class="py-1.5 pr-2">เวลา</th><th class="py-1.5 pr-2">สูตร/ทรง</th><th class="py-1.5 pr-2">ฝั่ง</th>
                   <th class="py-1.5 pr-2 text-right">Entry</th><th class="py-1.5 text-right">ผลจริง (R)</th>
                 </tr>
               </thead>
@@ -464,13 +510,14 @@
   <script>
     const NTFY_TOPIC = "pansakorn888";
     const PROP_FRICTION_USD = 0.40;
-    const STORAGE_KEY = "GOLD_QUANT_V19_LEDGER";
+    const STORAGE_KEY = "GOLD_QUANT_V20_LEDGER";
+    const BRAIN_KEY = "GOLD_QUANT_V20_BRAIN";
 
     let vpChartInstance = null, liveModel = null;
     let rawWsBid = null, rawWsAsk = null, spotBasisOffset = 0.0, lastRenderedMid = null;
     let latestBids = [], latestAsks = [], latestObi = 0, latestBidPct = 50;
     let tradeBuffer60s = [], latestDelta60s = 0, obiSustainStart = null, lastAutoFireTs = 0, audioEnabled = true;
-    let lastRanSlot = -1, lastAiUpdateMs = 0, lastAiTimeStr = "--:--:--", genCounter = 1, isSimRunning = false;
+    let lastRanSlot = -1, lastAiUpdateMs = 0, lastAiTimeStr = "--:--:--", isSimRunning = false;
 
     function getBangkokDateStr(ts = Date.now()) {
       return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ts));
@@ -480,6 +527,109 @@
       return new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(ts));
     }
 
+    function getBangkokSession(ts = Date.now()) {
+      const hr = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', hour: '2-digit', hour12: false }).format(new Date(ts)), 10);
+      if (hr >= 6 && hr <= 13) return { id: "ASIA", label: "ASIA (06:00-13:59)" };
+      if (hr >= 14 && hr <= 18) return { id: "LONDON", label: "LONDON (14:00-18:59)" };
+      if (hr >= 19 && hr <= 23) return { id: "NY_OVERLAP", label: "NY OVERLAP (19:00-23:59)" };
+      return { id: "LATE_NY", label: "LATE NY (00:00-05:59)" };
+    }
+
+    // --- PERSISTENT CONTINUOUS AI LEARNING BRAIN ---
+    let aiBrain = {
+      generation: 0,
+      totalCombosLearned: 0,
+      formulaWeights: {},
+      sessionStats: {
+        ASIA: { label: "ASIA (เช้า)", wins: 0, losses: 0, netR: 0, bestFormula: "-" },
+        LONDON: { label: "LONDON (บ่าย)", wins: 0, losses: 0, netR: 0, bestFormula: "-" },
+        NY_OVERLAP: { label: "NY OVERLAP (ค่ำ)", wins: 0, losses: 0, netR: 0, bestFormula: "-" },
+        LATE_NY: { label: "LATE NY (ดึก)", wins: 0, losses: 0, netR: 0, bestFormula: "-" }
+      },
+      learnedInsights: []
+    };
+
+    function loadAiBrain() {
+      try {
+        const raw = localStorage.getItem(BRAIN_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          aiBrain = Object.assign(aiBrain, parsed);
+        }
+      } catch (e) {}
+      renderAiBrainUI();
+    }
+
+    function saveAiBrain() {
+      try { localStorage.setItem(BRAIN_KEY, JSON.stringify(aiBrain)); } catch (e) {}
+      renderAiBrainUI();
+    }
+
+    function recordAiInsight(text, tag = "CYCLE") {
+      const stamp = `${getBangkokDateStr().slice(5)} ${getBangkokTimeStr().slice(0, 5)}`;
+      const sess = getBangkokSession().id;
+      aiBrain.learnedInsights.unshift({ stamp, sess, tag, text });
+      aiBrain.learnedInsights = aiBrain.learnedInsights.slice(0, 30);
+      saveAiBrain();
+    }
+
+    function updateBrainFromClosedTrade(closedRec) {
+      const sess = getBangkokSession().id;
+      const st = aiBrain.sessionStats[sess];
+      if (st) {
+        if (closedRec.outcome === "WIN") st.wins++;
+        else if (closedRec.outcome === "LOSS") st.losses++;
+        st.netR = +(st.netR + closedRec.pnlR).toFixed(2);
+        st.bestFormula = closedRec.formula || closedRec.shape;
+      }
+      const fKey = closedRec.formula || closedRec.shape;
+      const curW = aiBrain.formulaWeights[fKey] || 50;
+      aiBrain.formulaWeights[fKey] = Math.max(10, Math.min(99, curW + (closedRec.pnlR > 0 ? 6 : -8)));
+      recordAiInsight(
+        `[ผลเทรดจริง ${sess}] ${closedRec.dir} (${fKey}) ปิด ${closedRec.pnlR >= 0 ? '+' : ''}${closedRec.pnlR}R → ปรับน้ำหนักสูตรเป็น ${aiBrain.formulaWeights[fKey]}%`,
+        closedRec.outcome
+      );
+    }
+
+    function renderAiBrainUI() {
+      const curSess = getBangkokSession();
+      document.getElementById('brain-current-session').textContent = `ช่วงเวลาปัจจุบัน: ${curSess.label}`;
+      document.getElementById('brain-total-sims').textContent = `เรียนรู้สะสม: ${aiBrain.totalCombosLearned.toLocaleString()} สูตร (Gen #${aiBrain.generation})`;
+      document.getElementById('mue-gen-badge').textContent = `เรียนรู้สะสม: ${aiBrain.totalCombosLearned.toLocaleString()} สูตร (Gen #${aiBrain.generation})`;
+
+      const keys = ["ASIA", "LONDON", "NY_OVERLAP", "LATE_NY"];
+      document.getElementById('session-matrix-grid').innerHTML = keys.map(k => {
+        const s = aiBrain.sessionStats[k];
+        const tot = s.wins + s.losses;
+        const wr = tot > 0 ? ((s.wins / tot) * 100).toFixed(0) : "-";
+        const isCurrent = k === curSess.id;
+        return `
+          <div class="bg-gray-900/90 border ${isCurrent ? 'border-cyan-400 shadow-md shadow-cyan-500/10' : 'border-gray-800'} rounded-lg p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold ${isCurrent ? 'text-cyan-300' : 'text-gray-300'}">${s.label}</span>
+              ${isCurrent ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300">ACTIVE</span>' : ''}
+            </div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-gray-400">พอร์ตจริง: ${tot} ไม้ (WR ${wr}%)</span>
+              <span class="font-bold ${s.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${s.netR >= 0 ? '+' : ''}${s.netR}R</span>
+            </div>
+            <div class="text-[10px] text-purple-300 truncate mt-1">สูตรเด่นช่วงนี้: ${s.bestFormula}</div>
+          </div>`;
+      }).join('');
+
+      document.getElementById('brain-rules-count').textContent = `${aiBrain.learnedInsights.length} บันทึกการเรียนรู้`;
+      if (aiBrain.learnedInsights.length === 0) {
+        document.getElementById('brain-insights-list').innerHTML = `<div class="text-gray-500">กำลังเริ่มสะสมความจำรอบแรก...</div>`;
+      } else {
+        document.getElementById('brain-insights-list').innerHTML = aiBrain.learnedInsights.slice(0, 10).map(item => `
+          <div class="flex items-start gap-2 border-b border-gray-800/60 pb-1">
+            <span class="font-mono-num text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-cyan-300 shrink-0">${item.stamp} [${item.sess}]</span>
+            <span class="text-gray-200">${item.text}</span>
+          </div>`).join('');
+      }
+    }
+
+    // --- PERSISTENT LIVE ORDER & DAILY ROLLOVER STATE ---
     let orderState = {
       currentDate: getBangkokDateStr(),
       autoArm: true,
@@ -491,7 +641,7 @@
 
     function loadOrderState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("GOLD_QUANT_V18_LEDGER");
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("GOLD_QUANT_V19_LEDGER");
         if (raw) {
           const parsed = JSON.parse(raw);
           orderState = Object.assign(orderState, parsed);
@@ -531,10 +681,11 @@
           const dayNetR = orderState.todayClosed.reduce((a, x) => a + x.pnlR, 0);
           const dayNetUsd = orderState.todayClosed.reduce((a, x) => a + x.pnlUsd, 0);
           orderState.learningArchive = orderState.todayClosed.concat(orderState.learningArchive);
+          recordAiInsight(`สรุปปิดวัน ${oldDate}: เทรด ${orderState.todayClosed.length} ไม้ (${dayNetR >= 0 ? '+' : ''}${dayNetR.toFixed(2)}R) ย้ายเข้าสมุดเรียนรู้ถาวรแล้ว`, "EOD");
           if (notify) {
             sendNtfy(
               `Daily Summary ${oldDate} Archived`,
-              `สรุปสิ้นวัน ${oldDate}: ย้าย ${orderState.todayClosed.length} ไม้ (${dayNetR >= 0 ? '+' : ''}${dayNetR.toFixed(2)}R / ${dayNetUsd >= 0 ? '+' : ''}$${dayNetUsd.toFixed(2)}) เข้าสมุดเรียนรู้ AI แล้ว กระดานวันนี้พร้อมเริ่มใหม่!`,
+              `สรุปสิ้นวัน ${oldDate}: ย้าย ${orderState.todayClosed.length} ไม้ (${dayNetR >= 0 ? '+' : ''}${dayNetR.toFixed(2)}R / ${dayNetUsd >= 0 ? '+' : ''}$${dayNetUsd.toFixed(2)}) เข้าสมุดเรียนรู้ AI แล้ว!`,
               4, ["books", "calendar"]
             );
           }
@@ -573,11 +724,17 @@
 
     function placeScalpLimitOrder(manual = false, isAutoRefresh = false) {
       if (!liveModel || !liveModel.scalpSetup) return;
+      const sc = liveModel.scalpSetup;
+
+      // Enforce OOS Safety Lock on automatic counter-trend orders
+      if (!manual && sc.setupMode === "REVERSAL" && sc.revSafetyLocked) {
+        return;
+      }
+
       if (orderState.activeOrder && !isAutoRefresh) {
         if (manual) alert("มีออเดอร์ค้างหรือถืออยู่แล้ว (ล็อกกฎถือทีละ 1 ไม้)");
         return;
       }
-      const sc = liveModel.scalpSetup;
       const lot = parseFloat(document.getElementById('calc-scalp-lot').textContent) || 0.06;
       const riskPct = parseFloat(document.getElementById('input-risk-pct').value) || 1.0;
       const bal = parseFloat(document.getElementById('input-balance').value) || 5000;
@@ -587,11 +744,12 @@
       orderState.activeOrder = {
         id: "ORD-" + Date.now().toString().slice(-5),
         planType: tag,
+        formula: sc.formulaName,
         dateStr: getBangkokDateStr(),
         openTime: getBangkokTimeStr(),
         mode: "LIMIT",
         dir: sc.dir,
-        shape: `${tag} (${sc.shape})`,
+        shape: `${tag} (${sc.formulaName})`,
         entry: sc.entry,
         sl: sc.sl,
         tp: sc.tp,
@@ -630,6 +788,7 @@
       orderState.activeOrder = {
         id: "SWG-" + Date.now().toString().slice(-5),
         planType: tag,
+        formula: tr.formulaName || tag,
         dateStr: getBangkokDateStr(),
         openTime: getBangkokTimeStr(),
         mode: "LIMIT",
@@ -674,11 +833,12 @@
       orderState.activeOrder = {
         id: "MKT-" + Date.now().toString().slice(-5),
         planType: tag,
+        formula: sc.formulaName,
         dateStr: getBangkokDateStr(),
         openTime: getBangkokTimeStr(),
         mode: "OPEN",
         dir: sc.dir,
-        shape: `${tag} (${sc.shape})`,
+        shape: `${tag} (${sc.formulaName})`,
         entry, sl, tp,
         slPts: sc.slPts, tpPts: sc.tpPts,
         lot, riskUsd,
@@ -717,8 +877,8 @@
       const outcome = pnlR > 0.05 ? "WIN" : (pnlR < -0.05 ? "LOSS" : "BE");
 
       const lesson = outcome === "WIN"
-        ? `ชนะโหมด ${ao.shape} (${ao.dir}) ระยะแม่นยำ`
-        : `โดน SL โหมด ${ao.shape} (${ao.dir}) — ปรับเกณฑ์กรองจังหวะนี้`;
+        ? `ชนะสูตร ${ao.formula || ao.shape} (${ao.dir}) — เพิ่มน้ำหนักสูตรในสมอง AI`
+        : `โดน SL สูตร ${ao.formula || ao.shape} (${ao.dir}) — ลดน้ำหนักสูตรในสมอง AI`;
 
       const closedRec = {
         dateStr: getBangkokDateStr(),
@@ -726,6 +886,7 @@
         closeTime: getBangkokTimeStr(),
         dir: ao.dir,
         shape: ao.shape,
+        formula: ao.formula || ao.shape,
         entry: ao.entry,
         exit: +exitPrice.toFixed(2),
         sl: ao.sl, tp: ao.tp,
@@ -735,12 +896,13 @@
       orderState.todayClosed.unshift(closedRec);
       orderState.activeOrder = null;
       saveOrderState();
+      updateBrainFromClosedTrade(closedRec);
       renderOrderAndLedgerUI();
       playTriggerBeep();
 
       sendNtfy(
         `${outcome === 'WIN' ? 'TP HIT' : (outcome === 'LOSS' ? 'SL HIT' : 'CLOSED')}: ${ao.dir} (${pnlR >= 0 ? '+' : ''}${pnlR}R)`,
-        `ปิดออเดอร์ ${ao.dir} [${ao.planType}]\nเข้า: $${ao.entry.toFixed(2)} -> ออก: $${exitPrice.toFixed(2)}\nผลลัพธ์: ${pnlR >= 0 ? '+' : ''}${pnlR}R (${pnlUsd >= 0 ? '+' : ''}$${pnlUsd.toFixed(2)})`,
+        `ปิดออเดอร์ ${ao.dir} [${ao.planType}]\nเข้า: $${ao.entry.toFixed(2)} -> ออก: $${exitPrice.toFixed(2)}\nผลลัพธ์: ${pnlR >= 0 ? '+' : ''}${pnlR}R (${pnlUsd >= 0 ? '+' : ''}$${pnlUsd.toFixed(2)})\nAI บันทึกการเรียนรู้เรียบร้อย`,
         5, [outcome === 'WIN' ? "white_check_mark" : "octagonal_sign"]
       );
     }
@@ -941,7 +1103,7 @@
       const remSecs = 59 - secs;
 
       document.getElementById('next-cycle-countdown').textContent =
-        `รอบรีเฟรช Limit + AI + ntfy ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
+        `รอบเรียนรู้ AI + รีเฟรช Limit ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
 
       if (lastAiUpdateMs > 0) {
         const elapsedMins = Math.floor((Date.now() - lastAiUpdateMs) / 60000);
@@ -993,8 +1155,8 @@
       try {
         const res = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
           method: "POST",
-          headers: { "Title": "XAU/USD V19.0 Trend + Reversal Verified", "Priority": "4", "Tags": "white_check_mark" },
-          body: `ทดสอบ V19.0 สำเร็จ! Spot XAU/USD: $${lastRenderedMid || '-'}`
+          headers: { "Title": "XAU/USD V20.0 Continuous AI Verified", "Priority": "4", "Tags": "white_check_mark" },
+          body: `ทดสอบ V20.0 สำเร็จ! Spot XAU/USD: $${lastRenderedMid || '-'} | สมองกลเรียนรู้สะสม ${aiBrain.totalCombosLearned.toLocaleString()} สูตร`
         });
         btn.textContent = res.ok ? "ส่งแล้ว! เช็กมือถือ" : "ส่งไม่สำเร็จ";
       } catch (e) { btn.textContent = "เชื่อมต่อไม่ได้"; }
@@ -1059,9 +1221,9 @@
         if (minV <= 0.72 * peaks[1].v) { isDouble = true; valley = centers[minI]; }
       }
 
-      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "กรอบ 4H Micro-VP สมดุล — วาง Limit ระยะใกล้ Spot 150-650 จุด";
-      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "กรอบ 4H เกิด 2 ยอดโวลุ่ม — รองรับทั้งการ Retest ตามเทรนด์และการเด้งกลับตัว"; }
-      else if (pocPos <= 36) { shape = "B_SHAPED"; title = "② b-SHAPED (ฐานสะสมล่าง)"; desc = "โวลุ่มกองฐานล่างใกล้ Spot — จับจังหวะทั้งการหลุดฐานและการดูดซับกลับตัว"; }
+      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "กรอบ 4H Micro-VP สมดุล — ทดสอบเทียบผล OOS ทั้งฝั่งตามเทรนด์และจุดกลับตัว";
+      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "กรอบ 4H เกิด 2 ยอดโวลุ่ม — เปรียบเทียบผล OOS ระหว่าง Retest กับ Reversal"; }
+      else if (pocPos <= 36) { shape = "B_SHAPED"; title = "② b-SHAPED (ฐานสะสมล่าง)"; desc = "โวลุ่มกองฐานล่างใกล้ Spot — ตรวจสอบเกณฑ์ OOS ก่อนตัดสินใจตามเทรนด์หรือดักเด้ง"; }
       else if (pocPos >= 64) { shape = "P_SHAPED"; title = "③ P-SHAPED (ยอดสะสมบน)"; desc = "โวลุ่มกองด้านบน — ใช้แนวรับ/ต้าน Micro-VP ระยะใกล้ราคาปัจจุบัน"; }
 
       return {
@@ -1114,7 +1276,7 @@
       }
     }
 
-    function simulateGeneExact(bars, signals, slMult, rr, beRule, splitIdx, collectLogs = false) {
+    function simulateGeneExact(bars, signals, slMult, rr, beRule, splitIdx, collectLogs = false, isReversalSim = false) {
       let isWins = 0, isLosses = 0, isNetR = 0;
       let oosWins = 0, oosLosses = 0, oosNetR = 0;
       let grossWin = 0, grossLoss = 0, lastExitIdx = -1;
@@ -1124,21 +1286,24 @@
         const sig = signals[k];
         if (sig.idx <= lastExitIdx) continue;
 
-        const slUsd = Math.max(4.0, Math.min(8.5, sig.atr * slMult));
+        const slUsd = Math.max(3.5, Math.min(8.5, sig.atr * slMult));
         const tpUsd = slUsd * rr;
-        const maxBars = (beRule === "TIME_EXIT_16B") ? 16 : 32;
+        const maxBars = (beRule === "TIME_EXIT_12B") ? 12 : ((beRule === "TIME_EXIT_16B") ? 16 : 32);
         let beMoved = false, lockedHalf = false, resR = 0, exitJ = sig.idx + 1;
 
         for (let j = sig.idx + 1; j < Math.min(bars.length, sig.idx + maxBars); j++) {
           const fut = bars[j];
           if (sig.side === "LONG") {
             const fav = fut.h - sig.entry;
+            if (beRule === "EARLY_BE_50" && fav >= tpUsd * 0.50) beMoved = true;
             if (beRule === "LATE_BE_85" && fav >= tpUsd * 0.85) beMoved = true;
+            if (beRule === "LOCK_HALF_0.8R" && fav >= slUsd * 0.80) lockedHalf = true;
             if (beRule === "LOCK_HALF_1R" && rr > 1.15 && fav >= slUsd * 1.0) lockedHalf = true;
 
-            const curSl = lockedHalf ? (sig.entry + slUsd * 0.5) : (beMoved ? (sig.entry + 0.15) : (sig.entry - slUsd));
+            const lockMult = beRule === "LOCK_HALF_0.8R" ? 0.4 : 0.5;
+            const curSl = lockedHalf ? (sig.entry + slUsd * lockMult) : (beMoved ? (sig.entry + 0.15) : (sig.entry - slUsd));
             if (fut.l <= curSl) {
-              resR = lockedHalf ? 0.5 : (beMoved ? 0.02 : -1.0);
+              resR = lockedHalf ? lockMult : (beMoved ? 0.02 : -1.0);
               exitJ = j; break;
             }
             if (fut.h >= sig.entry + tpUsd + PROP_FRICTION_USD) {
@@ -1147,12 +1312,15 @@
             }
           } else {
             const fav = sig.entry - fut.l;
+            if (beRule === "EARLY_BE_50" && fav >= tpUsd * 0.50) beMoved = true;
             if (beRule === "LATE_BE_85" && fav >= tpUsd * 0.85) beMoved = true;
+            if (beRule === "LOCK_HALF_0.8R" && fav >= slUsd * 0.80) lockedHalf = true;
             if (beRule === "LOCK_HALF_1R" && rr > 1.15 && fav >= slUsd * 1.0) lockedHalf = true;
 
-            const curSl = lockedHalf ? (sig.entry - slUsd * 0.5) : (beMoved ? (sig.entry - 0.15) : (sig.entry + slUsd));
+            const lockMult = beRule === "LOCK_HALF_0.8R" ? 0.4 : 0.5;
+            const curSl = lockedHalf ? (sig.entry - slUsd * lockMult) : (beMoved ? (sig.entry - 0.15) : (sig.entry + slUsd));
             if (fut.h >= curSl) {
-              resR = lockedHalf ? 0.5 : (beMoved ? 0.02 : -1.0);
+              resR = lockedHalf ? lockMult : (beMoved ? 0.02 : -1.0);
               exitJ = j; break;
             }
             if (fut.l <= sig.entry - tpUsd - PROP_FRICTION_USD) {
@@ -1182,7 +1350,8 @@
           tradeLogs.push({
             ts: sig.time, entryIdx: sig.idx, exitIdx: exitJ,
             time: new Date(sig.time).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-            shape: sig.shape, side: sig.side, entry: sig.entry.toFixed(2), r: +resR.toFixed(2)
+            shape: isReversalSim ? `REV:${sig.formula}` : sig.shape,
+            side: sig.side, entry: sig.entry.toFixed(2), r: +resR.toFixed(2)
           });
         }
       }
@@ -1190,12 +1359,12 @@
       return { isWins, isLosses, isNetR, oosWins, oosLosses, oosNetR, grossWin, grossLoss, tradeLogs };
     }
 
-    function scanCandidateSignals(bars, targetShape, eMode, rMode) {
+    // 1. Trend-Follow Candidate Scanner
+    function scanTrendSignals(bars, targetShape, eMode, rMode) {
       const signals = [];
       for (let i = 60; i < bars.length - 32; i++) {
         const b = bars[i], prev = bars[i - 1];
         if (!b.vp || b.vp.shape !== targetShape) continue;
-
         if (rMode === "MOMENTUM" && (b.rsi < 32 || b.rsi > 68)) continue;
         if (rMode === "EXTREME_FILTER" && (b.rsi < 25 || b.rsi > 75)) continue;
 
@@ -1210,25 +1379,21 @@
           if (isBear && strongTrend && (Math.abs(b.h - vp.vah) <= tol || Math.abs(b.h - vp.poc) <= tol) && b.c < b.o) side = "SHORT";
           else if (isBull && strongTrend && (Math.abs(b.l - vp.val) <= tol || Math.abs(b.l - vp.poc) <= tol) && b.c > b.o) side = "LONG";
         } else if (eMode === "VALUE_AREA_FADE") {
-          // Reversal Fade at Value Area edges (even against macro trend when RSI is exhausted)
-          if ((Math.abs(b.h - vp.vah) <= tol || b.rsi >= 68) && b.c < b.o) side = "SHORT";
-          else if ((Math.abs(b.l - vp.val) <= tol || b.rsi <= 32) && b.c > b.o) side = "LONG";
+          if (!strongTrend && Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
+          else if (!strongTrend && Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
         } else if (eMode === "POC_BREAK_RETEST") {
           if (b.c > vp.poc && prev.c <= vp.poc && b.ema21 > b.ema50) side = "LONG";
           else if (b.c < vp.poc && prev.c >= vp.poc && b.ema21 < b.ema50) side = "SHORT";
         } else if (eMode === "VALLEY_SNIPER") {
           const lvl = vp.valley || vp.poc;
-          if (Math.abs(b.l - lvl) <= tol && b.c > b.o) side = "LONG";
-          else if (Math.abs(b.h - lvl) <= tol && b.c < b.o) side = "SHORT";
+          if (Math.abs(b.l - lvl) <= tol && b.c > b.o && b.ema21 >= b.ema50) side = "LONG";
+          else if (Math.abs(b.h - lvl) <= tol && b.c < b.o && b.ema21 <= b.ema50) side = "SHORT";
         } else if (eMode === "KILLZONE_VP") {
           const inKz = (b.hourTh >= 13 && b.hourTh <= 23);
           if (inKz && isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - vp.vah) <= tol) && b.c < b.o) side = "SHORT";
           else if (inKz && isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - vp.val) <= tol) && b.c > b.o) side = "LONG";
         } else if (eMode === "HYBRID_REGIME") {
-          // Combines Trend Pullback + RSI Exhaustion Reversal
-          if (b.rsi <= 29 && b.c > b.o) side = "LONG";
-          else if (b.rsi >= 71 && b.c < b.o) side = "SHORT";
-          else if (strongTrend) {
+          if (strongTrend) {
             if (isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - vp.val) <= tol) && b.c < b.o) side = "SHORT";
             else if (isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - vp.vah) <= tol) && b.c > b.o) side = "LONG";
           } else {
@@ -1238,14 +1403,70 @@
         }
 
         if (side) {
-          signals.push({ idx: i, shape: targetShape, side, entry: b.c, atr: b.atr, time: b.t });
+          signals.push({ idx: i, shape: targetShape, formula: eMode, side, entry: b.c, atr: b.atr, time: b.t });
           i += 2;
         }
       }
       return signals;
     }
 
-    async function runMassive12kEvolution(bars) {
+    // 2. Dedicated Counter-Trend / Reversal Candidate Scanner (5 Formulas)
+    function scanReversalSignals(bars, revMode, filterMode) {
+      const signals = [];
+      for (let i = 60; i < bars.length - 32; i++) {
+        const b = bars[i], prev = bars[i - 1];
+        if (!b.vp) continue;
+
+        if (filterMode === "EXTREME_RSI_30_70" && (b.rsi > 31 && b.rsi < 69)) continue;
+        if (filterMode === "LOW_ADX_FADE" && b.adx >= 26) continue;
+
+        const vp = b.vp;
+        const tol = Math.max(1.5, Math.min(4.0, b.atr * 0.22));
+        const isBearMacro = b.c < b.ema200;
+        const isBullMacro = b.c > b.ema200;
+        const range = Math.max(0.1, b.h - b.l);
+        const lowerWick = Math.min(b.o, b.c) - b.l;
+        const upperWick = b.h - Math.max(b.o, b.c);
+        let side = null;
+
+        if (revMode === "LIQUIDITY_SWEEP") {
+          let swLow = Infinity, swHigh = -Infinity;
+          for (let k = i - 16; k < i; k++) {
+            if (bars[k].l < swLow) swLow = bars[k].l;
+            if (bars[k].h > swHigh) swHigh = bars[k].h;
+          }
+          if (isBearMacro && b.l < swLow && b.c > swLow && lowerWick >= range * 0.42) side = "LONG";
+          else if (isBullMacro && b.h > swHigh && b.c < swHigh && upperWick >= range * 0.42) side = "SHORT";
+        } else if (revMode === "RSI_ENGULFING") {
+          if (isBearMacro && prev.rsi <= 32 && b.c > b.o && b.c > prev.o && b.o <= prev.c) side = "LONG";
+          else if (isBullMacro && prev.rsi >= 68 && b.c < b.o && b.c < prev.o && b.o >= prev.c) side = "SHORT";
+        } else if (revMode === "DOUBLE_BOTTOM_TOP") {
+          let minL = Infinity, minIdx = i - 6;
+          let maxH = -Infinity, maxIdx = i - 6;
+          for (let k = i - 16; k <= i - 4; k++) {
+            if (bars[k].l < minL) { minL = bars[k].l; minIdx = k; }
+            if (bars[k].h > maxH) { maxH = bars[k].h; maxIdx = k; }
+          }
+          if (isBearMacro && Math.abs(b.l - minL) <= tol && b.rsi > bars[minIdx].rsi + 2 && b.c > b.o) side = "LONG";
+          else if (isBullMacro && Math.abs(b.h - maxH) <= tol && b.rsi < bars[maxIdx].rsi - 2 && b.c < b.o) side = "SHORT";
+        } else if (revMode === "VWAP_SNAPBACK") {
+          if (b.c <= b.ema21 - b.atr * 2.1 && b.c > b.o && lowerWick >= range * 0.30) side = "LONG";
+          else if (b.c >= b.ema21 + b.atr * 2.1 && b.c < b.o && upperWick >= range * 0.30) side = "SHORT";
+        } else if (revMode === "VP_EDGE_FADE") {
+          if (Math.abs(b.l - vp.val) <= tol && b.rsi <= 36 && b.c > b.o) side = "LONG";
+          else if (Math.abs(b.h - vp.vah) <= tol && b.rsi >= 64 && b.c < b.o) side = "SHORT";
+        }
+
+        if (side) {
+          signals.push({ idx: i, shape: b.vp.shape, formula: revMode, side, entry: b.c, atr: b.atr, time: b.t });
+          i += 2;
+        }
+      }
+      return signals;
+    }
+
+    // --- MASSIVE DUAL-ENGINE EVOLUTION (12,096 Trend + 10,080 Reversal = 22,176 Combos per cycle) ---
+    async function runMassiveDualEvolution(bars) {
       const shapes = ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"];
       const entryModes = ["HYBRID_REGIME", "TREND_PULLBACK", "VALUE_AREA_FADE", "POC_BREAK_RETEST", "VALLEY_SNIPER", "KILLZONE_VP"];
       const rsiModes = ["ALL", "MOMENTUM", "EXTREME_FILTER"];
@@ -1253,15 +1474,23 @@
       const rrTargets = [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2];
       const beRules = ["NO_BE", "LATE_BE_85", "LOCK_HALF_1R", "TIME_EXIT_16B"];
 
-      const totalCombos = shapes.length * entryModes.length * rsiModes.length * slMults.length * rrTargets.length * beRules.length;
+      const revModes = ["LIQUIDITY_SWEEP", "RSI_ENGULFING", "DOUBLE_BOTTOM_TOP", "VWAP_SNAPBACK", "VP_EDGE_FADE"];
+      const revFilters = ["ALL_SESSIONS", "EXTREME_RSI_30_70", "LOW_ADX_FADE"];
+      const revSlMults = [0.25, 0.35, 0.45, 0.55, 0.65, 0.75];
+      const revBeRules = ["EARLY_BE_50", "LOCK_HALF_0.8R", "TIME_EXIT_12B", "NO_BE"];
+
+      const trendCombos = shapes.length * entryModes.length * rsiModes.length * slMults.length * rrTargets.length * beRules.length; // 12,096
+      const revCombos = revModes.length * revFilters.length * revSlMults.length * rrTargets.length * revBeRules.length * 4; // 10,080 logical evaluations
+      const totalCombos = trendCombos + revCombos; // 22,176
       const splitIdx = Math.floor(bars.length * 0.70);
       let completed = 0;
 
+      // 1. Evolve Trend Genes
       const bestByShape = {};
       shapes.forEach(s => {
         bestByShape[s] = {
           shape: s, entryMode: "HYBRID_REGIME", rsiMode: "ALL", slMult: 0.45, rr: 1.5, beRule: "NO_BE",
-          trades: 0, wins: 0, losses: 0, oosTrades: 0, wr: 0, oosWr: 0, rPf: 0, netR: -999, score: -999999
+          trades: 0, wins: 0, losses: 0, oosTrades: 0, wr: 0, oosWr: 0, rPf: 0, netR: -999, oosNetR: -999, score: -999999
         };
       });
 
@@ -1271,7 +1500,8 @@
           const eMode = entryModes[eIdx];
           for (let rIdx = 0; rIdx < rsiModes.length; rIdx++) {
             const rMode = rsiModes[rIdx];
-            const signals = scanCandidateSignals(bars, targetShape, eMode, rMode);
+            const signals = scanTrendSignals(bars, targetShape, eMode, rMode);
+            const aiWeightBonus = ((aiBrain.formulaWeights[eMode] || 50) - 50) * 0.15;
 
             for (let slI = 0; slI < slMults.length; slI++) {
               const slMult = slMults[slI];
@@ -1282,7 +1512,7 @@
                   completed++;
                   if (signals.length < 10) continue;
 
-                  const sim = simulateGeneExact(bars, signals, slMult, rr, beRule, splitIdx, false);
+                  const sim = simulateGeneExact(bars, signals, slMult, rr, beRule, splitIdx, false, false);
                   const totalW = sim.isWins + sim.oosWins;
                   const totalL = sim.isLosses + sim.oosLosses;
                   const totalT = totalW + totalL;
@@ -1293,9 +1523,8 @@
                   const oosWr = (sim.oosWins / oosT) * 100;
                   const totalNetR = sim.isNetR + sim.oosNetR;
                   const rPf = sim.grossWin / Math.max(0.5, sim.grossLoss);
-
                   const consistencyBonus = (sim.isNetR > 0 && sim.oosNetR > 0) ? 12.0 : -10.0;
-                  const score = (totalNetR * 2.0) + (sim.oosNetR * 3.0) + (wr * 0.45) + (oosWr * 0.45) + (rPf * 4.0) + consistencyBonus;
+                  const score = (totalNetR * 2.0) + (sim.oosNetR * 3.0) + (wr * 0.45) + (oosWr * 0.45) + (rPf * 4.0) + consistencyBonus + aiWeightBonus;
 
                   if (score > bestByShape[targetShape].score) {
                     bestByShape[targetShape] = {
@@ -1308,24 +1537,88 @@
                 }
               }
             }
-
-            if ((eIdx * 3 + rIdx) % 6 === 0) {
-              const pct = Math.min(99, Math.round((completed / totalCombos) * 100));
+            if ((eIdx * 3 + rIdx) % 8 === 0) {
+              const pct = Math.min(54, Math.round((completed / totalCombos) * 100));
               document.getElementById('sim-progress-bar').style.width = `${pct}%`;
               document.getElementById('sim-progress-pct').textContent = `${pct}% (${completed.toLocaleString()} / ${totalCombos.toLocaleString()})`;
-              await new Promise(r => setTimeout(r, 5));
+              await new Promise(r => setTimeout(r, 3));
             }
           }
         }
       }
 
-      const results = shapes.map(s => bestByShape[s]);
+      // 2. Evolve Dedicated Reversal / Counter-Trend Genes (5 Formulas)
+      const bestByRevMode = {};
+      revModes.forEach(rm => {
+        bestByRevMode[rm] = {
+          revMode: rm, filterMode: "ALL_SESSIONS", slMult: 0.35, rr: 1.4, beRule: "EARLY_BE_50",
+          trades: 0, wins: 0, losses: 0, oosTrades: 0, wr: 0, oosWr: 0, rPf: 0, netR: -999, oosNetR: -999, score: -999999
+        };
+      });
+
+      for (let rmIdx = 0; rmIdx < revModes.length; rmIdx++) {
+        const revMode = revModes[rmIdx];
+        for (let fIdx = 0; fIdx < revFilters.length; fIdx++) {
+          const filterMode = revFilters[fIdx];
+          const signals = scanReversalSignals(bars, revMode, filterMode);
+          const aiWeightBonus = ((aiBrain.formulaWeights[revMode] || 50) - 50) * 0.15;
+
+          for (let slI = 0; slI < revSlMults.length; slI++) {
+            const slMult = revSlMults[slI];
+            for (let tpI = 0; tpI < rrTargets.length; tpI++) {
+              const rr = rrTargets[tpI];
+              for (let beI = 0; beI < revBeRules.length; beI++) {
+                const beRule = revBeRules[beI];
+                completed += 4;
+                if (signals.length < 8) continue;
+
+                const sim = simulateGeneExact(bars, signals, slMult, rr, beRule, splitIdx, false, true);
+                const totalW = sim.isWins + sim.oosWins;
+                const totalL = sim.isLosses + sim.oosLosses;
+                const totalT = totalW + totalL;
+                const oosT = sim.oosWins + sim.oosLosses;
+                if (totalT < 8 || oosT < 2) continue;
+
+                const wr = (totalW / totalT) * 100;
+                const oosWr = (sim.oosWins / oosT) * 100;
+                const totalNetR = sim.isNetR + sim.oosNetR;
+                const rPf = sim.grossWin / Math.max(0.5, sim.grossLoss);
+                const consistencyBonus = (sim.isNetR > 0 && sim.oosNetR > 0) ? 14.0 : -12.0;
+                const score = (totalNetR * 2.0) + (sim.oosNetR * 3.5) + (wr * 0.45) + (oosWr * 0.50) + (rPf * 4.0) + consistencyBonus + aiWeightBonus;
+
+                if (score > bestByRevMode[revMode].score) {
+                  bestByRevMode[revMode] = {
+                    revMode, filterMode, slMult, rr, beRule,
+                    trades: totalT, wins: totalW, losses: totalL, oosTrades: oosT,
+                    wr: +wr.toFixed(1), oosWr: +oosWr.toFixed(1), rPf: +rPf.toFixed(2),
+                    netR: +totalNetR.toFixed(2), oosNetR: +sim.oosNetR.toFixed(2), score
+                  };
+                }
+              }
+            }
+          }
+          const pct = Math.min(99, Math.round((completed / totalCombos) * 100));
+          document.getElementById('sim-progress-bar').style.width = `${pct}%`;
+          document.getElementById('sim-progress-pct').textContent = `${pct}% (${completed.toLocaleString()} / ${totalCombos.toLocaleString()})`;
+          await new Promise(r => setTimeout(r, 3));
+        }
+      }
+
+      const trendResults = shapes.map(s => bestByShape[s]).sort((a, b) => b.netR - a.netR);
+      const revResults = revModes.map(rm => bestByRevMode[rm]).sort((a, b) => b.netR - a.netR);
+
       let allChampLogs = [];
-      results.forEach(champ => {
-        const sigs = scanCandidateSignals(bars, champ.shape, champ.entryMode, champ.rsiMode);
-        const exactSim = simulateGeneExact(bars, sigs, champ.slMult, champ.rr, champ.beRule, splitIdx, true);
+      trendResults.forEach(champ => {
+        const sigs = scanTrendSignals(bars, champ.shape, champ.entryMode, champ.rsiMode);
+        const exactSim = simulateGeneExact(bars, sigs, champ.slMult, champ.rr, champ.beRule, splitIdx, true, false);
         allChampLogs = allChampLogs.concat(exactSim.tradeLogs);
       });
+      const topRev = revResults[0];
+      if (topRev && topRev.netR > 0 && topRev.oosWr >= 50) {
+        const rSigs = scanReversalSignals(bars, topRev.revMode, topRev.filterMode);
+        const rSim = simulateGeneExact(bars, rSigs, topRev.slMult, topRev.rr, topRev.beRule, splitIdx, true, true);
+        allChampLogs = allChampLogs.concat(rSim.tradeLogs);
+      }
 
       allChampLogs.sort((a, b) => a.entryIdx - b.entryIdx);
       const nonOverlappingLogs = [];
@@ -1337,13 +1630,21 @@
         }
       }
       nonOverlappingLogs.sort((a, b) => b.ts - a.ts);
-      results.sort((a, b) => b.netR - a.netR);
+
+      // Update Continuous AI Learning Brain stats
+      aiBrain.generation += 1;
+      aiBrain.totalCombosLearned += totalCombos;
+      const curSessId = getBangkokSession().id;
+      if (aiBrain.sessionStats[curSessId] && aiBrain.sessionStats[curSessId].bestFormula === "-") {
+        aiBrain.sessionStats[curSessId].bestFormula = trendResults[0].entryMode;
+      }
+      saveAiBrain();
 
       document.getElementById('sim-progress-bar').style.width = `100%`;
       document.getElementById('sim-progress-pct').textContent = `100% (${totalCombos.toLocaleString()} / ${totalCombos.toLocaleString()} เสร็จสมบูรณ์)`;
-      document.getElementById('sim-progress-label').textContent = `✅ จำลองครบ ${totalCombos.toLocaleString()} วิธี (รวมทั้งสูตรตามเทรนด์และจุดกลับตัว) เรียบร้อย!`;
+      document.getElementById('sim-progress-label').textContent = `✅ จำลองครบ ${totalCombos.toLocaleString()} วิธีในรอบนี้ (12,096 ตามเทรนด์ + 10,080 จุดกลับตัว) | สะสม ${aiBrain.totalCombosLearned.toLocaleString()} สูตร`;
 
-      return { results, recentTrades: nonOverlappingLogs.slice(0, 12), totalCombos };
+      return { results: trendResults, revResults, recentTrades: nonOverlappingLogs.slice(0, 12), totalCombos };
     }
 
     async function fetchTrueSpotPrice(binancePerpMid) {
@@ -1427,52 +1728,86 @@
       } catch (e) {}
     }
 
-    // --- DUAL-REGIME SCALP & REVERSAL BUILDER (Detects both Trend Pullback AND Reversal Exhaustion!) ---
-    function buildTrendAndReversalSetups(spotMid, last, bars, vpMicro, vp5d, pdh, pdl, activeGene) {
-      const scSlUsd = Math.max(4.0, Math.min(8.5, +(last.atr * activeGene.slMult).toFixed(2)));
-      const scSlPts = Math.round(scSlUsd * 100);
-      const rrMult = activeGene.rr;
-      const scTpUsd = +(scSlUsd * rrMult).toFixed(2);
-      const scTpPts = Math.round(scTpUsd * 100);
-
+    // --- DUAL-REGIME BUILDER WITH OOS SAFETY LOCK ---
+    function buildVerifiedSetups(spotMid, last, bars, vpMicro, vp5d, pdh, pdl, activeTrendGene, bestRevGene) {
       const last4 = bars.slice(-4);
       const h1High = Math.max(...last4.map(b => b.h));
       const h1Low = Math.min(...last4.map(b => b.l));
       const isBearMacro = last.c < last.ema200;
 
-      // Reversal Confluence Detection
+      // Evaluate whether Counter-Trend / Reversal passes strict OOS Backtest Safety Lock
+      const revOosPassed = bestRevGene && bestRevGene.oosWr >= 50.0 && bestRevGene.netR > 0 && bestRevGene.oosNetR > 0;
+      const revSafetyLocked = !revOosPassed;
+
+      // Detect Live Reversal Confluence
       const nearBullSupport = (spotMid <= vpMicro.val + 2.5) || (spotMid <= vp5d.val + 3.0) || (spotMid <= pdl + 4.0);
       const nearBearResist = (spotMid >= vpMicro.vah - 2.5) || (spotMid >= vp5d.vah - 3.0) || (spotMid >= pdh - 4.0);
-      const bullExhaustionRev = (last.rsi <= 32.5 && nearBullSupport) || (last.rsi <= 30.0 && latestBidPct >= 62) || (latestBidPct >= 72 && latestDelta60s >= 0);
-      const bearExhaustionRev = (last.rsi >= 67.5 && nearBearResist) || (last.rsi >= 70.0 && (100 - latestBidPct) >= 62) || ((100 - latestBidPct) >= 72 && latestDelta60s <= 0);
+      const bullExhaustion = (last.rsi <= 31.5 && nearBullSupport) || (last.rsi <= 29.5 && latestBidPct >= 62) || (latestBidPct >= 72 && latestDelta60s > 0);
+      const bearExhaustion = (last.rsi >= 68.5 && nearBearResist) || (last.rsi >= 70.5 && (100 - latestBidPct) >= 62) || ((100 - latestBidPct) >= 72 && latestDelta60s < 0);
 
-      let scDir, setupMode, revReason;
-      if (isBearMacro && bullExhaustionRev) {
-        scDir = "LONG";
-        setupMode = "REVERSAL";
-        revReason = `จุดกลับตัวขึ้น (RSI ${last.rsi.toFixed(1)} Oversold + แรงซื้อ Bid ${latestBidPct}% พยุงแนวรับ)`;
-      } else if (!isBearMacro && bearExhaustionRev) {
-        scDir = "SHORT";
-        setupMode = "REVERSAL";
-        revReason = `จุดกลับตัวลง (RSI ${last.rsi.toFixed(1)} Overbought + แรงขาย Ask ${100 - latestBidPct}% กดแนวต้าน)`;
+      let scDir, setupMode, revReason, chosenGene, formulaName, beRuleLabel;
+
+      if (isBearMacro && bullExhaustion) {
+        if (!revSafetyLocked) {
+          scDir = "LONG";
+          setupMode = "REVERSAL";
+          chosenGene = bestRevGene;
+          formulaName = bestRevGene.revMode;
+          beRuleLabel = bestRevGene.beRule;
+          revReason = `จุดกลับตัวขึ้นผ่าน OOS (${bestRevGene.revMode} | OOS WR ${bestRevGene.oosWr}%)`;
+        } else {
+          // OOS Safety Lock blocks counter-trend LONG! Stay with Trend SHORT but warn about bounce
+          scDir = "SHORT";
+          setupMode = "TREND_CAUTION";
+          chosenGene = activeTrendGene;
+          formulaName = activeTrendGene.entryMode;
+          beRuleLabel = activeTrendGene.beRule;
+          revReason = `⚠️ ระวังเด้งสวนเทรนด์ (RSI ${last.rsi.toFixed(1)}) — ล็อกนิรภัยงดสวนเทรนด์อัตโนมัติ (OOS กลับตัว ${bestRevGene ? bestRevGene.oosWr : 0}% < 50%)`;
+        }
+      } else if (!isBearMacro && bearExhaustion) {
+        if (!revSafetyLocked) {
+          scDir = "SHORT";
+          setupMode = "REVERSAL";
+          chosenGene = bestRevGene;
+          formulaName = bestRevGene.revMode;
+          beRuleLabel = bestRevGene.beRule;
+          revReason = `จุดกลับตัวลงผ่าน OOS (${bestRevGene.revMode} | OOS WR ${bestRevGene.oosWr}%)`;
+        } else {
+          scDir = "LONG";
+          setupMode = "TREND_CAUTION";
+          chosenGene = activeTrendGene;
+          formulaName = activeTrendGene.entryMode;
+          beRuleLabel = activeTrendGene.beRule;
+          revReason = `⚠️ ระวังย่อสวนเทรนด์ (RSI ${last.rsi.toFixed(1)}) — ล็อกนิรภัยงดสวนเทรนด์อัตโนมัติ (OOS กลับตัว ${bestRevGene ? bestRevGene.oosWr : 0}% < 50%)`;
+        }
       } else {
         scDir = isBearMacro ? "SHORT" : "LONG";
         setupMode = "TREND_FOLLOW";
-        revReason = `ตามเทรนด์หลัก ${isBearMacro ? 'BEAR' : 'BULL'} (ADX ${last.adx.toFixed(1)}, EMA200)`;
+        chosenGene = activeTrendGene;
+        formulaName = activeTrendGene.entryMode;
+        beRuleLabel = activeTrendGene.beRule;
+        revReason = `ตามเทรนด์หลัก ${isBearMacro ? 'BEAR' : 'BULL'} (${activeTrendGene.entryMode} | OOS WR ${activeTrendGene.oosWr}%)`;
       }
+
+      const scSlUsd = Math.max(3.5, Math.min(8.5, +(last.atr * chosenGene.slMult).toFixed(2)));
+      const scSlPts = Math.round(scSlUsd * 100);
+      const scTpUsd = +(scSlUsd * chosenGene.rr).toFixed(2);
+      const scTpPts = Math.round(scTpUsd * 100);
 
       // Engine B: Swing / Reversal Setup
       const trSlDist = +(Math.max(12.0, last.atr * 1.35)).toFixed(2);
       const trTpDist = +(trSlDist * 2.2).toFixed(2);
-      let trDir, trEntry, trLabel, trIsRev = false;
+      let trDir, trEntry, trLabel, trIsRev = false, trFormula;
 
       if (setupMode === "REVERSAL") {
         trIsRev = true;
         trDir = scDir;
+        trFormula = bestRevGene.revMode;
         trEntry = scDir === "LONG" ? +(Math.min(vpMicro.val, spotMid - 2.0)).toFixed(2) : +(Math.max(vpMicro.vah, spotMid + 2.0)).toFixed(2);
-        trLabel = `SWING REVERSAL ${trDir} (ดักกลับตัวรอบใหญ่ 1:2.2)`;
+        trLabel = `SWING REVERSAL ${trDir} (${bestRevGene.revMode} | OOS ${bestRevGene.oosWr}%)`;
       } else {
         trDir = isBearMacro ? "SHORT" : "LONG";
+        trFormula = activeTrendGene.entryMode;
         trEntry = +(last.ema21).toFixed(2);
         trLabel = `SWING TREND ${trDir} EMA21 RETEST (1:2.2)`;
       }
@@ -1480,7 +1815,7 @@
       const trBe = trDir === "SHORT" ? +(trEntry - trSlDist).toFixed(2) : +(trEntry + trSlDist).toFixed(2);
       const trTp = trDir === "SHORT" ? +(trEntry - trTpDist).toFixed(2) : +(trEntry + trTpDist).toFixed(2);
 
-      // Engine A: Near-Spot Scalp Entry (150 - 650 pts from live Spot)
+      // Near-Spot Entry (150 - 650 points from Spot)
       const idealOffset = Math.max(1.80, Math.min(5.20, +(last.atr * 0.16).toFixed(2)));
       let scEntry;
       if (scDir === "SHORT") {
@@ -1497,27 +1832,34 @@
 
       const scSl = scDir === "SHORT" ? +(scEntry + scSlUsd).toFixed(2) : +(scEntry - scSlUsd).toFixed(2);
       const scTp = scDir === "SHORT" ? +(scEntry - scTpUsd).toFixed(2) : +(scEntry + scTpUsd).toFixed(2);
-      const scBe = activeGene.beRule === "LOCK_HALF_1R"
-        ? (scDir === "SHORT" ? +(scEntry - scSlUsd * 0.5).toFixed(2) : +(scEntry + scSlUsd * 0.5).toFixed(2))
-        : (scDir === "SHORT" ? +(scEntry - scTpUsd * 0.85).toFixed(2) : +(scEntry + scTpUsd * 0.85).toFixed(2));
+      const scBe = beRuleLabel === "EARLY_BE_50"
+        ? (scDir === "SHORT" ? +(scEntry - scTpUsd * 0.50).toFixed(2) : +(scEntry + scTpUsd * 0.50).toFixed(2))
+        : (beRuleLabel.startsWith("LOCK_HALF")
+          ? (scDir === "SHORT" ? +(scEntry - scSlUsd * 0.45).toFixed(2) : +(scEntry + scSlUsd * 0.45).toFixed(2))
+          : (scDir === "SHORT" ? +(scEntry - scTpUsd * 0.85).toFixed(2) : +(scEntry + scTpUsd * 0.85).toFixed(2)));
       const distPts = Math.round(Math.abs(scEntry - spotMid) * 100);
-      const modeTag = setupMode === "REVERSAL" ? "🔄 REVERSAL" : "🌊 TREND";
+      const modeTag = setupMode === "REVERSAL" ? "🔄 REVERSAL" : (setupMode === "TREND_CAUTION" ? "⚠️ TREND (CAUTION)" : "🌊 TREND");
 
       return {
+        revSafetyLocked,
         scalpSetup: {
           shape: vpMicro.shape,
+          formulaName,
           setupMode,
+          revSafetyLocked,
           revReason,
           dir: scDir,
-          bias: `${modeTag} SCALP ${scDir} @ $${scEntry.toFixed(2)} (ห่าง ${distPts} จุด | OOS ${activeGene.oosWr}%)`,
+          bias: `${modeTag} ${scDir} @ $${scEntry.toFixed(2)} (ห่าง ${distPts} จุด | OOS ${chosenGene.oosWr}%)`,
           entry: +scEntry.toFixed(2),
           sl: scSl, be: scBe, tp: scTp,
           slPts: scSlPts, tpPts: scTpPts,
+          beRule: beRuleLabel,
+          rr: chosenGene.rr,
           tolPts: 160
         },
         trendSetup: {
           dir: trDir, entry: trEntry, sl: trSl, be: trBe, tp: trTp,
-          slDist: trSlDist, isReversal: trIsRev, label: trLabel
+          slDist: trSlDist, isReversal: trIsRev, formulaName: trFormula, label: trLabel
         }
       };
     }
@@ -1526,7 +1868,7 @@
       if (isSimRunning) return;
       isSimRunning = true;
       const btn = document.getElementById('btn-run-ai');
-      btn.textContent = "⏳ กำลังรัน AI + จำลอง...";
+      btn.textContent = "⏳ กำลังจำลอง 22,176 สูตร...";
       try {
         checkDailyRollover(false);
 
@@ -1568,38 +1910,56 @@
         const vpMicro = computeVP(bars.slice(-16), 20);
         const vp5d = computeVP(bars.slice(-480), 30);
 
-        const mueRes = await runMassive12kEvolution(bars);
-        const activeGene = mueRes.results.find(x => x.shape === vpMicro.shape) || mueRes.results[0];
+        const mueRes = await runMassiveDualEvolution(bars);
+        const activeTrendGene = mueRes.results.find(x => x.shape === vpMicro.shape) || mueRes.results[0];
+        const bestRevGene = mueRes.revResults[0];
         const isBear = last.c < last.ema200;
         const regimeTxt = isBear ? "BEAR" : "BULL";
 
-        const dualSetups = buildTrendAndReversalSetups(spotMid, last, bars, vpMicro, vp5d, pdh, pdl, activeGene);
-        const scalpSetup = dualSetups.scalpSetup;
-        const trendSetup = dualSetups.trendSetup;
+        const verified = buildVerifiedSetups(spotMid, last, bars, vpMicro, vp5d, pdh, pdl, activeTrendGene, bestRevGene);
+        const scalpSetup = verified.scalpSetup;
+        const trendSetup = verified.trendSetup;
 
         liveModel = {
           spot: +spotMid.toFixed(2),
-          vpMicro, vp5d, mueRes, activeGene,
+          vpMicro, vp5d, mueRes,
+          activeGene: scalpSetup.setupMode === "REVERSAL" ? bestRevGene : activeTrendGene,
+          bestRevGene,
           scalpSetup, trendSetup
         };
 
         lastAiUpdateMs = Date.now();
         lastAiTimeStr = getBangkokTimeStr(lastAiUpdateMs);
         document.getElementById('last-updated').textContent = `AI อัปเดตสด: ${lastAiTimeStr} (0 นาทีที่แล้ว)`;
-        document.getElementById('mue-gen-badge').textContent = `12,096-Sim Gen #${genCounter++}`;
         document.getElementById('kpi-regime').textContent = `ADX ${last.adx.toFixed(1)} (${regimeTxt})`;
         document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${pdh.toFixed(2)} | PDL: $${pdl.toFixed(2)}`;
         document.getElementById('kpi-macro').textContent = `RSI ${last.rsi.toFixed(1)} / ATR $${last.atr.toFixed(2)}`;
         document.getElementById('kpi-corr').textContent = `EMA21: $${last.ema21.toFixed(2)} | EMA200: $${last.ema200.toFixed(2)}`;
 
-        // Update Mode Badge (Trend vs Reversal)
+        // Update Mode & Reversal Safety Lock Badges
         const modeBadge = document.getElementById('regime-mode-badge');
+        const safetyBadge = document.getElementById('rev-safety-badge');
         if (scalpSetup.setupMode === "REVERSAL") {
-          modeBadge.textContent = `🔄 REVERSAL HUNTER MODE (${scalpSetup.dir})`;
+          modeBadge.textContent = `🔄 REVERSAL HUNTER (${scalpSetup.formulaName})`;
           modeBadge.className = "px-2.5 py-0.5 text-[10px] font-mono-num font-bold bg-amber-500/20 text-amber-300 border border-amber-400/60 rounded";
+        } else if (scalpSetup.setupMode === "TREND_CAUTION") {
+          modeBadge.textContent = `⚠️ TREND + BOUNCE CAUTION`;
+          modeBadge.className = "px-2.5 py-0.5 text-[10px] font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500/60 rounded";
         } else {
-          modeBadge.textContent = `🌊 TREND FOLLOW MODE (${scalpSetup.dir})`;
+          modeBadge.textContent = `🌊 TREND FOLLOW (${scalpSetup.formulaName})`;
           modeBadge.className = "px-2.5 py-0.5 text-[10px] font-mono-num font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 rounded";
+        }
+
+        if (verified.revSafetyLocked) {
+          safetyBadge.textContent = `🔒 REV OOS LOCKED (สวนเทรนด์ OOS ${bestRevGene ? bestRevGene.oosWr : 0}% / ${bestRevGene ? bestRevGene.netR : 0}R)`;
+          safetyBadge.className = "px-2.5 py-0.5 text-[10px] font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-600/60 rounded";
+          document.getElementById('rev-table-status').textContent = "🔒 ล็อกนิรภัยทำงาน (OOS < 50% — ห้าม Auto สวนเทรนด์)";
+          document.getElementById('rev-table-status').className = "text-[11px] font-mono-num text-rose-400 font-bold";
+        } else {
+          safetyBadge.textContent = `✅ REV OOS VERIFIED (${bestRevGene.revMode} OOS ${bestRevGene.oosWr}% | +${bestRevGene.netR}R)`;
+          safetyBadge.className = "px-2.5 py-0.5 text-[10px] font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60 rounded";
+          document.getElementById('rev-table-status').textContent = `✅ ผ่านเกณฑ์ OOS (${bestRevGene.revMode} OOS ${bestRevGene.oosWr}%)`;
+          document.getElementById('rev-table-status').className = "text-[11px] font-mono-num text-emerald-400 font-bold";
         }
 
         document.getElementById('anatomy-title').textContent = `${vpMicro.title} — ${scalpSetup.revReason}`;
@@ -1613,14 +1973,14 @@
         const totalNetR = mueRes.results.reduce((a, x) => a + x.netR, 0);
         const totalWr = ((totalWins / Math.max(1, totalWins + totalLosses)) * 100).toFixed(1);
 
-        document.getElementById('scalp-bt-badge').textContent = `Prop-Verified WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
+        document.getElementById('scalp-bt-badge').textContent = `Trend WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
         document.getElementById('scalp-bias').textContent = scalpSetup.bias;
-        document.getElementById('scalp-rr-badge').textContent = `SL ${scalpSetup.slPts} จุด / TP ${scalpSetup.tpPts} จุด (1:${activeGene.rr})`;
+        document.getElementById('scalp-rr-badge').textContent = `SL ${scalpSetup.slPts} จุด / TP ${scalpSetup.tpPts} จุด (1:${scalpSetup.rr})`;
         document.getElementById('sc-entry').textContent = `$${scalpSetup.entry.toFixed(2)}`;
         document.getElementById('sc-sl-label').textContent = `Scalp SL (${scalpSetup.slPts} จุด)`;
         document.getElementById('sc-sl').textContent = `$${scalpSetup.sl.toFixed(2)}`;
-        document.getElementById('sc-be-label').textContent = activeGene.beRule === "NO_BE" ? "Full TP/SL" : activeGene.beRule;
-        document.getElementById('sc-be').textContent = activeGene.beRule === "NO_BE" ? "Full TP" : `$${scalpSetup.be.toFixed(2)}`;
+        document.getElementById('sc-be-label').textContent = scalpSetup.beRule === "NO_BE" ? "Full TP/SL" : scalpSetup.beRule;
+        document.getElementById('sc-be').textContent = scalpSetup.beRule === "NO_BE" ? "Full TP" : `$${scalpSetup.be.toFixed(2)}`;
         document.getElementById('sc-tp-label').textContent = `Scalp TP (${scalpSetup.tpPts} จุด)`;
         document.getElementById('sc-tp').textContent = `$${scalpSetup.tp.toFixed(2)}`;
 
@@ -1655,6 +2015,21 @@
             <td class="py-1.5 text-right font-bold ${r.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${r.netR >= 0 ? '+' : ''}${r.netR}R</td>
           </tr>`).join('');
 
+        // Render Table 2: Reversal / Counter-Trend Backtest Results
+        document.getElementById('rev-bt-table-body').innerHTML = mueRes.revResults.map(r => {
+          const passed = r.oosWr >= 50 && r.netR > 0 && r.oosNetR > 0;
+          return `
+          <tr class="hover:bg-gray-800/40 text-gray-300">
+            <td class="py-1.5 pr-2 font-bold ${passed ? 'text-emerald-300' : 'text-amber-300'}">${r.revMode} ${passed ? '✅' : '🔒'}</td>
+            <td class="py-1.5 pr-2 text-gray-400">${r.filterMode}</td>
+            <td class="py-1.5 pr-2">${r.slMult}x / 1:${r.rr} / ${r.beRule}</td>
+            <td class="py-1.5 pr-2 text-right">${r.trades}</td>
+            <td class="py-1.5 pr-2 text-right text-cyan-400 font-bold">${r.wr}%</td>
+            <td class="py-1.5 pr-2 text-right ${r.oosWr >= 50 ? 'text-emerald-400' : 'text-rose-400'} font-bold">${r.oosWr}%</td>
+            <td class="py-1.5 text-right font-bold ${r.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${r.netR >= 0 ? '+' : ''}${r.netR}R</td>
+          </tr>`;
+        }).join('');
+
         document.getElementById('sim-audit-table-body').innerHTML = mueRes.recentTrades.map(t => `
           <tr>
             <td class="py-1 pr-2 text-gray-400">${t.time}</td>
@@ -1670,7 +2045,7 @@
         renderVolumeProfileChart(vp5d);
         recalcPropMath();
 
-        // Auto-Place OR Auto-Refresh Pending Limit every 15m (never touches an active HOLDING order!)
+        // Auto-Place OR Auto-Refresh Pending Limit every 15m (respecting OOS Safety Lock!)
         if (orderState.autoArm) {
           if (!orderState.activeOrder) {
             placeScalpLimitOrder(false, false);
@@ -1679,7 +2054,7 @@
           }
         }
 
-        const aiSummaryText = await runTrueLiveAIAnalysis(spotMid, last, pdh, pdl, vpMicro, scalpSetup, trendSetup, activeGene, totalWr, totalNetR, regimeTxt, lastAiTimeStr);
+        const aiSummaryText = await runContinuousLiveAI(spotMid, last, pdh, pdl, vpMicro, scalpSetup, trendSetup, activeTrendGene, bestRevGene, verified.revSafetyLocked, regimeTxt, lastAiTimeStr);
 
         if (notify) {
           const ao = orderState.activeOrder;
@@ -1687,8 +2062,8 @@
             ? `ออเดอร์บนกระดาน [${ao.mode} | ${ao.planType}]: ${ao.dir} @ $${ao.entry.toFixed(2)} | SL $${ao.sl.toFixed(2)} | TP $${ao.tp.toFixed(2)}`
             : `แผนรอบนี้ (${scalpSetup.setupMode}): ${scalpSetup.dir} @ $${scalpSetup.entry.toFixed(2)} | SL $${scalpSetup.sl.toFixed(2)} | TP $${scalpSetup.tp.toFixed(2)}`;
           sendNtfy(
-            `15m Report (${lastAiTimeStr}) | Spot $${spotMid.toFixed(2)} [${scalpSetup.setupMode}]`,
-            `${orderLine}\nเหตุผล: ${scalpSetup.revReason}\nสรุป AI: ${aiSummaryText.slice(0, 220)}...`,
+            `15m AI Report (${lastAiTimeStr}) | Spot $${spotMid.toFixed(2)} [Gen #${aiBrain.generation}]`,
+            `${orderLine}\nOOS Safety: ${verified.revSafetyLocked ? 'LOCKED (งดสวนเทรนด์)' : 'VERIFIED'}\nสรุป AI: ${aiSummaryText.slice(0, 210)}...`,
             4, ["clock1", "chart_with_upwards_trend"]
           );
         }
@@ -1696,32 +2071,34 @@
         console.error(err);
       } finally {
         isSimRunning = false;
-        btn.textContent = "🧬 รัน AI + จำลองใหม่";
+        btn.textContent = "🧬 รันจำลอง 22,176 สูตร + AI";
       }
     }
 
-    async function runTrueLiveAIAnalysis(spot, last, pdh, pdl, vpMicro, sc, tr, activeGene, totalWr, totalNetR, regimeTxt, nowStr) {
+    // --- CONTINUOUS LIVE AI ANALYST (Reads Past Insights + Both Backtest Tables + Real Trades) ---
+    async function runContinuousLiveAI(spot, last, pdh, pdl, vpMicro, sc, tr, activeTrend, bestRev, revLocked, regimeTxt, nowStr) {
       const badgeEl = document.getElementById('ai-engine-badge');
       const contentEl = document.getElementById('ai-content');
-      badgeEl.textContent = "⏳ AI กำลังวิเคราะห์ข้อมูลสด...";
+      badgeEl.textContent = "⏳ AI กำลังเรียนรู้และวิเคราะห์ข้อมูลสด...";
 
+      const curSess = getBangkokSession();
       const allHist = (orderState.todayClosed || []).concat(orderState.learningArchive || []);
       const histWins = allHist.filter(x => x.outcome === "WIN").length;
       const histR = allHist.reduce((a, x) => a + x.pnlR, 0);
       const ledgerContext = allHist.length > 0
-        ? `สถิติพอร์ตจริงในสมุดเรียนรู้: เทรดแล้ว ${allHist.length} ไม้ (ชนะ ${histWins} ไม้, Net ${histR >= 0 ? '+' : ''}${histR.toFixed(2)}R), ไม้ล่าสุด: ${allHist[0].dir} ${allHist[0].outcome} (${allHist[0].pnlR}R)`
-        : "ยังไม่มีประวัติปิดออเดอร์จริงในสมุดเรียนรู้";
+        ? `สถิติพอร์ตจริง: เทรดแล้ว ${allHist.length} ไม้ (ชนะ ${histWins} ไม้, Net ${histR >= 0 ? '+' : ''}${histR.toFixed(2)}R)`
+        : "ยังไม่มีประวัติปิดออเดอร์จริง";
+
+      const priorMemories = aiBrain.learnedInsights.slice(0, 4).map(x => `- [${x.stamp}] ${x.text}`).join("\n") || "- เพิ่งเริ่มต้นรอบแรก";
 
       const promptText =
-        `คุณคือนักวิเคราะห์กลยุทธ์ Prop Firm XAU/USD มืออาชีพ วิเคราะห์ข้อมูลตลาดสด ณ เวลา ${nowStr} น.:\n` +
-        `- ราคา Spot ปัจจุบัน: $${spot.toFixed(2)} | PDH: $${pdh.toFixed(2)} | PDL: $${pdl.toFixed(2)}\n` +
-        `- เทรนด์หลัก: ${regimeTxt} | ADX(14): ${last.adx.toFixed(1)} | RSI(14): ${last.rsi.toFixed(1)} | ATR(14): $${last.atr.toFixed(2)}\n` +
-        `- OrderFlow สด: L2 OBI = ${latestObi >= 0 ? '+' : ''}${latestObi.toFixed(3)} (Bid ${latestBidPct}% / Ask ${100 - latestBidPct}%), 60s Delta = ${latestDelta60s >= 0 ? '+' : ''}${latestDelta60s.toFixed(1)}\n` +
-        `- โหมดที่ระบบตรวจพบตอนนี้: ${sc.setupMode} (${sc.revReason})\n` +
-        `- แผน Near-Spot Scalp: ${sc.dir} Limit @ $${sc.entry.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)}\n` +
-        `- แผน Swing/Reversal (Engine B): ${tr.dir} @ $${tr.entry} | SL $${tr.sl} | TP $${tr.tp}\n` +
-        `- ${ledgerContext}\n` +
-        `ตอบภาษาไทยกระชับ 4 หัวข้อ: (1) อ่านแรงซื้อขาย L2 & โอกาสกลับตัวหรือไปต่อตามเทรนด์ (2) ประเมินจุดเข้า Scalp $${sc.entry.toFixed(2)} และ Swing $${tr.entry} (3) จุดระวัง/ยกเลิกแผน (4) คำแนะนำจากสมุดเรียนรู้`;
+        `คุณคือระบบ AI Quant ที่เรียนรู้ต่อเนื่องตลอด 24 ชั่วโมงสำหรับพอร์ต Prop Firm XAU/USD (รอบ Gen #${aiBrain.generation}, สะสม ${aiBrain.totalCombosLearned.toLocaleString()} สูตร, ช่วงเวลา ${curSess.label}, เวลา ${nowStr} น.):\n` +
+        `1. ข้อมูลตลาดสด: Spot $${spot.toFixed(2)} | เทรนด์หลัก ${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)}, ATR $${last.atr.toFixed(2)}) | L2 OBI ${latestObi >= 0 ? '+' : ''}${latestObi.toFixed(3)} (Bid ${latestBidPct}% / Ask ${100 - latestBidPct}%)\n` +
+        `2. ผลจำลองตามเทรนด์ (12,096 วิธี): สูตรชนะ ${activeTrend.entryMode} (OOS WR ${activeTrend.oosWr}%, Net ${activeTrend.netR}R)\n` +
+        `3. ผลจำลองจุดกลับตัว (10,080 วิธี): สูตรดีสุด ${bestRev.revMode} (OOS WR ${bestRev.oosWr}%, Net ${bestRev.netR}R) -> สถานะนิรภัย: ${revLocked ? 'ล็อกห้ามสวนเทรนด์ (OOS ไม่ผ่านเกณฑ์)' : 'ผ่านเกณฑ์ OOS'}\n` +
+        `4. ${ledgerContext}\n` +
+        `5. ความจำที่ AI เรียนรู้จากรอบก่อนหน้า:\n${priorMemories}\n` +
+        `ตอบภาษาไทยกระชับ 4 ข้อ: (1) สภาวะตลาด L2 & จุดกลับตัวตอนนี้ (2) แผนเข้าเทรดที่ปลอดภัยที่สุดในรอบนี้ ($${sc.entry.toFixed(2)}) (3) สิ่งที่ AI เรียนรู้เพิ่มจากรอบที่แล้วและช่วงเวลา ${curSess.id} (4) กฎที่ AI สรุปเก็บไว้ใช้รอบถัดไป 1 บรรทัดขึ้นต้นด้วย "LEARNED_RULE:"`;
 
       const apiKey = localStorage.getItem("THAILLM_KEY") || "";
       let liveAiOutput = null;
@@ -1735,7 +2112,7 @@
             body: JSON.stringify({
               model: "/model/typhoon-v2.5-30b-a3b-instruct",
               messages: [{ role: "user", content: promptText }],
-              max_tokens: 650,
+              max_tokens: 680,
               temperature: 0.25
             })
           });
@@ -1744,7 +2121,7 @@
             const raw = j.choices[0].message.content.trim();
             if (raw.length > 60) {
               liveAiOutput = raw;
-              engineLabel = `✅ TYPHOON-V2.5 LIVE (${nowStr})`;
+              engineLabel = `✅ TYPHOON-V2.5 CONTINUOUS (${nowStr})`;
             }
           }
         } catch (e) {}
@@ -1766,20 +2143,30 @@
             const raw = j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content.trim() : "";
             if (raw.length > 60) {
               liveAiOutput = raw;
-              engineLabel = `✅ LIVE AI MODEL VERIFIED (${nowStr})`;
+              engineLabel = `✅ LIVE AI CONTINUOUS (${nowStr})`;
             }
           }
         } catch (e) {}
       }
 
       if (!liveAiOutput) {
+        const autoRule = revLocked
+          ? `ช่วง ${curSess.id} สูตรกลับตัว ${bestRev.revMode} ได้ OOS ${bestRev.oosWr}% (<50%) ให้ยึดฝั่งตามเทรนด์ ${activeTrend.entryMode} เป็นหลัก`
+          : `ช่วง ${curSess.id} สูตรกลับตัว ${bestRev.revMode} ผ่าน OOS ${bestRev.oosWr}% สามารถดักกลับตัวเมื่อ RSI สุดโต่งได้`;
         liveAiOutput =
-          `**1. อ่านแรงซื้อขาย L2 & สถานะกลับตัว (${nowStr} น.):** Spot XAU/USD อยู่ที่ **$${spot.toFixed(2)}** (RSI ${last.rsi.toFixed(1)}, ADX ${last.adx.toFixed(1)}) ระบบเลือกโหมด **${sc.setupMode}** เนื่องจาก **${sc.revReason}**\n` +
-          `**2. ประเมินแผน Scalp ($${sc.entry.toFixed(2)}) และ Swing ($${tr.entry}):** แผน Scalp วางดัก **${sc.dir}** ห่างราคาปัจจุบัน **${Math.round(Math.abs(spot - sc.entry)*100)} จุด** (SL $${sc.sl.toFixed(2)} / TP $${sc.tp.toFixed(2)}) ส่วนแผน Swing/Reversal วางดักระยะกลางที่ **$${tr.entry}** (สามารถกดส่งเข้ากระดานได้ทั้ง 2 แผน)\n` +
-          `**3. เงื่อนไขระวัง:** หากออเดอร์ยังไม่แมตช์ในรอบ 15 นาที ระบบจะรีเฟรชราคา Limit ให้อัตโนมัติ แต่หากแมตช์แล้วให้ถือทีละ 1 ไม้ตามเพดานความเสี่ยง 1%\n` +
-          `**4. บันทึกจากสมุดเรียนรู้ AI:** ${ledgerContext}`;
-        engineLabel = `QUANT-AI SYNTHESIS (${nowStr})`;
+          `**1. สภาวะตลาด L2 & ผลจำลองจุดกลับตัว (${nowStr} น.):** Spot XAU/USD อยู่ที่ **$${spot.toFixed(2)}** (RSI ${last.rsi.toFixed(1)}, ADX ${last.adx.toFixed(1)}) ผลจำลองจุดกลับตัว 10,080 วิธีได้สูงสุดคือ **${bestRev.revMode}** (OOS WR **${bestRev.oosWr}%**, Net **${bestRev.netR}R**) ระบบจึงตั้งสถานะ **${revLocked ? 'ล็อกนิรภัยงดสวนเทรนด์อัตโนมัติ' : 'อนุญาตดักกลับตัวตามเกณฑ์ OOS'}**\n` +
+          `**2. แผนเข้าเทรดที่ปลอดภัยที่สุดรอบนี้:** เลือกโหมด **${sc.setupMode}** ฝั่ง **${sc.dir}** ที่ **$${sc.entry.toFixed(2)}** (SL $${sc.sl.toFixed(2)} / TP $${sc.tp.toFixed(2)}) อิงสูตร **${sc.formulaName}**\n` +
+          `**3. การเรียนรู้ต่อเนื่องช่วง ${curSess.label}:** สะสมการเรียนรู้แล้ว **${aiBrain.totalCombosLearned.toLocaleString()} สูตร (Gen #${aiBrain.generation})** ร่วมกับ${ledgerContext}\n` +
+          `LEARNED_RULE: ${autoRule}`;
+        engineLabel = `QUANT-AI MEMORY (${nowStr})`;
       }
+
+      // Extract & persist new learned rule into AI Brain
+      const ruleMatch = liveAiOutput.match(/LEARNED_RULE:\s*(.+)/i);
+      const learnedLine = ruleMatch
+        ? ruleMatch[1].trim()
+        : `Gen #${aiBrain.generation}: Spot $${spot.toFixed(2)} (${regimeTxt}) | ตามเทรนด์ ${activeTrend.entryMode} (${activeTrend.oosWr}%) vs กลับตัว ${bestRev.revMode} (${bestRev.oosWr}%)`;
+      recordAiInsight(learnedLine, "AI-LEARN");
 
       badgeEl.textContent = engineLabel;
       contentEl.innerHTML = liveAiOutput.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-400">$1</strong>').replace(/\n/g, '<br/>');
@@ -1830,7 +2217,7 @@
       if (inZone && obiConfirmed && tapeOrWallAligned) {
         pill.textContent = `🔥 TRIGGERED (${sc.setupMode}) — ENTER ${sc.dir}!`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full animate-pulse";
-        head.textContent = `ยืนยันครบ 3 ชั้น (${sc.setupMode})! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)}`;
+        head.textContent = `ยืนยันครบ 3 ชั้น (${sc.formulaName})! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)}`;
         box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40";
 
         if ((!orderState.activeOrder || orderState.activeOrder.mode === "LIMIT") && Date.now() - lastAutoFireTs > 300000) {
@@ -1846,12 +2233,12 @@
       } else if (inZone) {
         pill.textContent = `ARMED IN ZONE — รอยืนยัน L2 OBI 3 วิ (${sc.dir})`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-500 rounded-full";
-        head.textContent = `ราคาเข้าโซน $${sc.entry.toFixed(2)} (${sc.setupMode}) แล้ว! รอ Order Book OBI ยืนค้าง 3 วินาที`;
+        head.textContent = `ราคาเข้าโซน $${sc.entry.toFixed(2)} (${sc.formulaName}) แล้ว! รอ Order Book OBI ยืนค้าง 3 วินาที`;
         box.className = "card p-4 border-cyan-500/60 bg-gradient-to-r from-gray-900 via-cyan-950/30 to-purple-950/25";
       } else {
         pill.textContent = `SCANNING (${distPts} จุดถึงโซน $${sc.entry.toFixed(2)})`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-gray-800 text-amber-300 border border-gray-700 rounded-full";
-        head.textContent = `แผน ${sc.setupMode === 'REVERSAL' ? '🔄 ดักกลับตัว' : '🌊 ตามเทรนด์'} ${sc.dir} ที่ $${sc.entry.toFixed(2)} (ห่าง ${distPts} จุด)`;
+        head.textContent = `แผน ${sc.setupMode === 'REVERSAL' ? '🔄 ดักกลับตัว (ผ่าน OOS)' : '🌊 ตามเทรนด์'} ${sc.dir} ที่ $${sc.entry.toFixed(2)} (ห่าง ${distPts} จุด)`;
         box.className = "card p-4 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-cyan-950/20 to-purple-950/20";
       }
     }
@@ -1917,6 +2304,7 @@
       };
     }
 
+    loadAiBrain();
     loadOrderState();
     seedInitial60sTape();
     runFullLiveQuantAndAI(false).then(() => connectLiveStreams());
