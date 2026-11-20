@@ -1,0 +1,48 @@
+{
+  "generation": 2,
+  "last_evolved_at": "2026-11-20 09:58:58",
+  "stagnation_cycles": 0,
+  "exploration_pressure": 0.4,
+  "genes": {
+    "D_SHAPED": {
+      "mode": "MEAN_REVERSION",
+      "sl_points": 500,
+      "tp_points": 750,
+      "tol_points": 140,
+      "obi_min": 0.08,
+      "generation": 2,
+      "fitness": 0.23,
+      "rule_th": "MUE-X Gen#2: ดักเด้งกรอบ VAL/VAH (SL 500 / TP 750 จุด + OBI)"
+    },
+    "B_SHAPED": {
+      "mode": "POC_PULLBACK",
+      "sl_points": 500,
+      "tp_points": 650,
+      "tol_points": 140,
+      "obi_min": 0.05,
+      "generation": 2,
+      "fitness": 0.83,
+      "rule_th": "MUE-X Gen#2: ย่อเข้าที่ฐาน POC ตามเทรนด์ (SL 500 / TP 650 จุด + OBI)"
+    },
+    "P_SHAPED": {
+      "mode": "POC_PULLBACK",
+      "sl_points": 500,
+      "tp_points": 600,
+      "tol_points": 160,
+      "obi_min": 0.08,
+      "generation": 1,
+      "fitness": 0.15,
+      "rule_th": "MUE-X Gen#1: ย่อเข้าที่ฐาน POC ตามเทรนด์ (SL 500 / TP 600 จุด + OBI)"
+    },
+    "DOUBLE_ZONE": {
+      "mode": "POC_PULLBACK",
+      "sl_points": 500,
+      "tp_points": 750,
+      "tol_points": 220,
+      "obi_min": 0.1,
+      "generation": 2,
+      "fitness": 0.49,
+      "rule_th": "MUE-X Gen#2: ย่อเข้าที่ฐาน POC ตามเทรนด์ (SL 500 / TP 750 จุด + OBI)"
+    }
+  }
+}
