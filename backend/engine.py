@@ -13,8 +13,8 @@ import yfinance as yf
 from openai import OpenAI
 
 THAI_TZ = timezone(timedelta(hours=7))
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-KB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "knowledge_base")
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
 STATE_PATH = os.path.join(DATA_DIR, "state.json")
 VAULT_PATH = os.path.join(DATA_DIR, "gold_m15_vault.csv")
 JOURNAL_PATH = os.path.join(DATA_DIR, "trade_journal.json")
@@ -26,7 +26,7 @@ NTFY_URL = "https://ntfy.sh"
 
 
 def load_dotenv_local():
-    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+    env_path = os.path.join(BASE_DIR, ".env")
     if os.path.exists(env_path):
         with open(env_path, "r", encoding="utf-8") as f:
             for line in f:
@@ -75,7 +75,6 @@ def fetch_order_flow_snapshot(fallback_spot=3550.0):
     snapshot = {
         "source": "Binance XAUUSDT Perp L2",
         "mid_price": round(fallback_spot, 2),
-        "obi_10bps": 0.0,
         "obi_25bps": 0.0,
         "bid_liq_total": 0.0,
         "ask_liq_total": 0.0,
@@ -94,8 +93,7 @@ def fetch_order_flow_snapshot(fallback_spot=3550.0):
             bids = [(float(p), float(q)) for p, q in d.get("bids", [])]
             asks = [(float(p), float(q)) for p, q in d.get("asks", [])]
             if bids and asks:
-                mid = (bids[0][0] + asks[0][0]) / 2.0
-                snapshot["mid_price"] = round(mid, 2)
+                snapshot["mid_price"] = round((bids[0][0] + asks[0][0]) / 2.0, 2)
                 b_25 = sum(q for p, q in bids[:15])
                 a_25 = sum(q for p, q in asks[:15])
                 snapshot["obi_25bps"] = round((b_25 - a_25) / max(1e-6, b_25 + a_25), 3)
@@ -219,7 +217,7 @@ def compute_technicals(df):
     return out, round(pdh, 2), round(pdl, 2)
 
 
-def analyze_volume_profile_anatomy(slice_df, bins=28):
+def analyze_volume_profile_anatomy(slice_df, bins=24):
     lo, hi = float(slice_df["Low"].min()), float(slice_df["High"].max())
     if hi <= lo:
         hi = lo + 1.0
@@ -276,19 +274,19 @@ def analyze_volume_profile_anatomy(slice_df, bins=28):
     if is_double:
         shape = "DOUBLE_ZONE"
         title_th = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"
-        desc_th = "มียอดโวลุ่ม 2 โซนคั่นด้วยหุบเขา Valley — MUE-X ใช้โหมดวิ่งข้ามโซนตามแรงทะลุ Valley"
+        desc_th = "Session VP 8 ชม. เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — ใช้ OrderFlow ยืนยันจังหวะเด้งหรือทะลุโซน"
     elif poc_pos_pct <= 36.0:
         shape = "B_SHAPED"
         title_th = "② b-SHAPED (ฐานสะสมล่าง / Short Covering)"
-        desc_th = "โวลุ่มกระจุกตัวด้านล่าง (POC Pos <= 36%) แรงขายเริ่มหมดและมีฐานสะสมซื้อรองรับ"
+        desc_th = "โวลุ่มสะสมฐานล่างใกล้ราคาปัจจุบัน (POC Pos <= 36%) แรงขายเริ่มชะลอและมี Bid รองรับ"
     elif poc_pos_pct >= 64.0:
         shape = "P_SHAPED"
         title_th = "③ P-SHAPED (ยอดสะสมบน / Long Liquidation)"
-        desc_th = "โวลุ่มกระจุกตัวด้านบน (POC Pos >= 64%) ตลาดพักฐานบนยอดโวลุ่ม"
+        desc_th = "โวลุ่มสะสมด้านบน (POC Pos >= 64%) ตลาดพักฐานบนยอดโวลุ่ม รอ OrderFlow เลือกทาง"
     else:
         shape = "D_SHAPED"
-        title_th = "① D-SHAPED (สมดุลตัว D / Balanced Range)"
-        desc_th = "โวลุ่มสมดุลตรงกลางกรอบ (POC Pos 36–64%) สะสมพลังรอเบรกหรือเด้งในกรอบ"
+        title_th = "① D-SHAPED (สมดุลตัว D / Balanced Auction)"
+        desc_th = "โวลุ่มสมดุลกลางกรอบ Session ปัจจุบัน (POC Pos 36–64%) ดักเด้งขอบ VAH/VAL เมื่อ OBI ยืนยัน"
 
     return {
         "shape": shape,
@@ -310,10 +308,10 @@ def load_or_init_mue_memory():
         "generation": 1,
         "last_evolved_at": "",
         "genes": {
-            "D_SHAPED": {"mode": "VALLEY_MIGRATION", "sl_points": 500, "tp_points": 650, "tol_points": 180, "obi_min": 0.06, "generation": 1, "fitness": 0.65, "rule_th": ""},
-            "B_SHAPED": {"mode": "MEAN_REVERSION", "sl_points": 500, "tp_points": 650, "tol_points": 180, "obi_min": 0.05, "generation": 1, "fitness": 0.78, "rule_th": ""},
-            "P_SHAPED": {"mode": "POC_PULLBACK", "sl_points": 500, "tp_points": 600, "tol_points": 180, "obi_min": 0.06, "generation": 1, "fitness": 0.62, "rule_th": ""},
-            "DOUBLE_ZONE": {"mode": "VALLEY_MIGRATION", "sl_points": 500, "tp_points": 700, "tol_points": 180, "obi_min": 0.08, "generation": 1, "fitness": 0.66, "rule_th": ""}
+            "D_SHAPED": {"mode": "MEAN_REVERSION", "sl_points": 500, "tp_points": 650, "tol_points": 180, "obi_min": 0.18, "generation": 1, "fitness": 0.70, "rule_th": ""},
+            "B_SHAPED": {"mode": "MEAN_REVERSION", "sl_points": 500, "tp_points": 650, "tol_points": 180, "obi_min": 0.18, "generation": 1, "fitness": 0.78, "rule_th": ""},
+            "P_SHAPED": {"mode": "POC_PULLBACK", "sl_points": 500, "tp_points": 600, "tol_points": 180, "obi_min": 0.18, "generation": 1, "fitness": 0.68, "rule_th": ""},
+            "DOUBLE_ZONE": {"mode": "VALLEY_MIGRATION", "sl_points": 500, "tp_points": 700, "tol_points": 180, "obi_min": 0.18, "generation": 1, "fitness": 0.72, "rule_th": ""}
         }
     }
     mem = load_json_safe(MUE_MEMORY_PATH, default_mem)
@@ -328,12 +326,13 @@ def simulate_scalp_gene(df, target_shape, mode, sl_pts, tp_pts, tol_pts):
     spread_pen = 0.20
     trades_r, sim_records = [], []
     n = len(df)
-    i = max(120, n - 1800)
+    i = max(80, n - 1800)
 
     while i < n - 12:
-        vp = analyze_volume_profile_anatomy(df.iloc[i - 96:i], bins=24)
+        # Use 32-bar (8H) Session Micro-VP so scalp levels always track live auction!
+        vp = analyze_volume_profile_anatomy(df.iloc[i - 32:i], bins=20)
         if vp["shape"] != target_shape:
-            i += 4
+            i += 3
             continue
 
         row = df.iloc[i]
@@ -420,16 +419,15 @@ def evolve_mue_x_genes(df, mue_memory):
 
     for shape_name in ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"]:
         cur = mue_memory["genes"][shape_name]
-        best_res = simulate_scalp_gene(df, shape_name, cur["mode"], cur["sl_points"], cur["tp_points"], cur["tol_points"])
+        best_res = simulate_scalp_gene(df, shape_name, cur["mode"], 500, cur["tp_points"], cur["tol_points"])
         best_cfg = dict(cur)
         mutated = False
 
-        # Search all mode & constant combinations so EVERY shape finds positive expectancy!
         for m_c in modes:
             for tp_c in tp_grid:
                 for tol_c in tol_grid:
                     cand = simulate_scalp_gene(df, shape_name, m_c, 500, tp_c, tol_c)
-                    if cand["trades"] >= 4 and (cand["net_r"] > best_res["net_r"] + 0.2):
+                    if cand["trades"] >= 4 and (cand["net_r"] > best_res["net_r"] + 0.15):
                         best_res = cand
                         best_cfg["mode"] = m_c
                         best_cfg["sl_points"] = 500
@@ -441,7 +439,8 @@ def evolve_mue_x_genes(df, mue_memory):
             best_cfg["generation"] = int(best_cfg.get("generation", 1)) + 1
 
         best_cfg["fitness"] = best_res["fitness"]
-        best_cfg["rule_th"] = f"MUE-X Gen#{best_cfg['generation']}: โหมด {best_cfg['mode']} | SL 500 / TP {best_cfg['tp_points']} จุด (โซนเข้า ±{best_cfg['tol_points']} จุด + OBI)"
+        best_cfg["obi_min"] = 0.18
+        best_cfg["rule_th"] = f"MUE-X Gen#{best_cfg['generation']}: {best_cfg['mode']} | SL 500 / TP {best_cfg['tp_points']} จุด (โซน ±{best_cfg['tol_points']} จุด + OBI >= 0.18)"
         mue_memory["genes"][shape_name] = best_cfg
 
         breakdown.append({
@@ -465,7 +464,7 @@ def evolve_mue_x_genes(df, mue_memory):
             "mode": best_cfg["mode"],
             "tp_points": best_cfg["tp_points"],
             "tol_points": best_cfg["tol_points"],
-            "wick_mode": f"OBI>={best_cfg['obi_min']}",
+            "wick_mode": "OBI>=0.18 (3s)",
             "trades": best_res["trades"],
             "win_rate": best_res["win_rate"],
             "r_profit_factor": best_res["r_pf"],
@@ -601,11 +600,52 @@ def run_trend_walk_forward(df):
         "atr_sl_mult": 1.8, "rr_mult": 2.2, "adx_thresh": 24,
         "trades": len(trades_r), "win_rate": wr, "r_profit_factor": r_pf,
         "sharpe": sharpe, "sortino": round(sharpe * 1.35, 2), "calmar": round(net_r / max(1.0, max_dd), 2),
-        "net_r": net_r, "max_dd_r": round(max_dd, 2), "mc_dd_95_r": round(max(2.5, max_dd * 1.15), 2),
-        "mc_prob_profit": 98.5, "trade_r_list": trades_r, "equity_curve_r": curve,
-        "recent_sim_trades": list(reversed(sim_records[-10:]))
+        "net_r": net_r, "max_dd_r": round(max_dd, 2),
+        "equity_curve_r": curve, "recent_sim_trades": list(reversed(sim_records[-10:]))
     }
     return {"best": best_obj}
+
+
+def generate_live_ai_strategist_brief(spot, vp_session, scalp_setup, trend_setup, order_flow, scalp_bt, trend_bt, mue_mem):
+    fallback_brief = (
+        f"**1. Session Micro-VP 8H & Live OrderFlow ({vp_session['title_th']}):**\n"
+        f"Spot ปัจจุบัน **${spot}** เกาะอยู่ในกรอบ Session 8H (VAL **${vp_session['val']}** / POC **${vp_session['poc']}** / VAH **${vp_session['vah']}**) | "
+        f"L2 OBI **{order_flow['obi_25bps']:+.3f}** | Tick CVD **{order_flow['tick_cvd']:+.1f}** ({order_flow['absorption_flag']})\n\n"
+        f"**2. เงื่อนไขลั่นไก OrderFlow Execution Gate (ใช้งานจริง 3 ชั้น):**\n"
+        f"• **ชั้นที่ 1 (Location):** รอราคาเข้าใกล้จุดยิง Scalp **${scalp_setup['entry']}** ในระยะไม่เกิน `±{scalp_setup['tol_points']} จุด`\n"
+        f"• **ชั้นที่ 2 (3s Sustained OBI):** แรงฝั่ง **{scalp_setup['direction']}** ต้องยืนเหนือเกณฑ์ `{'+0.18' if scalp_setup['direction']=='LONG' else '-0.18'}` ต่อเนื่อง 3 วินาทีเต็ม (ตัดออเดอร์หลอก)\n"
+        f"• **ชั้นที่ 3 (60s Tape Delta):** แรงเคาะซื้อ/ขายจริง 60 วินาทีต้องสอดคล้องทิศทางจึงเปิดออเดอร์\n\n"
+        f"**3. แผนเข้าเทรด Scalp ({scalp_setup['direction']}):** Entry **${scalp_setup['entry']}** | SL **${scalp_setup['sl']}** | BE (+250 จุด) **${scalp_setup['be_target']}** | TP **${scalp_setup['tp']}**\n"
+        f"**4. แผน Trend Sniper ({trend_setup['direction']}):** Entry **${trend_setup['entry']}** | SL **${trend_setup['sl']}** | TP **${trend_setup['tp']}** (WR {trend_bt['best']['win_rate']}%)"
+    )
+
+    if not THAILLM_API_KEY:
+        return fallback_brief, "MUE-X Local Quant V14.0"
+
+    try:
+        client = OpenAI(api_key=THAILLM_API_KEY, base_url="http://thaillm.or.th/api/typhoon/v1")
+        prompt = (
+            f"คุณคือ Chief Quant Strategist ดูแลพอร์ตกองทุน XAU/USD วิเคราะห์ข้อมูลสด ณ เวลานี้เป็นภาษาไทยกระชับ 4 ข้อ:\n"
+            f"- Spot: ${spot} | Session 8H VP: {vp_session['shape']} (VAL ${vp_session['val']}, POC ${vp_session['poc']}, VAH ${vp_session['vah']})\n"
+            f"- Live L2 OrderFlow: OBI={order_flow['obi_25bps']:+.3f}, TickCVD={order_flow['tick_cvd']:+.1f}, Status={order_flow['absorption_flag']}\n"
+            f"- MUE-X Gen#{mue_mem['generation']} Scalp Plan: {scalp_setup['direction']} @ ${scalp_setup['entry']} (SL ${scalp_setup['sl']}, TP ${scalp_setup['tp']}, Mode={scalp_setup['mode']})\n"
+            f"- Trend Sniper Plan: {trend_setup['direction']} @ ${trend_setup['entry']} (SL ${trend_setup['sl']}, TP ${trend_setup['tp']}, Backtest WR {trend_bt['best']['win_rate']}%)\n"
+            f"สรุปจังหวะรอยิงร่วมกับ L2 OrderBook และการคุมความเสี่ยงพอร์ตกองทุนไม่เกิน -2R/วัน"
+        )
+        resp = client.chat.completions.create(
+            model="/model/typhoon-v2.5-30b-a3b-instruct",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=650,
+            temperature=0.25,
+            timeout=18
+        )
+        txt = (resp.choices[0].message.content or "").strip()
+        if len(txt) > 80:
+            return txt, "Typhoon-v2.5 + MUE-X V14.0"
+    except Exception as e:
+        print(f"[AI Brief Warning] {e}")
+
+    return fallback_brief, "MUE-X Quant V14.0"
 
 
 def fetch_macro_and_news():
@@ -689,7 +729,7 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
         })
         send_ntfy(
             f"PROP SCALP {scalp_setup['direction']} @ ${scalp_setup['entry']}",
-            f"ทรง {scalp_setup['shape']} [{scalp_setup['mode']}] | OBI: {scalp_setup['obi']} | SL: ${scalp_setup['sl']} | TP: ${scalp_setup['tp']}",
+            f"Session VP {scalp_setup['shape']} | OBI: {scalp_setup['obi']} | SL: ${scalp_setup['sl']} | TP: ${scalp_setup['tp']}",
             priority=5, tags=["zap", "dart"]
         )
 
@@ -747,20 +787,21 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
 
 def run_cycle(send_summary_alert=True):
     now_th = datetime.now(THAI_TZ)
-    print(f"[{now_th.strftime('%H:%M:%S')}] เริ่มประมวลผล XAU/USD V13.1 Prop-Firm Edition...")
+    print(f"[{now_th.strftime('%H:%M:%S')}] เริ่มประมวลผล XAU/USD V14.0 Unified OrderFlow + MUE-X...")
 
     df_raw, spot, bid, ask, feed_src = update_hydra_vault()
     df, pdh, pdl = compute_technicals(df_raw)
     order_flow = fetch_order_flow_snapshot(fallback_spot=spot)
 
-    vp_24h = analyze_volume_profile_anatomy(df.tail(96), bins=28)
+    # Session Micro-VP (32 M15 bars = 8 hours) so Scalp entries ALWAYS stay anchored near live price!
+    vp_session = analyze_volume_profile_anatomy(df.tail(32), bins=22)
     vp_5d = analyze_volume_profile_anatomy(df.tail(480), bins=32)
 
     mue_mem = load_or_init_mue_memory()
     scalp_bt = evolve_mue_x_genes(df, mue_mem)
     trend_bt = run_trend_walk_forward(df)
 
-    active_gene = mue_mem["genes"][vp_24h["shape"]]
+    active_gene = mue_mem["genes"][vp_session["shape"]]
     mode = active_gene["mode"]
     sl_pts, tp_pts, tol_pts = 500, int(active_gene["tp_points"]), int(active_gene["tol_points"])
     sl_usd, tp_usd = 5.0, tp_pts / 100.0
@@ -772,64 +813,67 @@ def run_cycle(send_summary_alert=True):
     curr_rsi = round(float(last_row["rsi14"]), 1)
     curr_atr = max(2.0, round(float(last_row["atr14"]), 2))
 
-    if mode == "VALLEY_MIGRATION":
-        pivot = vp_24h["valley"] if vp_24h["valley"] is not None else vp_24h["poc"]
-        if spot >= curr_ema21 or order_flow["obi_25bps"] >= 0:
-            sc_dir, sc_entry = "LONG", round(pivot if abs(spot - pivot) <= 6.0 else spot, 2)
-            sc_sl, sc_be, sc_tp = round(sc_entry - sl_usd, 2), round(sc_entry + 2.50, 2), round(sc_entry + tp_usd, 2)
-            sc_bias = f"{vp_24h['shape']} VALLEY MIGRATION BUY (ทะลุ Valley ${pivot} + OBI {order_flow['obi_25bps']:+.2f})"
+    # Anchor Scalp Entry to the NEAREST active Session VP level around current Spot price!
+    candidates_long = [lvl for lvl in [vp_session["val"], vp_session["lower_peak"], vp_session["poc"]] if lvl <= spot + 2.5]
+    candidates_short = [lvl for lvl in [vp_session["vah"], vp_session["upper_peak"], vp_session["poc"]] if lvl >= spot - 2.5]
+    nearest_sup = round(max(candidates_long) if candidates_long else (spot - 1.5), 2)
+    nearest_res = round(min(candidates_short) if candidates_short else (spot + 1.5), 2)
+
+    if mode == "VALLEY_MIGRATION" and vp_session["valley"] is not None:
+        pivot = vp_session["valley"]
+        if spot >= pivot:
+            sc_dir, sc_entry = "LONG", round(pivot if abs(spot - pivot) <= 4.0 else nearest_sup, 2)
+            sc_bias = f"{vp_session['shape']} VALLEY BUY (รอย่อรับโซน ${sc_entry} + OBI >= +0.18)"
         else:
-            sc_dir, sc_entry = "SHORT", round(pivot if abs(spot - pivot) <= 6.0 else spot, 2)
-            sc_sl, sc_be, sc_tp = round(sc_entry + sl_usd, 2), round(sc_entry - 2.50, 2), round(sc_entry - tp_usd, 2)
-            sc_bias = f"{vp_24h['shape']} VALLEY MIGRATION SELL (กดใต้ Valley ${pivot} + OBI {order_flow['obi_25bps']:+.2f})"
+            sc_dir, sc_entry = "SHORT", round(pivot if abs(spot - pivot) <= 4.0 else nearest_res, 2)
+            sc_bias = f"{vp_session['shape']} VALLEY SELL (รอเด้งชนโซน ${sc_entry} + OBI <= -0.18)"
     elif mode == "POC_PULLBACK":
-        if spot >= curr_h1_200 or order_flow["obi_25bps"] >= 0:
-            sc_dir, sc_entry = "LONG", round(vp_24h["poc"] if vp_24h["poc"] <= spot + 3.0 else vp_24h["val"], 2)
-            sc_sl, sc_be, sc_tp = round(sc_entry - sl_usd, 2), round(sc_entry + 2.50, 2), round(sc_entry + tp_usd, 2)
-            sc_bias = f"{vp_24h['shape']} POC PULLBACK BUY (ย่อฐาน POC ${sc_entry})"
+        if spot >= vp_session["poc"]:
+            sc_dir, sc_entry = "LONG", round(vp_session["poc"] if abs(spot - vp_session["poc"]) <= 5.0 else nearest_sup, 2)
+            sc_bias = f"{vp_session['shape']} POC PULLBACK BUY (รอย่อฐาน Session POC ${sc_entry} + OBI)"
         else:
-            sc_dir, sc_entry = "SHORT", round(vp_24h["poc"] if vp_24h["poc"] >= spot - 3.0 else vp_24h["vah"], 2)
-            sc_sl, sc_be, sc_tp = round(sc_entry + sl_usd, 2), round(sc_entry - 2.50, 2), round(sc_entry - tp_usd, 2)
-            sc_bias = f"{vp_24h['shape']} POC PULLBACK SELL (เด้งชน POC ${sc_entry})"
+            sc_dir, sc_entry = "SHORT", round(vp_session["poc"] if abs(spot - vp_session["poc"]) <= 5.0 else nearest_res, 2)
+            sc_bias = f"{vp_session['shape']} POC PULLBACK SELL (รอเด้งชน Session POC ${sc_entry} + OBI)"
     else:
-        if order_flow["obi_25bps"] >= -0.05 and spot <= vp_24h["poc"]:
-            sc_dir, sc_entry = "LONG", round(vp_24h["val"] if vp_24h["val"] <= spot else vp_24h["lower_peak"], 2)
-            sc_sl, sc_be, sc_tp = round(sc_entry - sl_usd, 2), round(sc_entry + 2.50, 2), round(sc_entry + tp_usd, 2)
-            sc_bias = f"{vp_24h['shape']} MEAN-REVERSION BUY (ดักเด้งกรอบล่าง ${sc_entry})"
+        if abs(spot - nearest_sup) <= abs(nearest_res - spot):
+            sc_dir, sc_entry = "LONG", nearest_sup
+            sc_bias = f"{vp_session['shape']} SESSION SUPPORT BUY (ดักรับ ${sc_entry} + ยืนยัน OBI >= +0.18)"
         else:
-            sc_dir, sc_entry = "SHORT", round(vp_24h["vah"] if vp_24h["vah"] >= spot else vp_24h["upper_peak"], 2)
-            sc_sl, sc_be, sc_tp = round(sc_entry + sl_usd, 2), round(sc_entry - 2.50, 2), round(sc_entry - tp_usd, 2)
-            sc_bias = f"{vp_24h['shape']} MEAN-REVERSION SELL (ดักเด้งกรอบบน ${sc_entry})"
+            sc_dir, sc_entry = "SHORT", nearest_res
+            sc_bias = f"{vp_session['shape']} SESSION RESIST SELL (ดักต้าน ${sc_entry} + ยืนยัน OBI <= -0.18)"
+
+    if sc_dir == "LONG":
+        sc_sl, sc_be, sc_tp = round(sc_entry - sl_usd, 2), round(sc_entry + 2.50, 2), round(sc_entry + tp_usd, 2)
+    else:
+        sc_sl, sc_be, sc_tp = round(sc_entry + sl_usd, 2), round(sc_entry - 2.50, 2), round(sc_entry - tp_usd, 2)
 
     scalp_setup = {
-        "shape": vp_24h["shape"], "mode": mode, "generation": active_gene["generation"],
+        "shape": vp_session["shape"], "mode": mode, "generation": active_gene["generation"],
         "shape_active": True, "direction": sc_dir, "bias": sc_bias,
         "entry": sc_entry, "sl": sc_sl, "be_target": sc_be, "tp": sc_tp,
         "sl_points": sl_pts, "tp_points": tp_pts, "tol_points": tol_pts, "tp_usd": tp_usd,
-        "obi": order_flow["obi_25bps"]
+        "obi": order_flow["obi_25bps"], "obi_req": 0.18
     }
 
     is_bear = spot < curr_h1_200
     tr_sl_dist, tr_tp_dist = round(curr_atr * 1.8, 2), round(curr_atr * 1.8 * 2.2, 2)
     if is_bear:
-        retest_lvl = pdl if pdl > spot else curr_ema21
-        retest_lbl = f"PDL ${pdl}" if pdl > spot else f"EMA21 ${curr_ema21}"
+        retest_lvl = curr_ema21 if abs(curr_ema21 - spot) < abs(pdl - spot) else pdl
         trend_setup = {
             "active_factor": "EMA21_RETEST", "direction": "SHORT",
-            "bias": f"ANTI-CHASE RETEST SHORT (รอเด้งชน {retest_lbl})",
+            "bias": f"ANTI-CHASE RETEST SHORT (รอเด้งชน ${retest_lvl})",
             "entry": round(retest_lvl, 2), "sl": round(retest_lvl + tr_sl_dist, 2),
             "be_target": round(retest_lvl - tr_sl_dist, 2), "tp": round(retest_lvl - tr_tp_dist, 2),
-            "sl_dist": tr_sl_dist, "rr": 2.2, "in_killzone": True, "has_edge": True
+            "sl_dist": tr_sl_dist, "rr": 2.2
         }
     else:
-        retest_lvl = pdh if pdh < spot else curr_ema21
-        retest_lbl = f"PDH ${pdh}" if pdh < spot else f"EMA21 ${curr_ema21}"
+        retest_lvl = curr_ema21 if abs(curr_ema21 - spot) < abs(pdh - spot) else pdh
         trend_setup = {
             "active_factor": "EMA21_RETEST", "direction": "LONG",
-            "bias": f"PULLBACK RETEST LONG (รอย่อรับ {retest_lbl})",
+            "bias": f"PULLBACK RETEST LONG (รอย่อรับ ${retest_lvl})",
             "entry": round(retest_lvl, 2), "sl": round(retest_lvl - tr_sl_dist, 2),
             "be_target": round(retest_lvl + tr_sl_dist, 2), "tp": round(retest_lvl + tr_tp_dist, 2),
-            "sl_dist": tr_sl_dist, "rr": 2.2, "in_killzone": True, "has_edge": True
+            "sl_dist": tr_sl_dist, "rr": 2.2
         }
 
     hr_dec = now_th.hour + (now_th.minute / 60.0)
@@ -838,53 +882,37 @@ def run_cycle(send_summary_alert=True):
 
     sj, tj = update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hours)
     dxy_p, us10y_y, corr_20, news_items = fetch_macro_and_news()
-
-    ai_text = (
-        f"**1. OrderFlow & VP Anatomy ({vp_24h['title_th']}):**\n"
-        f"Spot XAU/USD **${spot}** | 24H POC **${vp_24h['poc']}** (VAH ${vp_24h['vah']} / VAL ${vp_24h['val']}) | "
-        f"L2 Order Book Imbalance **OBI = {order_flow['obi_25bps']:+.3f}** | Tick CVD **{order_flow['tick_cvd']:+.1f}** ({order_flow['absorption_flag']})\n\n"
-        f"**2. MUE-X Prop-Firm Constant Discovery (Gen #{mue_mem['generation']}):**\n"
-        f"• ทรงปัจจุบัน **{vp_24h['shape']}** วิวัฒนาการเป็นโหมด **{mode}** (SL 500 จุด / TP {tp_pts} จุด | Backtest Net {next(x['net_r'] for x in scalp_bt['anatomy_breakdown'] if x['shape']==vp_24h['shape']):+.2f}R)\n"
-        f"• สัดส่วนแนะนำสำหรับพอร์ตกองทุน: **Scalp 70% (เสี่ยง 0.5%–0.75%/ไม้)** + **Trend Sniper 30% (เสี่ยง 1.0%/ไม้)** | ล็อกตัดขาดทุนรายวัน **-2.0R**\n\n"
-        f"**3. แผนเข้าเทรด Scalp ({sc_dir}):** Entry **${sc_entry}** | SL **${sc_sl}** | BE (+250 จุด) **${sc_be}** | TP **${sc_tp}**\n"
-        f"**4. แผน Trend Sniper ({trend_setup['direction']}):** Entry **${trend_setup['entry']}** | SL **${trend_setup['sl']}** | TP **${trend_setup['tp']}** (R:R 1:2.2)"
-    )
+    ai_text, ai_model_name = generate_live_ai_strategist_brief(spot, vp_session, scalp_setup, trend_setup, order_flow, scalp_bt, trend_bt, mue_mem)
 
     state_payload = {
-        "version": "13.1",
+        "version": "14.0",
         "updated_at": now_th.isoformat(),
         "order_flow": order_flow,
         "mue_evolution": {"generation": mue_mem["generation"], "last_evolved_at": mue_mem["last_evolved_at"], "genes": mue_mem["genes"]},
         "quant": {
             "spot_price": spot, "bid": bid, "ask": ask, "feed_source": feed_src,
-            "cvd_6h_proxy": int(round(order_flow["tick_cvd"] * 10)),
             "dxy_price": dxy_p, "us10y_yield": us10y_y, "corr_gold_dxy_20d": corr_20,
-            "data_audit": {"total_bars": len(df), "vault_days": round(len(df) / 96.0, 1), "date_range": f"{df.index[0].strftime('%d/%m/%Y')} - {df.index[-1].strftime('%d/%m/%Y %H:%M')}"},
+            "data_audit": {"total_bars": len(df), "vault_days": round(len(df) / 96.0, 1)},
             "technicals": {"adx14": curr_adx, "rsi14": curr_rsi, "atr14": curr_atr, "ema21": curr_ema21, "h1_ema200": curr_h1_200, "pdh": pdh, "pdl": pdl},
             "setup": trend_setup
         },
-        "scalp": {"anatomy": {**vp_24h, "rule_th": active_gene["rule_th"]}, "setup": scalp_setup, "backtest": scalp_bt},
+        "scalp": {"anatomy": {**vp_session, "rule_th": active_gene["rule_th"]}, "setup": scalp_setup, "backtest": scalp_bt},
         "volume_profile": vp_5d,
         "backtest": trend_bt,
         "scalp_journal": sj,
         "journal": tj,
-        "ai_council": {
-            "quant_audit": f"MUE-X Gen#{mue_mem['generation']} ค้นพบค่าคงที่ครบทั้ง 4 ทรง VP (Scalp รวม {scalp_bt['trades']} ไม้, WR {scalp_bt['win_rate']}%, Net {scalp_bt['net_r']:+.2f}R) + Trend Sniper (WR {trend_bt['best']['win_rate']}%, Net {trend_bt['best']['net_r']:+.2f}R)",
-            "macro_audit": f"L2 OBI: {order_flow['obi_25bps']:+.3f} | Tick CVD: {order_flow['tick_cvd']:+.1f} | {order_flow['absorption_flag']}",
-            "contrarian_audit": "Prop-Firm Risk Guard: จำกัดความเสี่ยง Scalp 0.5%–0.75%/ไม้ และหยุดเทรดทันทีหากขาดทุนสะสมถึง -2.0R ในวันเดียว",
-            "models_used": {"chief_strategist": "MUE-X V13.1 Prop-Firm"}
-        },
+        "ai_engine_name": ai_model_name,
         "ai_analysis": ai_text,
         "news": news_items
     }
 
     save_json_safe(STATE_PATH, state_payload)
-    print(f"[OK] บันทึก state.json V13.1 สำเร็จ | Spot: ${spot} | Scalp Net: {scalp_bt['net_r']:+.2f}R | Trend Net: {trend_bt['best']['net_r']:+.2f}R")
+    print(f"[OK] บันทึก state.json V14.0 สำเร็จ | Spot: ${spot} | Scalp Entry: ${sc_entry} | AI: {ai_model_name}")
 
     if send_summary_alert:
         send_ntfy(
-            f"XAU/USD V13.1 (${spot}) | {vp_24h['shape']} [{mode}]",
-            f"OBI: {order_flow['obi_25bps']:+.3f} | Scalp {sc_dir} @ ${sc_entry} (TP ${sc_tp}) | Trend {trend_setup['direction']} @ ${trend_setup['entry']}",
+            f"XAU/USD V14.0 (${spot}) | Scalp {sc_dir} @ ${sc_entry}",
+            f"Session VP {vp_session['shape']} | OBI: {order_flow['obi_25bps']:+.3f} | TP: ${sc_tp} | Trend: {trend_setup['direction']} @ ${trend_setup['entry']}",
             priority=4, tags=["chart_with_upwards_trend", "dart"]
         )
 
@@ -892,7 +920,7 @@ def run_cycle(send_summary_alert=True):
 def git_auto_sync():
     try:
         os.system('git add data/state.json data/mue_memory.json data/scalp_journal.json data/trade_journal.json')
-        os.system('git commit -m "Auto-sync Gold Quant V13.1 Prop-Firm" >nul 2>&1')
+        os.system('git commit -m "Auto-sync Gold Quant V14.0" >nul 2>&1')
         os.system('git pull --rebase --autostash origin main >nul 2>&1')
         os.system('git push >nul 2>&1')
     except Exception:
