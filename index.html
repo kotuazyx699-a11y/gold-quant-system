@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD Global Spot Quant & Continuous AI V21.0</title>
+  <title>XAU/USD Global Spot Quant & MT5-Parity AI V22.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -21,16 +21,16 @@
     <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-800 pb-4">
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
-          <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">GLOBAL SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Continuous AI & Dual-Backtest Quant V21.0</h1>
+          <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">MT5-PARITY SPOT XAU/USD</span>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Continuous AI & Dual-Backtest Quant V22.0</h1>
           <span class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> UNIFIED SPOT SYNC
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> ANTI-WICK 3s SYNC
           </span>
           <span id="mue-gen-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full">
             เรียนรู้สะสม: 0 สูตร (Gen #1)
           </span>
         </div>
-        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังซิงก์ราคากลาง Global Spot XAU/USD + ข้อมูล 4,500 แท่ง M15...</p>
+        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังซิงก์ราคากลาง Global Spot XAU/USD + ระบบป้องกันไส้เทียนกระชาก...</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <div class="text-right font-mono-num mr-1">
@@ -53,13 +53,18 @@
       </div>
     </header>
 
-    <!-- Canonical Global Spot Feed Status Bar (Auto-Synced Across All Devices) -->
-    <section class="card p-3 border-amber-500/40 bg-gradient-to-r from-amber-950/20 via-gray-900 to-cyan-950/20 flex flex-wrap items-center justify-between gap-2 text-xs font-mono-num">
+    <!-- Global Spot Feed & MT5 Execution Parity Bar -->
+    <section class="card p-3 border-amber-500/40 bg-gradient-to-r from-amber-950/20 via-gray-900 to-cyan-950/20 flex flex-wrap items-center justify-between gap-3 text-xs font-mono-num">
       <div class="flex flex-wrap items-center gap-2">
-        <span class="px-2 py-0.5 font-bold bg-amber-500/20 text-amber-300 rounded">🌐 GLOBAL SPOT FEED</span>
+        <span class="px-2 py-0.5 font-bold bg-amber-500/20 text-amber-300 rounded">🌐 GLOBAL SPOT + MT5 PARITY</span>
         <span id="spot-feed-status" class="text-gray-200">กำลังดึงราคากลาง Spot XAU/USD อัตโนมัติ...</span>
       </div>
-      <span class="text-[11px] text-emerald-400">ซิงก์ราคากลางอัตโนมัติทุก 15 วินาที (ตรงกันทุกหน้าจอ)</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="text-[11px] text-cyan-300">เผื่อสเปรด/ไส้เทียน MT5 (จุด):</label>
+        <input id="input-mt5-buffer" type="number" value="35" min="0" max="200" step="5" onchange="saveMt5Buffer()"
+          class="w-16 px-2 py-0.5 text-xs font-bold bg-gray-800 border border-cyan-600/60 rounded text-amber-300 text-center" />
+        <span class="text-[11px] text-emerald-400">ซิงก์ทุก 3 วิ + หน่วง SL 2.0 วิ</span>
+      </div>
     </section>
 
     <!-- LIVE ORDER BOARD & DAILY EXECUTION TRACKER -->
@@ -88,6 +93,9 @@
           <button onclick="placeMarketOrderNow()" class="px-2.5 py-1 rounded font-bold bg-emerald-600 hover:bg-emerald-500 text-gray-950">
             ⚡ เปิด Market ทันที
           </button>
+          <button id="btn-sync-mt5-entry" onclick="syncActiveOrderToMt5Entry()" class="px-2.5 py-1 rounded font-bold bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-600/60 hidden">
+            🔄 ปรับ Entry ตาม MT5
+          </button>
           <button id="btn-close-order" onclick="manualCancelOrCloseOrder()" class="px-2.5 py-1 rounded font-bold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-700/60 hidden">
             ❌ ยกเลิก / ปิดมือ
           </button>
@@ -95,7 +103,7 @@
       </div>
 
       <div id="active-order-empty" class="text-xs text-gray-400 font-mono-num py-1">
-        ยังไม่มีออเดอร์ถืออยู่หรือ Limit ค้างในขณะนี้ — ระบบตรวจสอบผล OOS Safety Lock ก่อนวาง Limit อัตโนมัติ และรีเฟรชจุดเข้าทุก 15 นาทีหากยังไม่แมตช์
+        ยังไม่มีออเดอร์ถืออยู่หรือ Limit ค้างในขณะนี้ — ระบบใช้กติกา Bid/Ask + เผื่อสเปรด MT5 และหน่วงยืนยัน SL 2.0 วินาทีเพื่อกันไส้เทียนกระชาก
       </div>
 
       <div id="active-order-card" class="hidden grid grid-cols-2 sm:grid-cols-6 gap-2.5 font-mono-num text-center">
@@ -110,7 +118,7 @@
           <span id="ao-dist-entry" class="block text-[10px] text-gray-400">-</span>
         </div>
         <div class="bg-rose-950/40 border border-rose-800/50 rounded-lg p-2">
-          <span class="block text-[10px] text-rose-300">Stop Loss (SL)</span>
+          <span class="block text-[10px] text-rose-300">Stop Loss (SL + Guard)</span>
           <span id="ao-sl" class="text-sm font-bold text-rose-400">$0.00</span>
           <span id="ao-dist-sl" class="block text-[10px] text-rose-300">-</span>
         </div>
@@ -120,7 +128,7 @@
           <span id="ao-dist-tp" class="block text-[10px] text-emerald-300">-</span>
         </div>
         <div class="bg-gray-900/90 border border-cyan-700/50 rounded-lg p-2">
-          <span class="block text-[10px] text-cyan-300">กำไร/ขาดทุนสด (Floating)</span>
+          <span class="block text-[10px] text-cyan-300">กำไร/ขาดทุนสด (MT5 Bid/Ask)</span>
           <span id="ao-pnl-usd" class="text-sm font-bold text-white">$0.00</span>
           <span id="ao-pnl-r" class="block text-[10px] text-cyan-300">0.00R</span>
         </div>
@@ -268,7 +276,7 @@
       <div class="card p-5 lg:col-span-5 border-cyan-600/40 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
           <h2 class="text-sm font-bold text-cyan-300">L2 Order Book Depth & Reversal Walls</h2>
-          <span id="of-absorption-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-300">LIVE SPOT-SYNC L2</span>
+          <span id="of-absorption-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-300">ANTI-WICK SPOT L2</span>
         </div>
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs font-mono-num">
@@ -498,20 +506,42 @@
 
   <script>
     const PROP_FRICTION_USD = 0.40;
-    const STORAGE_KEY = "GOLD_QUANT_V21_LEDGER";
-    const BRAIN_KEY = "GOLD_QUANT_V21_BRAIN";
+    const STORAGE_KEY = "GOLD_QUANT_V22_LEDGER";
+    const BRAIN_KEY = "GOLD_QUANT_V22_BRAIN";
     const NTFY_STORAGE_KEY = "GOLD_QUANT_PRIVATE_NTFY_TOPIC";
+    const MT5_BUFFER_KEY = "GOLD_QUANT_MT5_BUFFER_PTS";
 
-    // Wipe any old manual broker price overrides so every client uses the exact same Global Spot feed
     localStorage.removeItem("CUSTOM_BROKER_PRICE");
     localStorage.removeItem("CUSTOM_BROKER_TS");
 
     let privateNtfyTopic = "";
+    let mt5BufferPts = 35; // Default 35 points ($0.35) broker spread + wick guard
+    let slBreachStartMs = null; // 2.0-second confirmation timer before SL triggers
+
     let vpChartInstance = null, liveModel = null;
-    let rawWsBid = null, rawWsAsk = null, spotBasisOffset = 0.0, lastRenderedMid = null, spotFeedSourceName = "Global Spot XAU/USD";
+    let rawWsBid = null, rawWsAsk = null, prevFilteredMid = null, spotBasisOffset = 0.0;
+    let lastRenderedMid = null, lastRenderedBid = null, lastRenderedAsk = null, spotFeedSourceName = "Global Spot XAU/USD";
     let latestBids = [], latestAsks = [], latestObi = 0, latestBidPct = 50;
     let tradeBuffer60s = [], latestDelta60s = 0, obiSustainStart = null, lastAutoFireTs = 0, audioEnabled = true;
     let lastRanSlot = -1, lastAiUpdateMs = 0, lastAiTimeStr = "--:--:--", isSimRunning = false;
+
+    function initMt5Buffer() {
+      const saved = parseInt(localStorage.getItem(MT5_BUFFER_KEY), 10);
+      if (!isNaN(saved) && saved >= 0 && saved <= 200) {
+        mt5BufferPts = saved;
+      }
+      const el = document.getElementById('input-mt5-buffer');
+      if (el) el.value = mt5BufferPts;
+    }
+
+    function saveMt5Buffer() {
+      const el = document.getElementById('input-mt5-buffer');
+      const val = Math.max(0, Math.min(200, parseInt(el.value, 10) || 0));
+      mt5BufferPts = val;
+      el.value = val;
+      localStorage.setItem(MT5_BUFFER_KEY, String(val));
+      renderOrderAndLedgerUI();
+    }
 
     function getBangkokDateStr(ts = Date.now()) {
       return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ts));
@@ -529,7 +559,6 @@
       return { id: "LATE_NY", label: "LATE NY (00:00-05:59)" };
     }
 
-    // --- PRIVATE OWNER NTFY ISOLATION (Public viewers see dashboard only; only owner receives ntfy) ---
     function initPrivateNtfy() {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -575,9 +604,8 @@
       }
     }
 
-    // --- CONCISE 3-LINE NTFY SENDER (No duplicate title, never cuts off on phone screen) ---
     function sendNtfy(title, lines, priority = 4, tags = ["chart_with_upwards_trend"]) {
-      if (!privateNtfyTopic) return; // Silent in Public Viewer Mode
+      if (!privateNtfyTopic) return;
       const asciiTitle = title.replace(/[^\x20-\x7E]/g, '').trim() || "XAU/USD Quant Alert";
       const cleanBody = Array.isArray(lines) ? lines.filter(Boolean).slice(0, 3).join("\n") : String(lines);
 
@@ -613,7 +641,7 @@
 
     function loadAiBrain() {
       try {
-        const raw = localStorage.getItem(BRAIN_KEY) || localStorage.getItem("GOLD_QUANT_V20_BRAIN");
+        const raw = localStorage.getItem(BRAIN_KEY) || localStorage.getItem("GOLD_QUANT_V21_BRAIN");
         if (raw) {
           const parsed = JSON.parse(raw);
           aiBrain = Object.assign(aiBrain, parsed);
@@ -703,7 +731,7 @@
 
     function loadOrderState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("GOLD_QUANT_V20_LEDGER");
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("GOLD_QUANT_V21_LEDGER");
         if (raw) {
           const parsed = JSON.parse(raw);
           orderState = Object.assign(orderState, parsed);
@@ -770,6 +798,27 @@
       renderOrderAndLedgerUI();
     }
 
+    // Optional 1-click sync if MT5 filled at a slightly different price
+    function syncActiveOrderToMt5Entry() {
+      const ao = orderState.activeOrder;
+      if (!ao) return;
+      const input = prompt(
+        `กรอกราคาเปิดจริงใน MT5 ของคุณ (ระบบจะเลื่อน SL ${ao.slPts} จุด และ TP ${ao.tpPts} จุด ตามระยะจริงให้ตรงกับ MT5):`,
+        ao.entry.toFixed(2)
+      );
+      if (input === null) return;
+      const mt5Entry = parseFloat(input);
+      if (isNaN(mt5Entry) || mt5Entry < 1000) return;
+
+      const isLong = ao.dir === "LONG";
+      ao.entry = +mt5Entry.toFixed(2);
+      ao.sl = isLong ? +(ao.entry - ao.slPts / 100).toFixed(2) : +(ao.entry + ao.slPts / 100).toFixed(2);
+      ao.tp = isLong ? +(ao.entry + ao.tpPts / 100).toFixed(2) : +(ao.entry - ao.tpPts / 100).toFixed(2);
+      slBreachStartMs = null;
+      saveOrderState();
+      renderOrderAndLedgerUI();
+    }
+
     function placeScalpLimitOrder(manual = false, isAutoRefresh = false) {
       if (!liveModel || !liveModel.scalpSetup) return;
       const sc = liveModel.scalpSetup;
@@ -788,6 +837,7 @@
       const riskUsd = +(bal * (riskPct / 100.0)).toFixed(2);
       const tag = sc.setupMode === "REVERSAL" ? "REV-SCALP" : "TREND-SCALP";
 
+      slBreachStartMs = null;
       orderState.activeOrder = {
         id: "ORD-" + Date.now().toString().slice(-5),
         planType: tag,
@@ -835,6 +885,7 @@
       const tpPts = Math.round(Math.abs(tr.tp - tr.entry) * 100);
       const tag = tr.isReversal ? "SWING-REV" : "SWING-TREND";
 
+      slBreachStartMs = null;
       orderState.activeOrder = {
         id: "SWG-" + Date.now().toString().slice(-5),
         planType: tag,
@@ -873,8 +924,9 @@
         return;
       }
       const sc = liveModel.scalpSetup;
-      const entry = lastRenderedMid;
       const isLong = sc.dir === "LONG";
+      // Match MT5 Market Fill: LONG opens at Ask, SHORT opens at Bid
+      const entry = isLong ? (lastRenderedAsk || lastRenderedMid) : (lastRenderedBid || lastRenderedMid);
       const sl = isLong ? +(entry - sc.slPts / 100).toFixed(2) : +(entry + sc.slPts / 100).toFixed(2);
       const tp = isLong ? +(entry + sc.tpPts / 100).toFixed(2) : +(entry - sc.tpPts / 100).toFixed(2);
       const lot = parseFloat(document.getElementById('calc-scalp-lot').textContent) || 0.06;
@@ -883,6 +935,7 @@
       const riskUsd = +(bal * (riskPct / 100.0)).toFixed(2);
       const tag = sc.setupMode === "REVERSAL" ? "REV-MKT" : "TREND-MKT";
 
+      slBreachStartMs = null;
       orderState.activeOrder = {
         id: "MKT-" + Date.now().toString().slice(-5),
         planType: tag,
@@ -892,7 +945,8 @@
         mode: "OPEN",
         dir: sc.dir,
         shape: `${tag} (${sc.formulaName})`,
-        entry, sl, tp,
+        entry: +entry.toFixed(2),
+        sl, tp,
         slPts: sc.slPts, tpPts: sc.tpPts,
         lot, riskUsd,
         reason: "3-Layer Gate Triggered"
@@ -915,10 +969,12 @@
       if (!ao) return;
       if (ao.mode === "LIMIT") {
         orderState.activeOrder = null;
+        slBreachStartMs = null;
         saveOrderState();
         renderOrderAndLedgerUI();
       } else if (ao.mode === "OPEN" && lastRenderedMid) {
-        finalizeClosedOrder(lastRenderedMid, "MANUAL CLOSE");
+        const closePx = ao.dir === "LONG" ? (lastRenderedBid || lastRenderedMid) : (lastRenderedAsk || lastRenderedMid);
+        finalizeClosedOrder(closePx, "MANUAL CLOSE");
       }
     }
 
@@ -951,6 +1007,7 @@
 
       orderState.todayClosed.unshift(closedRec);
       orderState.activeOrder = null;
+      slBreachStartMs = null;
       saveOrderState();
       updateBrainFromClosedTrade(closedRec);
       renderOrderAndLedgerUI();
@@ -966,16 +1023,20 @@
       );
     }
 
-    function processLiveOrderTick(mid) {
+    // --- TRUE MT5 BID/ASK + ANTI-WICK 2.0-SECOND SL EXECUTION ---
+    function processLiveOrderTick(bid, ask, mid) {
       const ao = orderState.activeOrder;
       if (!ao || !mid) return;
       const isLong = ao.dir === "LONG";
+      const bufferUsd = mt5BufferPts / 100.0;
 
       if (ao.mode === "LIMIT") {
-        const filled = isLong ? (mid <= ao.entry + 0.15) : (mid >= ao.entry - 0.15);
+        // MT5 Limit Fill Rule: Buy Limit fills at Ask <= Entry; Sell Limit fills at Bid >= Entry
+        const filled = isLong ? (ask <= ao.entry) : (bid >= ao.entry);
         if (filled) {
           ao.mode = "OPEN";
           ao.openTime = getBangkokTimeStr();
+          slBreachStartMs = null;
           saveOrderState();
           playTriggerBeep();
           sendNtfy(
@@ -988,18 +1049,35 @@
           );
         }
       } else if (ao.mode === "OPEN") {
-        if (isLong) {
-          if (mid >= ao.tp) { finalizeClosedOrder(ao.tp, "TP HIT"); return; }
-          if (mid <= ao.sl) { finalizeClosedOrder(ao.sl, "SL HIT"); return; }
+        // MT5 Close Rule: LONG closes at Bid; SHORT closes at Ask
+        const exitEvalPrice = isLong ? bid : ask;
+        const tpHit = isLong ? (exitEvalPrice >= ao.tp) : (exitEvalPrice <= ao.tp);
+        if (tpHit) {
+          slBreachStartMs = null;
+          finalizeClosedOrder(ao.tp, "TP HIT");
+          return;
+        }
+
+        // Anti-Wick SL Guard: Must breach (SL +/- MT5 Buffer) AND hold for 2.0 seconds
+        const slBreached = isLong
+          ? (exitEvalPrice <= (ao.sl - bufferUsd))
+          : (exitEvalPrice >= (ao.sl + bufferUsd));
+
+        if (slBreached) {
+          if (!slBreachStartMs) {
+            slBreachStartMs = Date.now();
+          } else if (Date.now() - slBreachStartMs >= 2000) {
+            finalizeClosedOrder(ao.sl, "SL HIT (CONFIRMED)");
+            return;
+          }
         } else {
-          if (mid <= ao.tp) { finalizeClosedOrder(ao.tp, "TP HIT"); return; }
-          if (mid >= ao.sl) { finalizeClosedOrder(ao.sl, "SL HIT"); return; }
+          slBreachStartMs = null;
         }
       }
-      renderOrderAndLedgerUI(mid);
+      renderOrderAndLedgerUI(mid, bid, ask);
     }
 
-    function renderOrderAndLedgerUI(currentMid = lastRenderedMid) {
+    function renderOrderAndLedgerUI(currentMid = lastRenderedMid, currentBid = lastRenderedBid, currentAsk = lastRenderedAsk) {
       const autoBtn = document.getElementById('btn-auto-arm');
       autoBtn.textContent = `Auto-Limit: ${orderState.autoArm ? 'เปิด' : 'ปิด'}`;
       autoBtn.className = orderState.autoArm
@@ -1017,6 +1095,7 @@
       const emptyEl = document.getElementById('active-order-empty');
       const cardEl = document.getElementById('active-order-card');
       const closeBtn = document.getElementById('btn-close-order');
+      const syncMt5Btn = document.getElementById('btn-sync-mt5-entry');
 
       if (!ao) {
         pill.textContent = "NO ACTIVE ORDER (ว่าง)";
@@ -1024,19 +1103,28 @@
         emptyEl.classList.remove('hidden');
         cardEl.classList.add('hidden');
         closeBtn.classList.add('hidden');
+        syncMt5Btn.classList.add('hidden');
       } else {
         emptyEl.classList.add('hidden');
         cardEl.classList.remove('hidden');
         closeBtn.classList.remove('hidden');
+        syncMt5Btn.classList.remove('hidden');
         closeBtn.textContent = ao.mode === "LIMIT" ? "❌ ยกเลิก Limit" : "💰 ปิดมือ (Close)";
 
         if (ao.mode === "LIMIT") {
           pill.textContent = `⏳ PENDING LIMIT [${ao.planType}] ${ao.dir} @ $${ao.entry.toFixed(2)}`;
           pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500 rounded-full";
+        } else if (slBreachStartMs) {
+          const rem = Math.max(0, 2.0 - (Date.now() - slBreachStartMs) / 1000).toFixed(1);
+          pill.textContent = `⚠️ WICK TEST SL (${rem}s) — กันไส้เทียนกระชากตาม MT5`;
+          pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-500 text-gray-950 rounded-full animate-pulse";
         } else {
           pill.textContent = `🟢 HOLDING [${ao.planType}] ${ao.dir} @ $${ao.entry.toFixed(2)}`;
-          pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full animate-pulse";
+          pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full";
         }
+
+        const evalPx = ao.dir === "LONG" ? (currentBid || currentMid) : (currentAsk || currentMid);
+        const guardedSl = ao.dir === "LONG" ? (ao.sl - mt5BufferPts / 100) : (ao.sl + mt5BufferPts / 100);
 
         document.getElementById('ao-side-lot').textContent = `${ao.dir} (${ao.lot.toFixed(2)} Lot)`;
         document.getElementById('ao-side-lot').className = `text-sm font-bold ${ao.dir === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}`;
@@ -1045,16 +1133,16 @@
         document.getElementById('ao-sl').textContent = `$${ao.sl.toFixed(2)}`;
         document.getElementById('ao-tp').textContent = `$${ao.tp.toFixed(2)}`;
 
-        if (currentMid) {
-          const distEntryPts = Math.round(Math.abs(currentMid - ao.entry) * 100);
-          const distSlPts = Math.round(Math.abs(currentMid - ao.sl) * 100);
-          const distTpPts = Math.round(Math.abs(currentMid - ao.tp) * 100);
-          document.getElementById('ao-dist-entry').textContent = ao.mode === "LIMIT" ? `ห่าง ${distEntryPts} จุด` : `Spot $${currentMid.toFixed(2)}`;
-          document.getElementById('ao-dist-sl').textContent = `เหลือ ${distSlPts} จุด`;
+        if (evalPx) {
+          const distEntryPts = Math.round(Math.abs(evalPx - ao.entry) * 100);
+          const distSlPts = Math.round(Math.abs(evalPx - guardedSl) * 100);
+          const distTpPts = Math.round(Math.abs(evalPx - ao.tp) * 100);
+          document.getElementById('ao-dist-entry').textContent = ao.mode === "LIMIT" ? `ห่าง ${distEntryPts} จุด` : `${ao.dir === 'LONG' ? 'Bid' : 'Ask'} $${evalPx.toFixed(2)}`;
+          document.getElementById('ao-dist-sl').textContent = `เหลือ ${distSlPts} จุด (รวมกันชน)`;
           document.getElementById('ao-dist-tp').textContent = `เหลือ ${distTpPts} จุด`;
 
           if (ao.mode === "OPEN") {
-            const diff = ao.dir === "LONG" ? (currentMid - ao.entry) : (ao.entry - currentMid);
+            const diff = ao.dir === "LONG" ? (evalPx - ao.entry) : (ao.entry - evalPx);
             const flR = diff / Math.max(0.5, Math.abs(ao.entry - ao.sl));
             const flUsd = flR * ao.riskUsd;
             document.getElementById('ao-pnl-usd').textContent = `${flUsd >= 0 ? '+' : ''}$${flUsd.toFixed(2)}`;
@@ -1203,8 +1291,8 @@
       try {
         const res = await fetch(`https://ntfy.sh/${encodeURIComponent(privateNtfyTopic)}`, {
           method: "POST",
-          headers: { "Title": "XAU/USD V21.0 Private Alert Ready", "Priority": "4", "Tags": "white_check_mark" },
-          body: `✅ เชื่อมต่อช่องส่วนตัวสำเร็จ | Spot: $${lastRenderedMid || '-'}\nสมองกลเรียนรู้สะสม ${aiBrain.totalCombosLearned.toLocaleString()} สูตร`
+          headers: { "Title": "XAU/USD V22.0 MT5-Parity Ready", "Priority": "4", "Tags": "white_check_mark" },
+          body: `✅ เชื่อมต่อช่องส่วนตัวสำเร็จ | Spot: $${lastRenderedMid || '-'}\nกันชน MT5: ${mt5BufferPts} จุด + หน่วงยืนยัน SL 2.0 วิ`
         });
         btn.textContent = res.ok ? "ส่งแล้ว! เช็กมือถือ" : "ส่งไม่สำเร็จ";
       } catch (e) { btn.textContent = "เชื่อมต่อไม่ได้"; }
@@ -1689,17 +1777,14 @@
       return { results: trendResults, revResults, recentTrades: nonOverlappingLogs.slice(0, 12), totalCombos };
     }
 
-    // --- UNIFIED GLOBAL SPOT XAU/USD FEED (Zero manual typing, identical price across all devices) ---
+    // --- MULTI-SOURCE SPOT CONSENSUS (Calibrated every 3 seconds so crypto perp wicks never drift) ---
     async function fetchCanonicalGlobalSpot(binancePerpMid) {
+      const candidates = [];
       try {
         const rGoldApi = await fetch("https://api.gold-api.com/price/XAU", { cache: "no-store" });
         if (rGoldApi.ok) {
           const j = await rGoldApi.json();
-          if (j && j.price && j.price > 1000) {
-            const spot = parseFloat(j.price);
-            const offset = spot - binancePerpMid;
-            return { spotMid: spot, basis: offset, source: `Global Spot XAU/USD (Basis ${offset >= 0 ? '+' : ''}$${offset.toFixed(2)})` };
-          }
+          if (j && j.price && j.price > 1000) candidates.push({ px: parseFloat(j.price), name: "Gold-API Spot" });
         }
       } catch (e) {}
 
@@ -1708,17 +1793,25 @@
         if (rPaxg.ok) {
           const j = await rPaxg.json();
           const spot = (parseFloat(j.bidPrice) + parseFloat(j.askPrice)) / 2.0;
-          if (spot > 1000) {
-            const offset = spot - binancePerpMid;
-            return { spotMid: spot, basis: offset, source: `LBMA Physical Spot Proxy (Basis ${offset >= 0 ? '+' : ''}$${offset.toFixed(2)})` };
-          }
+          if (spot > 1000) candidates.push({ px: spot, name: "LBMA PAXG Spot" });
         }
       } catch (e) {}
+
+      if (candidates.length > 0) {
+        // Use primary physical spot proxy (LBMA PAXG updates every second; Gold-API anchors macro level)
+        const avgSpot = candidates.reduce((a, x) => a + x.px, 0) / candidates.length;
+        const offset = avgSpot - binancePerpMid;
+        return {
+          spotMid: +avgSpot.toFixed(2),
+          basis: offset,
+          source: `Global Spot Consensus (${candidates.map(c => c.name).join(' + ')} | Basis ${offset >= 0 ? '+' : ''}$${offset.toFixed(2)})`
+        };
+      }
 
       return { spotMid: binancePerpMid, basis: 0.0, source: "Global XAU Feed" };
     }
 
-    // Background 15-second Global Spot Basis Sync so live tick price stays locked to global Spot
+    // 3-Second Spot Basis Calibration (Prevents 15s drift between MT5 and Web)
     setInterval(async () => {
       if (rawWsBid && rawWsAsk) {
         const perpMid = (rawWsBid + rawWsAsk) / 2.0;
@@ -1730,7 +1823,7 @@
           statusEl.textContent = `Spot XAU/USD: $${lastRenderedMid.toFixed(2)} | ${spotFeedSourceName}`;
         }
       }
-    }, 15000);
+    }, 3000);
 
     async function fetchDeepHydraVault() {
       let allRaw = [];
@@ -2309,12 +2402,30 @@
         const asks = d.a.slice(0, 12).map(x => [parseFloat(x[0]), parseFloat(x[1])]);
         latestBids = bids; latestAsks = asks;
         rawWsBid = bids[0][0]; rawWsAsk = asks[0][0];
-        const mid = parseFloat((((rawWsBid + rawWsAsk) / 2.0) + spotBasisOffset).toFixed(2));
+
+        const rawMid = ((rawWsBid + rawWsAsk) / 2.0) + spotBasisOffset;
+        const halfSpread = Math.max(0.05, (rawWsAsk - rawWsBid) / 2.0);
+
+        // Anti-Wick Spike Filter: Clamp unnatural 100ms crypto perp flash spikes (> $0.45 per 0.1s)
+        let filteredMid = rawMid;
+        if (prevFilteredMid !== null) {
+          const delta = rawMid - prevFilteredMid;
+          if (Math.abs(delta) > 0.45) {
+            filteredMid = prevFilteredMid + Math.sign(delta) * 0.45;
+          }
+        }
+        prevFilteredMid = filteredMid;
+
+        const mid = parseFloat(filteredMid.toFixed(2));
+        const bidPx = parseFloat((filteredMid - halfSpread).toFixed(2));
+        const askPx = parseFloat((filteredMid + halfSpread).toFixed(2));
         lastRenderedMid = mid;
+        lastRenderedBid = bidPx;
+        lastRenderedAsk = askPx;
 
         document.getElementById('kpi-price').textContent = `$${mid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         document.getElementById('live-tick-time').textContent = getBangkokTimeStr();
-        document.getElementById('kpi-bidask').textContent = `Bid: $${(rawWsBid + spotBasisOffset).toFixed(2)} | Ask: $${(rawWsAsk + spotBasisOffset).toFixed(2)}`;
+        document.getElementById('kpi-bidask').textContent = `Bid: $${bidPx.toFixed(2)} | Ask: $${askPx.toFixed(2)}`;
 
         const bidSum = bids.reduce((a, x) => a + x[1], 0);
         const askSum = asks.reduce((a, x) => a + x[1], 0);
@@ -2347,7 +2458,7 @@
         }).join('');
 
         update60sDeltaUI();
-        processLiveOrderTick(mid);
+        processLiveOrderTick(bidPx, askPx, mid);
         evaluateLiveOrderFlowGate(mid, obi, bidPct, latestDelta60s);
       };
       wsDepth.onclose = () => setTimeout(connectLiveStreams, 2000);
@@ -2361,6 +2472,7 @@
       };
     }
 
+    initMt5Buffer();
     initPrivateNtfy();
     loadAiBrain();
     loadOrderState();
