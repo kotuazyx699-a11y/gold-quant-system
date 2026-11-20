@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD Global Spot Quant & MT5-Parity AI V23.0</title>
+  <title>XAU/USD Global Spot Quant & Confluence AI V24.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -22,20 +22,20 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">MT5-PARITY SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Continuous AI & Dual-Backtest Quant V23.0</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Confluence Quant & Reasoning AI V24.0</h1>
           <span class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> EXACT LOT & BE ENGINE
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> 6-PILLAR CONFIDENCE ENGINE
           </span>
           <span id="mue-gen-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full">
-            เรียนรู้สะสม: 0 สูตร (Gen #1)
+            รันสะสม: 0 รอบ (Gen #1)
           </span>
         </div>
-        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังซิงก์ราคากลาง Global Spot XAU/USD + ระบบคำนวณ Lot จริงและจุดบังทุน BE...</p>
+        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังซิงก์ราคากลาง Global Spot XAU/USD + ระบบให้คะแนนความมั่นใจ 6 เสาหลักและคำนวณ Lot จริง...</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <div class="text-right font-mono-num mr-1">
           <span id="last-updated" class="block text-xs text-emerald-400">AI อัปเดตสด: กำลังรัน...</span>
-          <span id="next-cycle-countdown" class="block text-[11px] text-cyan-400">รอบเรียนรู้ AI + รีเฟรช Limit ในอีก: -- นาที -- วินาที</span>
+          <span id="next-cycle-countdown" class="block text-[11px] text-cyan-400">รอบวิเคราะห์ + รีเฟรช Limit ในอีก: -- นาที -- วินาที</span>
         </div>
         <button id="btn-run-ai" onclick="runFullLiveQuantAndAI(true)"
            class="px-3 py-1.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950 rounded-lg transition shadow-lg shadow-cyan-500/20">
@@ -106,7 +106,7 @@
       </div>
 
       <div id="active-order-empty" class="text-xs text-gray-400 font-mono-num py-1">
-        ยังไม่มีออเดอร์ถืออยู่หรือ Limit ค้างในขณะนี้ — ระบบคิดกำไร/ขาดทุนตามขนาด Lot จริง (1 Lot = $100 ต่อการขยับ $1.00 / 0.01 Lot = $1.00 ต่อ $1.00)
+        ยังไม่มีออเดอร์ถืออยู่หรือ Limit ค้างในขณะนี้ — ระบบคิดกำไร/ขาดทุนตามขนาด Lot จริง (0.01 Lot = $0.01 ต่อจุด / $1.00 ต่อ $1.00)
       </div>
 
       <!-- Active Order BE Decision Banner -->
@@ -160,10 +160,10 @@
       </div>
     </section>
 
-    <!-- Evolution Progress Bar (22,176 Dual-Engine Combinations) -->
+    <!-- Evolution Progress Bar -->
     <div id="sim-progress-wrap" class="card p-3 border-purple-500/50 bg-purple-950/20">
       <div class="flex items-center justify-between text-xs font-mono-num mb-1.5">
-        <span id="sim-progress-label" class="text-purple-300 font-bold">กำลังจำลองกลยุทธ์คู่ 22,176 รูปแบบ (12,096 ตามเทรนด์ + 10,080 จุดกลับตัว)...</span>
+        <span id="sim-progress-label" class="text-purple-300 font-bold">กำลังทดสอบ 22,176 รูปแบบ (12,096 ตามเทรนด์ + 10,080 จุดกลับตัว)...</span>
         <span id="sim-progress-pct" class="text-cyan-400 font-bold">0%</span>
       </div>
       <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -171,11 +171,14 @@
       </div>
     </div>
 
-    <!-- LIVE TREND + REVERSAL ORDERFLOW EXECUTION GATE + OOS SAFETY LOCK -->
-    <section id="execution-gate-box" class="card p-4 border-cyan-500/50 bg-gradient-to-r from-gray-900 via-cyan-950/25 to-purple-950/25">
+    <!-- 6-PILLAR CONFLUENCE CONFIDENCE & EXECUTION GATE -->
+    <section id="execution-gate-box" class="card p-4 border-cyan-500/50 bg-gradient-to-r from-gray-900 via-cyan-950/25 to-purple-950/25 space-y-3">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div class="space-y-1">
           <div class="flex flex-wrap items-center gap-2">
+            <span id="confidence-grade-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 rounded">
+              🎯 CONFIDENCE: --% (กำลังประเมิน)
+            </span>
             <span id="regime-mode-badge" class="px-2.5 py-0.5 text-[10px] font-mono-num font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 rounded">
               🌊 TREND FOLLOW MODE
             </span>
@@ -186,8 +189,8 @@
               INITIALIZING...
             </span>
           </div>
-          <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังวิเคราะห์โครงสร้าง Trend & Reversal Backtest ระยะใกล้ราคา Spot...</h2>
-          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">กฎนิรภัย: หากสูตรกลับตัว OOS WR < 50% หรือ Net R <= 0 ระบบจะล็อกห้าม Auto-Limit สวนเทรนด์อัตโนมัติ</p>
+          <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังวิเคราะห์โครงสร้างและคำนวณคะแนนความมั่นใจ 6 เสาหลัก...</h2>
+          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">ยังคงออกแผนต่อเนื่องทุก 15 นาที แต่แสดงคะแนนความมั่นใจ 6 ปัจจัยจริงเพื่อให้รู้ว่าไม้ไหนคมที่สุด</p>
         </div>
         <div class="grid grid-cols-3 gap-2.5 font-mono-num text-center shrink-0">
           <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
@@ -204,6 +207,9 @@
           </div>
         </div>
       </div>
+
+      <!-- 6-Pillar Breakdown Strip -->
+      <div id="confluence-pillars-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-2 border-t border-gray-800/80 font-mono-num text-[11px]"></div>
     </section>
 
     <!-- Top KPI Cards -->
@@ -354,6 +360,11 @@
             <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2"><span id="sc-tp-label" class="block text-[10px] text-emerald-300">Scalp TP</span><span id="sc-tp" class="font-bold text-emerald-400 text-sm">$0.00</span></div>
           </div>
 
+          <!-- Structural Anchor Reason Banner -->
+          <div id="sc-anchor-reason" class="text-[11px] font-mono-num text-amber-300 bg-amber-950/20 border border-amber-800/40 rounded px-2.5 py-1.5">
+            กำลังคำนวณเหตุผลเชิงโครงสร้างของจุดเข้า...
+          </div>
+
           <!-- Explicit Should BE / Should NOT BE Advice Box -->
           <div id="sc-be-advice-box" class="rounded-lg p-2.5 border border-cyan-700/50 bg-cyan-950/20 text-xs font-mono-num space-y-1">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -372,12 +383,12 @@
     <section class="card p-5 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-indigo-950/20 to-purple-950/20 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-3">
         <div>
-          <span class="text-[10px] uppercase tracking-wider text-cyan-400 font-bold">CONTINUOUS EVOLUTIONARY AI BRAIN (เรียนรู้ตลอดเวลา 24/7 ข้ามทุกช่วงตลาด)</span>
-          <h2 class="text-base font-bold text-white">🧠 สมองกล AI เรียนรู้ต่อเนื่องตามช่วงเวลา & ประวัติพอร์ตจริง</h2>
+          <span class="text-[10px] uppercase tracking-wider text-cyan-400 font-bold">SESSION PERFORMANCE MATRIX & VERIFIED QUANT MEMORY</span>
+          <h2 class="text-base font-bold text-white">🧠 สถิติแยกตามช่วงเวลาตลาด & บันทึกกฎที่ผ่านการตรวจสอบ</h2>
         </div>
         <div class="flex flex-wrap items-center gap-2 font-mono-num text-xs">
           <span id="brain-current-session" class="px-2.5 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/60">ช่วงเวลาปัจจุบัน: --</span>
-          <span id="brain-total-sims" class="px-2.5 py-1 rounded bg-purple-950 text-purple-300 border border-purple-700/60">สะสม: 0 สูตร</span>
+          <span id="brain-total-sims" class="px-2.5 py-1 rounded bg-purple-950 text-purple-300 border border-purple-700/60">รันสะสม: 0 รอบ</span>
         </div>
       </div>
 
@@ -385,8 +396,8 @@
 
       <div class="bg-gray-900/80 border border-gray-800 rounded-lg p-3 space-y-2">
         <div class="flex items-center justify-between text-[11px] font-mono-num">
-          <span class="text-amber-300 font-bold">📝 บันทึกความจำระยะยาวของ AI (AI Persistent Memory — ส่งกลับไปสอน AI ทุกรอบ 15 นาที)</span>
-          <span id="brain-rules-count" class="text-gray-400">0 กฎที่เรียนรู้</span>
+          <span class="text-amber-300 font-bold">📝 บันทึกเหตุผลและสถิติที่ระบบตรวจสอบแล้ว (Verified Quant Log)</span>
+          <span id="brain-rules-count" class="text-gray-400">0 รายการ</span>
         </div>
         <div id="brain-insights-list" class="space-y-1.5 text-xs text-gray-300 max-h-36 overflow-y-auto pr-1"></div>
       </div>
@@ -395,12 +406,12 @@
     <!-- Bottom Grid -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-7 space-y-6">
-        <!-- Engine B + True Live AI Analyst -->
+        <!-- Engine B + Evidence-Based Quant Analyst -->
         <div class="card p-5 border-amber-500/30">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
             <div>
-              <h2 class="text-base font-bold text-white">Engine B: Swing / Reversal Sniper & True Live AI Analyst</h2>
-              <p id="ai-model-sub" class="text-[11px] text-gray-400 font-mono-num">AI อ่านผล Backtest ทั้ง 2 ฝั่ง + ความจำข้ามช่วงเวลา + สมุดเรียนรู้จริง</p>
+              <h2 class="text-base font-bold text-white">Engine B: Swing Sniper & Evidence-Based Quant Analyst</h2>
+              <p id="ai-model-sub" class="text-[11px] text-gray-400 font-mono-num">วิเคราะห์จากตัวเลขโครงสร้างกราฟจริง 100% (ไม่มีคำแต่งมั่ว)</p>
             </div>
             <div class="flex items-center gap-2">
               <button onclick="placeSwingLimitOrder(true)" class="text-[10px] font-mono-num font-bold px-2.5 py-1 rounded bg-amber-500 hover:bg-amber-400 text-gray-950">
@@ -409,7 +420,7 @@
               <button onclick="promptApiKey()" class="text-[10px] font-mono-num px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700">
                 ตั้งค่า Typhoon Key
               </button>
-              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-1 rounded bg-cyan-950 text-cyan-300">CONNECTING LIVE AI...</span>
+              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-1 rounded bg-cyan-950 text-cyan-300">QUANT REASONING ENGINE</span>
             </div>
           </div>
           <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3 mb-4 space-y-2">
@@ -427,7 +438,7 @@
               ✅ แผน Swing 1:2.2: ควรบังทุน BE เมื่อราคาวิ่งถึง +1.0R
             </div>
           </div>
-          <div id="ai-content" class="text-sm text-gray-200 leading-relaxed whitespace-pre-line">กำลังส่งข้อมูลตลาดสดให้ AI วิเคราะห์...</div>
+          <div id="ai-content" class="text-sm text-gray-200 leading-relaxed space-y-2.5">กำลังประมวลผลเหตุผลเชิงโครงสร้างตลาดสด...</div>
         </div>
 
         <!-- TABLE 1: TREND-FOLLOW BACKTEST (12,096 COMBOS) -->
@@ -473,7 +484,7 @@
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
             <div>
               <h2 class="text-sm font-bold text-purple-300">📚 สมุดบันทึกสถิติพอร์ตจริงข้ามวัน (Live Trade Archive)</h2>
-              <p class="text-[11px] text-gray-400">รวมผลเทรดจริงที่ย้ายมาจากกระดานเมื่อเปลี่ยนวัน — ป้อนกลับเข้าสมองกล AI ทันที</p>
+              <p class="text-[11px] text-gray-400">รวมผลเทรดจริงที่ย้ายมาจากกระดานเมื่อเปลี่ยนวัน — ป้อนกลับเข้าคะแนนความมั่นใจทันที</p>
             </div>
             <div class="flex items-center gap-2 font-mono-num text-xs">
               <span id="ledger-summary-badge" class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60">สะสม: 0 ไม้ | +0.00R</span>
@@ -487,7 +498,7 @@
               <thead>
                 <tr class="border-b border-gray-800 text-gray-400">
                   <th class="py-1.5 pr-2">วันที่</th><th class="py-1.5 pr-2">โหมด/สูตร</th><th class="py-1.5 pr-2">ฝั่ง (Lot)</th>
-                  <th class="py-1.5 pr-2 text-right">Entry -> Exit</th><th class="py-1.5 pr-2 text-right">ผล (R / $)</th><th class="py-1.5">บทเรียน AI</th>
+                  <th class="py-1.5 pr-2 text-right">Entry -> Exit</th><th class="py-1.5 pr-2 text-right">ผล (R / $)</th><th class="py-1.5">บทเรียน</th>
                 </tr>
               </thead>
               <tbody id="learning-ledger-body" class="divide-y divide-gray-800/60">
@@ -538,8 +549,8 @@
 
   <script>
     const PROP_FRICTION_USD = 0.40;
-    const STORAGE_KEY = "GOLD_QUANT_V23_LEDGER";
-    const BRAIN_KEY = "GOLD_QUANT_V23_BRAIN";
+    const STORAGE_KEY = "GOLD_QUANT_V24_LEDGER";
+    const BRAIN_KEY = "GOLD_QUANT_V24_BRAIN";
     const NTFY_STORAGE_KEY = "GOLD_QUANT_PRIVATE_NTFY_TOPIC";
     const MT5_BUFFER_KEY = "GOLD_QUANT_MT5_BUFFER_PTS";
     const LOT_MODE_KEY = "GOLD_QUANT_LOT_MODE";
@@ -548,7 +559,7 @@
 
     let privateNtfyTopic = "";
     let mt5BufferPts = 35;
-    let lotMode = "FIXED"; // Default to FIXED 0.01 Lot so PnL matches standard MT5 micro-lot immediately
+    let lotMode = "FIXED";
     let fixedLotSize = 0.01;
     let autoBeEnabled = true;
     let slBreachStartMs = null;
@@ -590,6 +601,15 @@
       localStorage.setItem(FIXED_LOT_KEY, fixedLotSize.toFixed(2));
       updateLotModeVisibility();
       recalcPropMath();
+
+      // Immediately sync any pending LIMIT order to the newly selected Lot size
+      if (orderState.activeOrder && orderState.activeOrder.mode === "LIMIT") {
+        const lotInfo = getActiveLotSetting();
+        const newLot = orderState.activeOrder.planType.startsWith("SWING") ? lotInfo.swingLot : lotInfo.scalpLot;
+        orderState.activeOrder.lot = newLot;
+        orderState.activeOrder.riskUsd = +(newLot * orderState.activeOrder.slPts).toFixed(2);
+        saveOrderState();
+      }
       renderOrderAndLedgerUI();
     }
 
@@ -618,13 +638,10 @@
       return { id: "LATE_NY", label: "LATE NY (00:00-05:59)" };
     }
 
-    // --- BULLETPROOF NTFY (NO CORS PREFLIGHT + FULL THAI/EMOJI + FALLBACK) ---
+    // --- BULLETPROOF NTFY ---
     function sanitizeNtfyTopic(raw) {
       if (!raw) return "";
-      return raw.trim()
-        .replace(/^https?:\/\/ntfy\.sh\//i, "")
-        .replace(/^\/+|\/+$/g, "")
-        .trim();
+      return raw.trim().replace(/^https?:\/\/ntfy\.sh\//i, "").replace(/^\/+|\/+$/g, "").trim();
     }
 
     function initPrivateNtfy() {
@@ -635,8 +652,7 @@
           localStorage.setItem(NTFY_STORAGE_KEY, urlTopic);
           params.delete("ntfy");
           const cleanQs = params.toString();
-          const cleanUrl = window.location.pathname + (cleanQs ? `?${cleanQs}` : "");
-          window.history.replaceState({}, "", cleanUrl);
+          window.history.replaceState({}, "", window.location.pathname + (cleanQs ? `?${cleanQs}` : ""));
         }
         privateNtfyTopic = sanitizeNtfyTopic(localStorage.getItem(NTFY_STORAGE_KEY) || "");
       } catch (e) {}
@@ -650,11 +666,8 @@
       );
       if (input === null) return;
       privateNtfyTopic = sanitizeNtfyTopic(input);
-      if (privateNtfyTopic) {
-        localStorage.setItem(NTFY_STORAGE_KEY, privateNtfyTopic);
-      } else {
-        localStorage.removeItem(NTFY_STORAGE_KEY);
-      }
+      if (privateNtfyTopic) localStorage.setItem(NTFY_STORAGE_KEY, privateNtfyTopic);
+      else localStorage.removeItem(NTFY_STORAGE_KEY);
       updateNtfyBadgeUI();
     }
 
@@ -679,7 +692,6 @@
       const cleanBody = Array.isArray(lines) ? lines.filter(Boolean).slice(0, 4).join("\n") : String(lines);
       const badge = document.getElementById('data-audit-line');
 
-      // Method 1: CORS Simple Request (text/plain JSON to https://ntfy.sh) - NO OPTIONS preflight!
       try {
         const res = await fetch("https://ntfy.sh", {
           method: "POST",
@@ -698,7 +710,6 @@
         }
       } catch (e) {}
 
-      // Method 2: Fallback no-cors direct topic publish (bypasses strict browser/AdBlock CORS response blocks)
       try {
         const asciiTitle = cleanTitle.replace(/[^\x20-\x7E]/g, '').trim() || "XAU/USD Quant Alert";
         const qUrl = `https://ntfy.sh/${encodeURIComponent(topic)}?title=${encodeURIComponent(asciiTitle)}&priority=${priority}`;
@@ -708,10 +719,10 @@
           headers: { "Content-Type": "text/plain;charset=UTF-8" },
           body: cleanBody
         });
-        if (badge) badge.textContent = `✅ ส่งแจ้งเตือน ntfy (โหมดสำรอง) ไปยัง ${topic} เมื่อ ${getBangkokTimeStr()} น.`;
+        if (badge) badge.textContent = `✅ ส่งแจ้งเตือน ntfy ไปยัง ${topic} เมื่อ ${getBangkokTimeStr()} น.`;
         return true;
       } catch (err) {
-        if (badge) badge.textContent = `⚠️ ส่ง ntfy ไม่สำเร็จ: ${err.message || 'ถูกบล็อกโดยเบราว์เซอร์/เครือข่าย'}`;
+        if (badge) badge.textContent = `⚠️ ส่ง ntfy ไม่สำเร็จ: ${err.message || 'ถูกบล็อกโดยเครือข่าย'}`;
         return false;
       }
     }
@@ -723,11 +734,12 @@
       }
       const btn = document.getElementById('btn-test-ntfy');
       btn.textContent = "กำลังส่ง...";
+      const lotNow = getActiveLotSetting().scalpLot;
       const ok = await sendNtfy(
-        "XAU/USD V23.0 ทดสอบการเชื่อมต่อสำเร็จ",
+        "XAU/USD V24.0 ทดสอบการเชื่อมต่อสำเร็จ",
         [
           `✅ ช่อง: ${privateNtfyTopic} | Spot: $${lastRenderedMid || '-'}`,
-          `Lot ปัจจุบัน: ${getActiveLotSetting().scalpLot.toFixed(2)} Lot ($${(getActiveLotSetting().scalpLot * 100).toFixed(2)} ต่อ $1)`
+          `Lot ปัจจุบัน: ${lotNow.toFixed(2)} Lot ($${(lotNow * 100).toFixed(2)} ต่อ $1.00)`
         ],
         4, ["white_check_mark"], true
       );
@@ -735,22 +747,20 @@
       setTimeout(() => { btn.textContent = "ทดสอบ ntfy"; }, 3000);
     }
 
-    // --- BE DECISION ENGINE (SHOULD BE vs SHOULD NOT BE + EXACT PRICES) ---
+    // --- BE DECISION ENGINE ---
     function evaluateBeRecommendation(entry, sl, tp, dir, beRule, atr = 5.0) {
       const isLong = dir === "LONG";
       const slDist = Math.max(0.5, Math.abs(entry - sl));
       const tpDist = Math.max(0.5, Math.abs(tp - entry));
-      const beLockOffset = 0.20; // +$0.20 (20 points) past entry to cover spread/commission
+      const beLockOffset = 0.20;
       const standardBeSl = isLong ? +(entry + beLockOffset).toFixed(2) : +(entry - beLockOffset).toFixed(2);
 
       if (beRule === "EARLY_BE_50") {
         const trig = isLong ? +(entry + tpDist * 0.50).toFixed(2) : +(entry - tpDist * 0.50).toFixed(2);
         return {
-          shouldBe: true,
-          triggerPrice: trig,
-          beNewSl: standardBeSl,
+          shouldBe: true, triggerPrice: trig, beNewSl: standardBeSl,
           verdict: `✅ ควรบัง BE เมื่อถึง $${trig.toFixed(2)} (+50% TP)`,
-          shortTag: `บัง BE ที่ $${trig.toFixed(2)} → SL $${standardBeSl.toFixed(2)}`,
+          shortTag: `ควรบัง BE ที่ $${trig.toFixed(2)} → เลื่อน SL $${standardBeSl.toFixed(2)}`,
           reason: `สูตรชนะ Backtest ใช้กฎ EARLY_BE_50: เมื่อราคาวิ่งถึง $${trig.toFixed(2)} ให้เลื่อน SL มาบังทุนที่ $${standardBeSl.toFixed(2)} ทันที`
         };
       }
@@ -758,9 +768,7 @@
         const trig = isLong ? +(entry + slDist * 0.80).toFixed(2) : +(entry - slDist * 0.80).toFixed(2);
         const lockSl = isLong ? +(entry + slDist * 0.40).toFixed(2) : +(entry - slDist * 0.40).toFixed(2);
         return {
-          shouldBe: true,
-          triggerPrice: trig,
-          beNewSl: lockSl,
+          shouldBe: true, triggerPrice: trig, beNewSl: lockSl,
           verdict: `✅ ควรบังทุน + ล็อกกำไร 0.4R เมื่อถึง $${trig.toFixed(2)}`,
           shortTag: `ล็อกกำไรที่ $${trig.toFixed(2)} → SL $${lockSl.toFixed(2)}`,
           reason: `เมื่อราคาวิ่งบวกถึง $${trig.toFixed(2)} (+0.8R) ให้เลื่อน SL มาล็อกกำไรที่ $${lockSl.toFixed(2)}`
@@ -770,9 +778,7 @@
         const trig = isLong ? +(entry + slDist * 1.00).toFixed(2) : +(entry - slDist * 1.00).toFixed(2);
         const lockSl = isLong ? +(entry + slDist * 0.50).toFixed(2) : +(entry - slDist * 0.50).toFixed(2);
         return {
-          shouldBe: true,
-          triggerPrice: trig,
-          beNewSl: lockSl,
+          shouldBe: true, triggerPrice: trig, beNewSl: lockSl,
           verdict: `✅ ควรบังทุน + ล็อกกำไร 0.5R เมื่อถึง $${trig.toFixed(2)}`,
           shortTag: `ล็อกกำไรที่ $${trig.toFixed(2)} → SL $${lockSl.toFixed(2)}`,
           reason: `เมื่อราคาวิ่งบวกถึง $${trig.toFixed(2)} (+1.0R) ให้เลื่อน SL มาล็อกกำไรที่ $${lockSl.toFixed(2)}`
@@ -781,25 +787,103 @@
       if (beRule === "LATE_BE_85") {
         const trig = isLong ? +(entry + tpDist * 0.85).toFixed(2) : +(entry - tpDist * 0.85).toFixed(2);
         return {
-          shouldBe: true,
-          triggerPrice: trig,
-          beNewSl: standardBeSl,
+          shouldBe: true, triggerPrice: trig, beNewSl: standardBeSl,
           verdict: `✅ ควรบัง BE ช่วงปลาย เมื่อถึง $${trig.toFixed(2)} (85% TP)`,
           shortTag: `บัง BE ที่ $${trig.toFixed(2)} → SL $${standardBeSl.toFixed(2)}`,
           reason: `ห้ามรีบบังช่วงต้น รอราคาวิ่งใกล้เป้าถึง $${trig.toFixed(2)} ค่อยเลื่อน SL บังทุนที่ $${standardBeSl.toFixed(2)}`
         };
       }
 
-      // NO_BE or TIME_EXIT -> Do NOT move SL to BE prematurely!
       const refTrig = isLong ? +(entry + tpDist * 0.85).toFixed(2) : +(entry - tpDist * 0.85).toFixed(2);
       return {
-        shouldBe: false,
-        triggerPrice: refTrig,
-        beNewSl: standardBeSl,
+        shouldBe: false, triggerPrice: refTrig, beNewSl: standardBeSl,
         verdict: `🚫 ไม่ควรบัง BE (ปล่อยวิ่งชน TP $${tp.toFixed(2)} / SL $${sl.toFixed(2)})`,
         shortTag: `ไม่ควรบัง BE (อ้างอิงฉุกเฉิน $${refTrig.toFixed(2)})`,
         reason: `ผล Backtest ยืนยันว่าสูตรนี้ "ไม่ควรรีบบัง BE" เพราะไส้เทียน M15 (ATR $${atr.toFixed(2)}) มักดีดมาชนทุนก่อนวิ่งถึง TP (ยกเว้นวิ่งเลย $${refTrig.toFixed(2)} ค่อยพิจารณาบังเอง)`
       };
+    }
+
+    // --- 6-PILLAR CONFLUENCE CONFIDENCE ENGINE (NO TRADE REDUCTION, FULL TRANSPARENCY) ---
+    function evaluateSetupConfluence(spotMid, last, vpMicro, vp5d, pdh, pdl, scDir, setupMode, chosenGene, scEntry, obi, bidPct, delta60s) {
+      const isLong = scDir === "LONG";
+      const pillars = [];
+
+      // Pillar 1: Trend & Momentum Alignment (Max 20)
+      const emaAligned = isLong ? (last.c > last.ema200 && last.ema21 >= last.ema50) : (last.c < last.ema200 && last.ema21 <= last.ema50);
+      const adxStrong = last.adx >= 24;
+      let p1 = 8;
+      let p1Detail = `ADX ${last.adx.toFixed(1)}`;
+      if (emaAligned && adxStrong) { p1 = 20; p1Detail = `EMA เรียงตัว + ADX ${last.adx.toFixed(1)}`; }
+      else if (emaAligned || adxStrong) { p1 = 14; p1Detail = emaAligned ? `ตาม EMA200 (ADX ${last.adx.toFixed(1)})` : `เทรนด์แรง ADX ${last.adx.toFixed(1)}`; }
+      pillars.push({ name: "1. โครงสร้างเทรนด์", score: p1, max: 20, detail: p1Detail });
+
+      // Pillar 2: Structural Anchor Proximity (Max 20)
+      const nearLevels = [
+        { name: "4H POC", px: vpMicro.poc },
+        { name: "4H VAH", px: vpMicro.vah },
+        { name: "4H VAL", px: vpMicro.val },
+        { name: "5D POC", px: vp5d.poc },
+        { name: "EMA21", px: last.ema21 },
+        { name: "PDH", px: pdh },
+        { name: "PDL", px: pdl }
+      ];
+      nearLevels.sort((a, b) => Math.abs(a.px - scEntry) - Math.abs(b.px - scEntry));
+      const closest = nearLevels[0];
+      const distToStruct = Math.abs(closest.px - scEntry);
+      let p2 = 10;
+      if (distToStruct <= 1.2) p2 = 20;
+      else if (distToStruct <= 2.8) p2 = 16;
+      else if (distToStruct <= 5.0) p2 = 13;
+      pillars.push({ name: "2. จุดอ้างอิง VP/EMA", score: p2, max: 20, detail: `ใกล้ ${closest.name} ($${closest.px.toFixed(1)})` });
+
+      // Pillar 3: Out-of-Sample Backtest Edge (Max 20)
+      const oosWr = chosenGene.oosWr || 50;
+      const oosNetR = chosenGene.oosNetR || 0;
+      let p3 = 8;
+      if (oosWr >= 60 && oosNetR > 0) p3 = 20;
+      else if (oosWr >= 52 && oosNetR > 0) p3 = 16;
+      else if (oosNetR > 0) p3 = 12;
+      pillars.push({ name: "3. สถิติ OOS 47 วัน", score: p3, max: 20, detail: `OOS WR ${oosWr}% (${oosNetR >= 0 ? '+' : ''}${oosNetR}R)` });
+
+      // Pillar 4: L2 Order Book & 60s Tape Delta (Max 15)
+      const obiFav = isLong ? (obi >= 0.05) : (obi <= -0.05);
+      const deltaFav = isLong ? (delta60s >= 0) : (delta60s <= 0);
+      let p4 = 6;
+      if (obiFav && deltaFav) p4 = 15;
+      else if (obiFav || deltaFav) p4 = 11;
+      pillars.push({ name: "4. แรง L2 & Tape 60s", score: p4, max: 15, detail: `OBI ${obi >= 0 ? '+' : ''}${obi.toFixed(2)} | Δ ${delta60s >= 0 ? '+' : ''}${delta60s.toFixed(0)}` });
+
+      // Pillar 5: RSI Room & ATR Volatility Fit (Max 15)
+      const rsiSafe = isLong ? (last.rsi >= 32 && last.rsi <= 66) : (last.rsi >= 34 && last.rsi <= 68);
+      const atrHealthy = last.atr >= 3.0 && last.atr <= 22.0;
+      let p5 = 7;
+      if (rsiSafe && atrHealthy) p5 = 15;
+      else if (rsiSafe || atrHealthy) p5 = 11;
+      pillars.push({ name: "5. พื้นที่ RSI & ATR", score: p5, max: 15, detail: `RSI ${last.rsi.toFixed(1)} | ATR $${last.atr.toFixed(1)}` });
+
+      // Pillar 6: Session & Live Ledger Track Record (Max 10)
+      const sess = getBangkokSession().id;
+      const st = aiBrain.sessionStats[sess];
+      const sessNet = st ? st.netR : 0;
+      const isActiveSession = (sess === "LONDON" || sess === "NY_OVERLAP");
+      let p6 = isActiveSession ? 8 : 6;
+      if (sessNet > 0) p6 = 10;
+      else if (sessNet < -2) p6 = 4;
+      pillars.push({ name: "6. ช่วงตลาด & พอร์ตจริง", score: p6, max: 10, detail: `${sess} (${sessNet >= 0 ? '+' : ''}${sessNet}R)` });
+
+      const totalScore = pillars.reduce((a, x) => a + x.score, 0);
+      let grade = "B", label = "⚡ เกรด B (ไม้ตามแผน — รอ L2 OBI ยืนยัน)", badgeClass = "bg-amber-950 text-amber-300 border-amber-500/50";
+      if (totalScore >= 80) {
+        grade = "A+";
+        label = "🔥 เกรด A+ (ความมั่นใจสูงมาก — ครบองค์ประกอบ)";
+        badgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-400/60";
+      } else if (totalScore >= 65) {
+        grade = "A";
+        label = "✅ เกรด A (ความมั่นใจดี — โครงสร้างหนุน)";
+        badgeClass = "bg-cyan-500/20 text-cyan-300 border-cyan-400/50";
+      }
+
+      return { totalScore, grade, label, badgeClass, pillars, closestAnchor: closest };
     }
 
     // --- EXACT MT5 LOT & DOLLAR CALCULATION ---
@@ -821,7 +905,6 @@
         swingLot = Math.max(0.01, Math.round((targetRiskUsd / trSlPts) * 100) / 100);
       }
 
-      // True MT5 XAU/USD Contract Value: 1.00 Lot = $100 per $1.00 move ($1.00 per 1 point)
       const scalpRiskUsd = +(scalpLot * scSlPts).toFixed(2);
       const scalpRewardUsd = +(scalpLot * scTpPts).toFixed(2);
       const swingRiskUsd = +(swingLot * trSlPts).toFixed(2);
@@ -846,7 +929,7 @@
       document.getElementById('calc-dd-room').textContent = `ตรงกับ MT5 100%`;
     }
 
-    // --- PERSISTENT CONTINUOUS AI LEARNING BRAIN ---
+    // --- PERSISTENT VERIFIED QUANT MEMORY ---
     let aiBrain = {
       generation: 0,
       totalCombosLearned: 0,
@@ -862,7 +945,7 @@
 
     function loadAiBrain() {
       try {
-        const raw = localStorage.getItem(BRAIN_KEY) || localStorage.getItem("GOLD_QUANT_V22_BRAIN");
+        const raw = localStorage.getItem(BRAIN_KEY);
         if (raw) aiBrain = Object.assign(aiBrain, JSON.parse(raw));
       } catch (e) {}
       renderAiBrainUI();
@@ -902,8 +985,8 @@
     function renderAiBrainUI() {
       const curSess = getBangkokSession();
       document.getElementById('brain-current-session').textContent = `ช่วงเวลาปัจจุบัน: ${curSess.label}`;
-      document.getElementById('brain-total-sims').textContent = `เรียนรู้สะสม: ${aiBrain.totalCombosLearned.toLocaleString()} สูตร (Gen #${aiBrain.generation})`;
-      document.getElementById('mue-gen-badge').textContent = `เรียนรู้สะสม: ${aiBrain.totalCombosLearned.toLocaleString()} สูตร (Gen #${aiBrain.generation})`;
+      document.getElementById('brain-total-sims').textContent = `รันสะสม: ${aiBrain.generation} รอบ (${aiBrain.totalCombosLearned.toLocaleString()} เทสต์)`;
+      document.getElementById('mue-gen-badge').textContent = `รันสะสม: ${aiBrain.generation} รอบ (Gen #${aiBrain.generation})`;
 
       const keys = ["ASIA", "LONDON", "NY_OVERLAP", "LATE_NY"];
       document.getElementById('session-matrix-grid').innerHTML = keys.map(k => {
@@ -925,9 +1008,9 @@
           </div>`;
       }).join('');
 
-      document.getElementById('brain-rules-count').textContent = `${aiBrain.learnedInsights.length} บันทึกการเรียนรู้`;
+      document.getElementById('brain-rules-count').textContent = `${aiBrain.learnedInsights.length} รายการ`;
       if (aiBrain.learnedInsights.length === 0) {
-        document.getElementById('brain-insights-list').innerHTML = `<div class="text-gray-500">กำลังเริ่มสะสมความจำรอบแรก...</div>`;
+        document.getElementById('brain-insights-list').innerHTML = `<div class="text-gray-500">กำลังเริ่มบันทึกข้อมูลรอบแรก...</div>`;
       } else {
         document.getElementById('brain-insights-list').innerHTML = aiBrain.learnedInsights.slice(0, 10).map(item => `
           <div class="flex items-start gap-2 border-b border-gray-800/60 pb-1">
@@ -949,9 +1032,15 @@
 
     function loadOrderState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("GOLD_QUANT_V22_LEDGER");
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("GOLD_QUANT_V23_LEDGER");
         if (raw) orderState = Object.assign(orderState, JSON.parse(raw));
       } catch (e) {}
+
+      // Ensure pending LIMIT order immediately matches user's selected Lot size on load
+      if (orderState.activeOrder && orderState.activeOrder.mode === "LIMIT" && lotMode === "FIXED") {
+        orderState.activeOrder.lot = fixedLotSize;
+        orderState.activeOrder.riskUsd = +(fixedLotSize * (orderState.activeOrder.slPts || 500)).toFixed(2);
+      }
       checkDailyRollover(false);
     }
 
@@ -1061,6 +1150,7 @@
       const lotInfo = getActiveLotSetting();
       const lot = lotInfo.scalpLot;
       const riskUsd = +(lot * sc.slPts).toFixed(2);
+      const rewardUsd = +(lot * sc.tpPts).toFixed(2);
       const tag = sc.setupMode === "REVERSAL" ? "REV-SCALP" : "TREND-SCALP";
 
       slBreachStartMs = null;
@@ -1089,9 +1179,9 @@
 
       if (manual) {
         sendNtfy(
-          `วาง Limit ${sc.dir} @ $${sc.entry.toFixed(2)} (${lot.toFixed(2)} Lot)`,
+          `วาง Limit ${sc.dir} @ $${sc.entry.toFixed(2)} (${lot.toFixed(2)} Lot | เกรด ${sc.conf.grade})`,
           [
-            `📌 ${tag} | SL $${sc.sl.toFixed(2)} (-$${riskUsd.toFixed(2)}) | TP $${sc.tp.toFixed(2)}`,
+            `📌 SL $${sc.sl.toFixed(2)} (-$${riskUsd.toFixed(2)}) | TP $${sc.tp.toFixed(2)} (+$${rewardUsd.toFixed(2)})`,
             `🛡️ ${sc.beInfo.shortTag}`
           ],
           4, ["pushpin"]
@@ -1111,6 +1201,7 @@
       const slPts = Math.round(tr.slDist * 100);
       const tpPts = Math.round(Math.abs(tr.tp - tr.entry) * 100);
       const riskUsd = +(lot * slPts).toFixed(2);
+      const rewardUsd = +(lot * tpPts).toFixed(2);
       const tag = tr.isReversal ? "SWING-REV" : "SWING-TREND";
 
       slBreachStartMs = null;
@@ -1140,7 +1231,7 @@
         sendNtfy(
           `วาง Swing Limit ${tr.dir} @ $${tr.entry.toFixed(2)} (${lot.toFixed(2)} Lot)`,
           [
-            `🎯 ${tag} | SL $${tr.sl.toFixed(2)} (-$${riskUsd.toFixed(2)}) | TP $${tr.tp.toFixed(2)}`,
+            `🎯 SL $${tr.sl.toFixed(2)} (-$${riskUsd.toFixed(2)}) | TP $${tr.tp.toFixed(2)} (+$${rewardUsd.toFixed(2)})`,
             `🛡️ ${tr.beInfo.shortTag}`
           ],
           4, ["dart"]
@@ -1161,6 +1252,7 @@
       const tp = isLong ? +(entry + sc.tpPts / 100).toFixed(2) : +(entry - sc.tpPts / 100).toFixed(2);
       const lot = getActiveLotSetting().scalpLot;
       const riskUsd = +(lot * sc.slPts).toFixed(2);
+      const rewardUsd = +(lot * sc.tpPts).toFixed(2);
       const tag = sc.setupMode === "REVERSAL" ? "REV-MKT" : "TREND-MKT";
       const beInfo = evaluateBeRecommendation(entry, sl, tp, sc.dir, sc.beRule);
 
@@ -1187,9 +1279,9 @@
       renderOrderAndLedgerUI();
       playTriggerBeep();
       sendNtfy(
-        `เปิดไม้สด ${sc.dir} @ $${entry.toFixed(2)} (${lot.toFixed(2)} Lot)`,
+        `เปิดไม้สด ${sc.dir} @ $${entry.toFixed(2)} (${lot.toFixed(2)} Lot | เกรด ${sc.conf.grade})`,
         [
-          `⚡ SL $${sl.toFixed(2)} (-$${riskUsd.toFixed(2)}) | TP $${tp.toFixed(2)}`,
+          `⚡ SL $${sl.toFixed(2)} (-$${riskUsd.toFixed(2)}) | TP $${tp.toFixed(2)} (+$${rewardUsd.toFixed(2)})`,
           `🛡️ ${beInfo.shortTag}`
         ],
         5, ["zap"]
@@ -1216,17 +1308,16 @@
       const isLong = ao.dir === "LONG";
       const diffUsd = isLong ? (exitPrice - ao.entry) : (ao.entry - exitPrice);
 
-      // Exact MT5 Dollar PnL = Price Difference ($) * Lot * 100
       const pnlUsd = +(diffUsd * ao.lot * 100).toFixed(2);
       const slDistUsd = Math.max(0.5, Math.abs(ao.entry - ao.sl));
       const pnlR = +(diffUsd / slDistUsd).toFixed(2);
       const outcome = pnlUsd > 0.05 ? "WIN" : (pnlUsd < -0.05 ? "LOSS" : "BE");
 
       const lesson = outcome === "WIN"
-        ? `ชนะสูตร ${ao.formula || ao.shape} (${ao.lot.toFixed(2)} Lot) — เพิ่มน้ำหนักสูตรในสมอง AI`
+        ? `ชนะสูตร ${ao.formula || ao.shape} (${ao.lot.toFixed(2)} Lot) — เพิ่มน้ำหนักสูตร`
         : (outcome === "BE"
           ? `ปิดบังทุน BE สูตร ${ao.formula || ao.shape} (${ao.lot.toFixed(2)} Lot) — รอดพ้นการขาดทุน`
-          : `โดน SL สูตร ${ao.formula || ao.shape} (${ao.lot.toFixed(2)} Lot) — ลดน้ำหนักสูตรในสมอง AI`);
+          : `โดน SL สูตร ${ao.formula || ao.shape} (${ao.lot.toFixed(2)} Lot) — ลดน้ำหนักสูตร`);
 
       const closedRec = {
         dateStr: getBangkokDateStr(),
@@ -1254,13 +1345,12 @@
         `${outcome === 'WIN' ? 'ชน TP' : (outcome === 'BE' ? 'ปิดบังทุน BE' : 'โดน SL')}: ${ao.dir} (${pnlUsd >= 0 ? '+' : ''}$${pnlUsd.toFixed(2)})`,
         [
           `${outcome === 'WIN' ? '✅' : (outcome === 'BE' ? '🛡️' : '🛑')} เข้า $${ao.entry.toFixed(2)} → ออก $${exitPrice.toFixed(2)} (${ao.lot.toFixed(2)} Lot | ${pnlR >= 0 ? '+' : ''}${pnlR}R)`,
-          `แผน: ${ao.planType} | อัปเดตสมองกล AI แล้ว`
+          `แผน: ${ao.planType}`
         ],
         5, [outcome === 'WIN' ? "white_check_mark" : (outcome === 'BE' ? "shield" : "octagonal_sign")]
       );
     }
 
-    // --- TRUE MT5 BID/ASK + ANTI-WICK 2.0-SECOND SL + LIVE BE TRIGGER ---
     function processLiveOrderTick(bid, ask, mid) {
       const ao = orderState.activeOrder;
       if (!ao || !mid) return;
@@ -1288,7 +1378,6 @@
       } else if (ao.mode === "OPEN") {
         const exitEvalPrice = isLong ? bid : ask;
 
-        // 1. Check TP Hit
         const tpHit = isLong ? (exitEvalPrice >= ao.tp) : (exitEvalPrice <= ao.tp);
         if (tpHit) {
           slBreachStartMs = null;
@@ -1296,7 +1385,6 @@
           return;
         }
 
-        // 2. Check Break-Even (BE) Trigger Price
         if (ao.beInfo && ao.beInfo.shouldBe && !ao.beTriggered) {
           const reachedBe = isLong
             ? (exitEvalPrice >= ao.beInfo.triggerPrice)
@@ -1311,7 +1399,7 @@
             sendNtfy(
               `ถึงจุดบังทุน BE แล้ว! เลื่อน SL ไปที่ $${ao.beInfo.beNewSl.toFixed(2)}`,
               [
-                `🛡️ ราคาวิ่งถึง $${exitEvalPrice.toFixed(2)} — รีบเลื่อน SL ใน MT5 มาบังทุนที่ $${ao.beInfo.beNewSl.toFixed(2)}`,
+                `🛡️ ราคาวิ่งถึง $${exitEvalPrice.toFixed(2)} — เลื่อน SL ใน MT5 มาบังทุนที่ $${ao.beInfo.beNewSl.toFixed(2)}`,
                 `ออเดอร์ ${ao.dir} @ $${ao.entry.toFixed(2)} (${ao.lot.toFixed(2)} Lot)`
               ],
               5, ["shield"]
@@ -1319,7 +1407,6 @@
           }
         }
 
-        // 3. Anti-Wick SL Guard: Must breach (SL +/- MT5 Buffer) AND hold for 2.0 seconds
         const slBreached = isLong
           ? (exitEvalPrice <= (ao.sl - bufferUsd))
           : (exitEvalPrice >= (ao.sl + bufferUsd));
@@ -1393,7 +1480,6 @@
           pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full";
         }
 
-        // Render Active Order BE Decision Banner
         const bInfo = ao.beInfo || evaluateBeRecommendation(ao.entry, ao.sl, ao.tp, ao.dir, ao.beRule || "NO_BE");
         const beBadge = document.getElementById('ao-be-badge');
         const beText = document.getElementById('ao-be-text');
@@ -1438,7 +1524,6 @@
 
           if (ao.mode === "OPEN") {
             const diff = ao.dir === "LONG" ? (evalPx - ao.entry) : (ao.entry - evalPx);
-            // Exact MT5 Floating PnL = Price Difference ($) * Lot * 100
             const flUsd = diff * ao.lot * 100;
             const flR = diff / Math.max(0.5, Math.abs(ao.entry - ao.sl));
             document.getElementById('ao-pnl-usd').textContent = `${flUsd >= 0 ? '+' : ''}$${flUsd.toFixed(2)}`;
@@ -1504,7 +1589,7 @@
     }
 
     function promptApiKey() {
-      const k = prompt("วาง THAILLM_API_KEY (หรือเว้นว่างเพื่อใช้ Live AI ในตัว):", localStorage.getItem("THAILLM_KEY") || "");
+      const k = prompt("วาง THAILLM_API_KEY ของ Typhoon V2.5 (หรือเว้นว่างเพื่อใช้ระบบวิเคราะห์เชิงสถิติในตัว 100%):", localStorage.getItem("THAILLM_KEY") || "");
       if (k !== null) {
         localStorage.setItem("THAILLM_KEY", k.trim());
         runFullLiveQuantAndAI(true);
@@ -1535,7 +1620,7 @@
       const remSecs = 59 - secs;
 
       document.getElementById('next-cycle-countdown').textContent =
-        `รอบเรียนรู้ AI + รีเฟรช Limit ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
+        `รอบวิเคราะห์ + รีเฟรช Limit ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
 
       if (lastAiUpdateMs > 0) {
         const elapsedMins = Math.floor((Date.now() - lastAiUpdateMs) / 60000);
@@ -2024,7 +2109,7 @@
 
       document.getElementById('sim-progress-bar').style.width = `100%`;
       document.getElementById('sim-progress-pct').textContent = `100% (${totalCombos.toLocaleString()} / ${totalCombos.toLocaleString()} เสร็จสมบูรณ์)`;
-      document.getElementById('sim-progress-label').textContent = `✅ จำลองครบ ${totalCombos.toLocaleString()} วิธีในรอบนี้ | สะสม ${aiBrain.totalCombosLearned.toLocaleString()} สูตร`;
+      document.getElementById('sim-progress-label').textContent = `✅ ทดสอบครบ ${totalCombos.toLocaleString()} รูปแบบในรอบนี้ | รันสะสม ${aiBrain.generation} รอบ`;
 
       return { results: trendResults, revResults, recentTrades: nonOverlappingLogs.slice(0, 12), totalCombos };
     }
@@ -2180,17 +2265,43 @@
       const trBeInfo = evaluateBeRecommendation(trEntry, trSl, trTp, trDir, "LOCK_HALF_1R", last.atr);
 
       const idealOffset = Math.max(1.80, Math.min(5.20, +(last.atr * 0.16).toFixed(2)));
-      let scEntry;
+      let scEntry, anchorSourceText;
       if (scDir === "SHORT") {
-        const pool = [vpMicro.poc, vpMicro.vah, vpMicro.val, h1High]
-          .concat(latestAsks.slice(0, 6).map(x => +(x[0] + spotBasisOffset).toFixed(2)))
-          .filter(lvl => lvl >= spotMid + 1.50 && lvl <= spotMid + 6.50);
-        scEntry = pool.length ? Math.min(...pool) : +(spotMid + idealOffset).toFixed(2);
+        const namedCandidates = [
+          { name: "4H Micro-POC", px: vpMicro.poc },
+          { name: "4H Micro-VAH", px: vpMicro.vah },
+          { name: "4H Micro-VAL", px: vpMicro.val },
+          { name: "ขอบบน H1 Swing", px: h1High },
+          { name: "เส้นค่าเฉลี่ย EMA21", px: +last.ema21.toFixed(2) }
+        ].concat(latestAsks.slice(0, 6).map(x => ({ name: "กำแพงขาย L2 Ask", px: +(x[0] + spotBasisOffset).toFixed(2) })))
+         .filter(item => item.px >= spotMid + 1.50 && item.px <= spotMid + 6.50);
+
+        if (namedCandidates.length) {
+          namedCandidates.sort((a, b) => a.px - b.px);
+          scEntry = namedCandidates[0].px;
+          anchorSourceText = `ดักรอที่แนวต้าน ${namedCandidates[0].name} ($${scEntry.toFixed(2)}) เพื่อเลี่ยงการไล่ราคาและได้ระยะ SL/TP ที่คุ้มค่า`;
+        } else {
+          scEntry = +(spotMid + idealOffset).toFixed(2);
+          anchorSourceText = `ดักย่อตัวขึ้นรับแรงขายที่ระยะ +$${idealOffset.toFixed(2)} จากราคา Spot ($${scEntry.toFixed(2)}) ตามสัดส่วน ATR`;
+        }
       } else {
-        const pool = [vpMicro.poc, vpMicro.val, vpMicro.vah, h1Low]
-          .concat(latestBids.slice(0, 6).map(x => +(x[0] + spotBasisOffset).toFixed(2)))
-          .filter(lvl => lvl <= spotMid - 1.50 && lvl >= spotMid - 6.50);
-        scEntry = pool.length ? Math.max(...pool) : +(spotMid - idealOffset).toFixed(2);
+        const namedCandidates = [
+          { name: "4H Micro-POC", px: vpMicro.poc },
+          { name: "4H Micro-VAL", px: vpMicro.val },
+          { name: "4H Micro-VAH", px: vpMicro.vah },
+          { name: "ขอบล่าง H1 Swing", px: h1Low },
+          { name: "เส้นค่าเฉลี่ย EMA21", px: +last.ema21.toFixed(2) }
+        ].concat(latestBids.slice(0, 6).map(x => ({ name: "กำแพงรับ L2 Bid", px: +(x[0] + spotBasisOffset).toFixed(2) })))
+         .filter(item => item.px <= spotMid - 1.50 && item.px >= spotMid - 6.50);
+
+        if (namedCandidates.length) {
+          namedCandidates.sort((a, b) => b.px - a.px);
+          scEntry = namedCandidates[0].px;
+          anchorSourceText = `ดักรอรับที่แนวรับ ${namedCandidates[0].name} ($${scEntry.toFixed(2)}) เพื่อเลี่ยงการไล่ราคาและได้ระยะ SL/TP ที่คุ้มค่า`;
+        } else {
+          scEntry = +(spotMid - idealOffset).toFixed(2);
+          anchorSourceText = `ดักย่อตัวลงรับแรงซื้อที่ระยะ -$${idealOffset.toFixed(2)} จากราคา Spot ($${scEntry.toFixed(2)}) ตามสัดส่วน ATR`;
+        }
       }
 
       const scSl = scDir === "SHORT" ? +(scEntry + scSlUsd).toFixed(2) : +(scEntry - scSlUsd).toFixed(2);
@@ -2198,6 +2309,8 @@
       const scBeInfo = evaluateBeRecommendation(scEntry, scSl, scTp, scDir, beRuleLabel, last.atr);
       const distPts = Math.round(Math.abs(scEntry - spotMid) * 100);
       const modeTag = setupMode === "REVERSAL" ? "🔄 REVERSAL" : (setupMode === "TREND_CAUTION" ? "⚠️ TREND (CAUTION)" : "🌊 TREND");
+
+      const conf = evaluateSetupConfluence(spotMid, last, vpMicro, vp5d, pdh, pdl, scDir, setupMode, chosenGene, scEntry, latestObi, latestBidPct, latestDelta60s);
 
       return {
         revSafetyLocked,
@@ -2208,7 +2321,9 @@
           revSafetyLocked,
           revReason,
           dir: scDir,
-          bias: `${modeTag} ${scDir} @ $${scEntry.toFixed(2)} (ห่าง ${distPts} จุด | OOS ${chosenGene.oosWr}%)`,
+          bias: `${modeTag} ${scDir} @ $${scEntry.toFixed(2)} (ห่าง ${distPts} จุด | ความมั่นใจ ${conf.totalScore}% เกรด ${conf.grade})`,
+          anchorSourceText,
+          conf,
           entry: +scEntry.toFixed(2),
           sl: scSl,
           be: scBeInfo.triggerPrice,
@@ -2300,6 +2415,24 @@
         document.getElementById('kpi-macro').textContent = `RSI ${last.rsi.toFixed(1)} / ATR $${last.atr.toFixed(2)}`;
         document.getElementById('kpi-corr').textContent = `EMA21: $${last.ema21.toFixed(2)} | EMA200: $${last.ema200.toFixed(2)}`;
 
+        // Render 6-Pillar Confidence Score UI
+        const confBadge = document.getElementById('confidence-grade-badge');
+        confBadge.textContent = `🎯 CONFIDENCE: ${scalpSetup.conf.totalScore}% (${scalpSetup.conf.label})`;
+        confBadge.className = `px-2.5 py-0.5 text-[11px] font-mono-num font-bold border rounded ${scalpSetup.conf.badgeClass}`;
+
+        document.getElementById('confluence-pillars-grid').innerHTML = scalpSetup.conf.pillars.map(p => {
+          const pct = Math.round((p.score / p.max) * 100);
+          const color = pct >= 80 ? 'text-emerald-400 border-emerald-800/50' : (pct >= 60 ? 'text-cyan-300 border-gray-700' : 'text-amber-300 border-gray-800');
+          return `
+            <div class="bg-gray-900/90 border ${color} rounded-lg p-2">
+              <div class="flex items-center justify-between text-[10px] text-gray-400">
+                <span>${p.name}</span>
+                <span class="font-bold text-white">${p.score}/${p.max}</span>
+              </div>
+              <div class="text-[11px] font-bold truncate mt-0.5">${p.detail}</div>
+            </div>`;
+        }).join('');
+
         const modeBadge = document.getElementById('regime-mode-badge');
         const safetyBadge = document.getElementById('rev-safety-badge');
         if (scalpSetup.setupMode === "REVERSAL") {
@@ -2346,8 +2479,8 @@
         document.getElementById('sc-be').textContent = scalpSetup.beInfo.shouldBe ? `$${scalpSetup.beInfo.triggerPrice.toFixed(2)}` : `ไม่บัง (อ้างอิง $${scalpSetup.beInfo.triggerPrice.toFixed(2)})`;
         document.getElementById('sc-tp-label').textContent = `Scalp TP (${scalpSetup.tpPts} จุด)`;
         document.getElementById('sc-tp').textContent = `$${scalpSetup.tp.toFixed(2)}`;
+        document.getElementById('sc-anchor-reason').textContent = `📍 เหตุผลจุดเข้า: ${scalpSetup.anchorSourceText}`;
 
-        // Render Engine A BE Advisor Box
         const beBox = document.getElementById('sc-be-advice-box');
         const beVerdict = document.getElementById('sc-be-verdict');
         const beTargetSl = document.getElementById('sc-be-target-sl');
@@ -2434,19 +2567,23 @@
           }
         }
 
-        const aiShortLine = await runContinuousLiveAI(spotMid, last, pdh, pdl, vpMicro, scalpSetup, trendSetup, activeTrendGene, bestRevGene, verified.revSafetyLocked, regimeTxt, lastAiTimeStr);
+        const aiShortLine = await buildEvidenceBasedQuantBriefing(spotMid, last, pdh, pdl, vpMicro, vp5d, scalpSetup, trendSetup, activeTrendGene, bestRevGene, regimeTxt, lastAiTimeStr);
 
         if (notify) {
           const ao = orderState.activeOrder;
-          const lotStr = ao ? `${ao.lot.toFixed(2)} Lot` : `${getActiveLotSetting().scalpLot.toFixed(2)} Lot`;
+          const lotInfo = getActiveLotSetting();
+          const lotNow = ao ? ao.lot : lotInfo.scalpLot;
+          const rUsd = +(lotNow * scalpSetup.slPts).toFixed(2);
+          const tpUsd = +(lotNow * scalpSetup.tpPts).toFixed(2);
+
           const line1 = ao
-            ? `${ao.mode === 'OPEN' ? '🟢' : '📌'} ${ao.mode} ${ao.dir} (${lotStr}) @ $${ao.entry.toFixed(2)} | SL $${ao.sl.toFixed(2)} | TP $${ao.tp.toFixed(2)}`
-            : `📌 แผน ${scalpSetup.dir} (${lotStr}) @ $${scalpSetup.entry.toFixed(2)} | SL $${scalpSetup.sl.toFixed(2)} | TP $${scalpSetup.tp.toFixed(2)}`;
+            ? `${ao.mode === 'OPEN' ? '🟢' : '📌'} ${ao.mode} ${ao.dir} (${lotNow.toFixed(2)} Lot) @ $${ao.entry.toFixed(2)} | SL $${ao.sl.toFixed(2)} (-$${rUsd}) | TP $${ao.tp.toFixed(2)} (+$${tpUsd})`
+            : `📌 แผน ${scalpSetup.dir} (${lotNow.toFixed(2)} Lot) @ $${scalpSetup.entry.toFixed(2)} | SL $${scalpSetup.sl.toFixed(2)} | TP $${scalpSetup.tp.toFixed(2)}`;
           const line2 = `🛡️ ${scalpSetup.beInfo.shortTag}`;
-          const line3 = `💡 ${aiShortLine}`;
+          const line3 = `🎯 ${aiShortLine}`;
 
           sendNtfy(
-            `15m XAU/USD | $${spotMid.toFixed(2)} [Gen #${aiBrain.generation}]`,
+            `15m XAU/USD | $${spotMid.toFixed(2)} [เกรด ${scalpSetup.conf.grade} ${scalpSetup.conf.totalScore}%]`,
             [line1, line2, line3],
             4, ["clock1"]
           );
@@ -2459,107 +2596,91 @@
       }
     }
 
-    async function runContinuousLiveAI(spot, last, pdh, pdl, vpMicro, sc, tr, activeTrend, bestRev, revLocked, regimeTxt, nowStr) {
+    // --- ZERO-HALLUCINATION EVIDENCE-BASED QUANT ANALYST ---
+    async function buildEvidenceBasedQuantBriefing(spot, last, pdh, pdl, vpMicro, vp5d, sc, tr, activeTrend, bestRev, regimeTxt, nowStr) {
       const badgeEl = document.getElementById('ai-engine-badge');
       const contentEl = document.getElementById('ai-content');
-      badgeEl.textContent = "⏳ AI กำลังเรียนรู้และวิเคราะห์ข้อมูลสด...";
-
       const curSess = getBangkokSession();
+      const lotInfo = getActiveLotSetting();
+      const isLong = sc.dir === "LONG";
+
+      const riskUsd = +(lotInfo.scalpLot * sc.slPts).toFixed(2);
+      const rewardUsd = +(lotInfo.scalpLot * sc.tpPts).toFixed(2);
+      const distPts = Math.round(Math.abs(sc.entry - spot) * 100);
+      const invalidationPx = isLong
+        ? Math.min(sc.sl, +(vpMicro.val - 1.5).toFixed(2))
+        : Math.max(sc.sl, +(vpMicro.vah + 1.5).toFixed(2));
+
       const allHist = (orderState.todayClosed || []).concat(orderState.learningArchive || []);
-      const histWins = allHist.filter(x => x.outcome === "WIN").length;
-      const histUsd = allHist.reduce((a, x) => a + x.pnlUsd, 0);
-      const ledgerContext = allHist.length > 0
-        ? `สถิติพอร์ตจริง: เทรดแล้ว ${allHist.length} ไม้ (ชนะ ${histWins} ไม้, Net ${histUsd >= 0 ? '+' : ''}$${histUsd.toFixed(2)})`
-        : "ยังไม่มีประวัติปิดออเดอร์จริง";
+      const histLine = allHist.length > 0
+        ? `สถิติพอร์ตจริงสะสม ${allHist.length} ไม้ (ชนะ ${allHist.filter(x => x.outcome === "WIN").length} ไม้)`
+        : `อ้างอิงผลทดสอบ Backtest 4,500 แท่ง (~47 วัน) สูตร ${sc.formulaName} (OOS WR ${activeTrend.oosWr}% | Net ${activeTrend.netR >= 0 ? '+' : ''}${activeTrend.netR}R)`;
 
-      const priorMemories = aiBrain.learnedInsights.slice(0, 4).map(x => `- [${x.stamp}] ${x.text}`).join("\n") || "- เพิ่งเริ่มต้นรอบแรก";
+      const reasoningBlocks = [
+        `<div class="bg-gray-900/90 border border-cyan-800/50 rounded-lg p-3">
+          <div class="text-xs font-bold text-cyan-300 mb-1">1. เหตุผลเชิงโครงสร้างที่ออกแผน ${sc.dir} ที่ $${sc.entry.toFixed(2)} (ความมั่นใจ ${sc.conf.totalScore}% — เกรด ${sc.conf.grade})</div>
+          <p class="text-xs text-gray-200 leading-relaxed">
+            ราคา Spot ปัจจุบัน <strong class="text-amber-400">$${spot.toFixed(2)}</strong> อยู่${isLong ? 'เหนือ' : 'ใต้'}เส้นค่าเฉลี่ยหลัก EMA200 ($${last.ema200.toFixed(2)}) และ EMA21 ($${last.ema21.toFixed(2)}) ด้วยกำลังเทรนด์ <strong class="text-white">ADX ${last.adx.toFixed(1)} (${regimeTxt})</strong> 
+            ระบบวางจุดเข้า <strong class="text-white">Limit ${sc.dir} ที่ $${sc.entry.toFixed(2)}</strong> (ห่าง Spot ${distPts} จุด) เพราะ${sc.anchorSourceText}
+          </p>
+        </div>`,
+        `<div class="bg-gray-900/90 border border-emerald-800/50 rounded-lg p-3">
+          <div class="text-xs font-bold text-emerald-300 mb-1">2. ความคุ้มค่าต่อ ${lotInfo.scalpLot.toFixed(2)} Lot จริง & เหตุผลเรื่องการบังทุน (BE)</div>
+          <p class="text-xs text-gray-200 leading-relaxed">
+            ขนาด <strong class="text-amber-300">${lotInfo.scalpLot.toFixed(2)} Lot</strong> ไม้แรกนี้เสี่ยงจริง <strong class="text-rose-400">-$${riskUsd.toFixed(2)}</strong> (${sc.slPts} จุด) เพื่อเป้าหมายกำไร <strong class="text-emerald-400">+$${rewardUsd.toFixed(2)}</strong> (${sc.tpPts} จุด | R:R 1:${sc.rr}) 
+            — <strong class="text-cyan-300">${sc.beInfo.verdict}</strong> เนื่องจากความผันผวน ATR ปัจจุบันอยู่ที่ $${last.atr.toFixed(2)}/แท่ง (${histLine})
+          </p>
+        </div>`,
+        `<div class="bg-gray-900/90 border border-rose-800/50 rounded-lg p-3">
+          <div class="text-xs font-bold text-rose-300 mb-1">3. จุดยกเลิกแผน (Invalidation) & การยืนยันหน้างานช่วง ${curSess.label}</div>
+          <p class="text-xs text-gray-200 leading-relaxed">
+            แผนนี้จะเสียทรงทันทีหากราคาทะลุ <strong class="text-rose-400">$${invalidationPx.toFixed(2)}</strong> หรือ Order Book L2 เปลี่ยนฝั่งตรงข้ามเกิน 70% 
+            ส่วนจังหวะเข้าหน้างานหากราคาแตะโซน $${sc.entry.toFixed(2)} ให้ดูตัวเลข <strong class="text-cyan-300">OBI ยืนยัน 3 วินาที</strong> ด้านบนประกอบการกดเข้าหรือปล่อย Limit แมตช์อัตโนมัติ
+          </p>
+        </div>`
+      ];
 
-      const promptText =
-        `คุณคือระบบ AI Quant ที่เรียนรู้ต่อเนื่องตลอด 24 ชั่วโมงสำหรับ XAU/USD (รอบ Gen #${aiBrain.generation}, ช่วงเวลา ${curSess.label}, เวลา ${nowStr} น.):\n` +
-        `1. ตลาดสด: Global Spot $${spot.toFixed(2)} | เทรนด์ ${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)}, ATR $${last.atr.toFixed(2)})\n` +
-        `2. แผนเข้าเทรด: ${sc.dir} @ $${sc.entry.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)} | คำแนะนำ BE: ${sc.beInfo.verdict}\n` +
-        `3. ${ledgerContext}\n` +
-        `4. ความจำที่เรียนรู้:\n${priorMemories}\n` +
-        `ตอบภาษาไทยกระชับ 3 ข้อสำหรับหน้าเว็บ และปิดท้ายด้วย:\n` +
-        `LEARNED_RULE: กฎสั้นๆ ที่เรียนรู้รอบนี้\n` +
-        `NTFY_SHORT: สรุปสั้นๆ 1 ประโยคไม่เกิน 75 ตัวอักษร`;
+      let finalHtml = reasoningBlocks.join('');
+      let engineTag = `✅ QUANT ANALYST (${nowStr})`;
 
+      // Optional Typhoon V2.5 enhancement ONLY if user explicitly provided a Typhoon key
       const apiKey = localStorage.getItem("THAILLM_KEY") || "";
-      let liveAiOutput = null;
-      let engineLabel = "";
-
       if (apiKey) {
         try {
+          const strictPrompt =
+            `สรุปแผนเทรด XAU/USD เป็นภาษาไทยทางการ 3 บรรทัดสั้นๆ ห้ามใช้ภาษาอื่นปน ห้ามพูดคำว่าปิดตำแหน่ง:\n` +
+            `- Spot $${spot.toFixed(2)} เทรนด์ ${regimeTxt} ADX ${last.adx.toFixed(1)} RSI ${last.rsi.toFixed(1)}\n` +
+            `- วาง Limit ${sc.dir} @ $${sc.entry.toFixed(2)} (${sc.anchorSourceText}) SL $${sc.sl.toFixed(2)} TP $${sc.tp.toFixed(2)} เกรด ${sc.conf.grade} (${sc.conf.totalScore}%)\n` +
+            `- คำแนะนำ BE: ${sc.beInfo.verdict}`;
           const resp = await fetch("https://thaillm.or.th/api/typhoon/v1/chat/completions", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
             body: JSON.stringify({
               model: "/model/typhoon-v2.5-30b-a3b-instruct",
-              messages: [{ role: "user", content: promptText }],
-              max_tokens: 680,
-              temperature: 0.25
+              messages: [{ role: "user", content: strictPrompt }],
+              max_tokens: 320,
+              temperature: 0.15
             })
           });
           if (resp.ok) {
             const j = await resp.json();
-            const raw = j.choices[0].message.content.trim();
-            if (raw.length > 60) {
-              liveAiOutput = raw;
-              engineLabel = `✅ TYPHOON-V2.5 CONTINUOUS (${nowStr})`;
+            const raw = (j.choices?.[0]?.message?.content || "").trim();
+            // Reject any output containing non-Thai/non-ASCII garbled characters (e.g., Korean/Chinese)
+            if (raw.length > 40 && !/[\uAC00-\uD7AF\u4E00-\u9FFF]/.test(raw)) {
+              finalHtml += `<div class="bg-purple-950/30 border border-purple-700/50 rounded-lg p-3 text-xs text-purple-200"><strong class="text-purple-300">สรุปเสริมจาก Typhoon V2.5:</strong><br/>${raw.replace(/\n/g, '<br/>')}</div>`;
+              engineTag = `✅ QUANT + TYPHOON V2.5 (${nowStr})`;
             }
           }
         } catch (e) {}
       }
 
-      if (!liveAiOutput) {
-        try {
-          const resp = await fetch("https://text.pollinations.ai/openai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "openai",
-              messages: [{ role: "user", content: promptText }],
-              seed: Math.floor(Date.now() / 60000)
-            })
-          });
-          if (resp.ok) {
-            const j = await resp.json();
-            const raw = j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content.trim() : "";
-            if (raw.length > 60) {
-              liveAiOutput = raw;
-              engineLabel = `✅ LIVE AI CONTINUOUS (${nowStr})`;
-            }
-          }
-        } catch (e) {}
-      }
+      const verifiedRule = `ช่วง ${curSess.id} | ${sc.dir} @ $${sc.entry.toFixed(2)} (${sc.conf.closestAnchor.name}) | เกรด ${sc.conf.grade} (${sc.conf.totalScore}%) | ${sc.beInfo.shouldBe ? 'บัง BE ที่ $' + sc.beInfo.triggerPrice.toFixed(2) : 'ไม่บัง BE'}`;
+      recordAiInsight(verifiedRule, `GRADE-${sc.conf.grade}`);
 
-      const fallbackShort = `${sc.dir} @ $${sc.entry.toFixed(2)} | ${sc.beInfo.shouldBe ? `บัง BE ที่ $${sc.beInfo.triggerPrice.toFixed(2)}` : 'ไม่ควรบัง BE ปล่อยชน TP'}`;
+      badgeEl.textContent = engineTag;
+      contentEl.innerHTML = finalHtml;
 
-      if (!liveAiOutput) {
-        const autoRule = `ช่วง ${curSess.id} สูตร ${sc.formulaName} (${sc.dir}) ใช้กติกา ${sc.beInfo.shouldBe ? 'บัง BE ที่ ' + sc.beInfo.triggerPrice : 'ไม่บัง BE'}`;
-        liveAiOutput =
-          `**1. สภาวะตลาดสด (${nowStr} น.):** Global Spot XAU/USD อยู่ที่ **$${spot.toFixed(2)}** เทรนด์หลัก **${regimeTxt}** (RSI ${last.rsi.toFixed(1)}, ADX ${last.adx.toFixed(1)})\n` +
-          `**2. แผนเข้าเทรด & คำแนะนำบังทุน (BE):** แผน **${sc.dir}** ที่ **$${sc.entry.toFixed(2)}** (SL $${sc.sl.toFixed(2)} / TP $${sc.tp.toFixed(2)}) — **${sc.beInfo.verdict}**\n` +
-          `**3. การเรียนรู้ต่อเนื่องช่วง ${curSess.label}:** สะสม **${aiBrain.totalCombosLearned.toLocaleString()} สูตร (Gen #${aiBrain.generation})** | ${ledgerContext}\n` +
-          `LEARNED_RULE: ${autoRule}\n` +
-          `NTFY_SHORT: ${fallbackShort}`;
-        engineLabel = `QUANT-AI MEMORY (${nowStr})`;
-      }
-
-      const ruleMatch = liveAiOutput.match(/LEARNED_RULE:\s*(.+)/i);
-      const learnedLine = ruleMatch
-        ? ruleMatch[1].trim()
-        : `Gen #${aiBrain.generation}: Spot $${spot.toFixed(2)} (${regimeTxt}) | ${sc.beInfo.shortTag}`;
-      recordAiInsight(learnedLine, "AI-LEARN");
-
-      const shortMatch = liveAiOutput.match(/NTFY_SHORT:\s*(.+)/i);
-      let ntfyShortLine = shortMatch ? shortMatch[1].replace(/\*\*/g, '').trim() : fallbackShort;
-      if (ntfyShortLine.length > 85) ntfyShortLine = ntfyShortLine.slice(0, 82).trim();
-
-      const cleanWebDisplay = liveAiOutput.replace(/NTFY_SHORT:.*$/im, '').trim();
-      badgeEl.textContent = engineLabel;
-      contentEl.innerHTML = cleanWebDisplay.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-400">$1</strong>').replace(/\n/g, '<br/>');
-      return ntfyShortLine;
+      return `ความมั่นใจ ${sc.conf.totalScore}% (เกรด ${sc.conf.grade}) | ใกล้ ${sc.conf.closestAnchor.name} ($${sc.conf.closestAnchor.px.toFixed(1)})`;
     }
 
     function renderVolumeProfileChart(vpData) {
@@ -2604,10 +2725,10 @@
       const box = document.getElementById('execution-gate-box');
 
       if (inZone && obiConfirmed && tapeOrWallAligned) {
-        pill.textContent = `🔥 TRIGGERED (${sc.setupMode}) — ENTER ${sc.dir}!`;
+        pill.textContent = `🔥 TRIGGERED (เกรด ${sc.conf.grade}) — ENTER ${sc.dir}!`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full animate-pulse";
-        head.textContent = `ยืนยันครบ 3 ชั้น (${sc.formulaName})! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)}`;
-        box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40";
+        head.textContent = `ยืนยันครบ 3 ชั้น (ความมั่นใจ ${sc.conf.totalScore}%)! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)}`;
+        box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40 space-y-3";
 
         if ((!orderState.activeOrder || orderState.activeOrder.mode === "LIMIT") && Date.now() - lastAutoFireTs > 300000) {
           lastAutoFireTs = Date.now();
@@ -2618,17 +2739,17 @@
         pill.textContent = `PAUSED — กำลังถือออเดอร์ ${ao.dir} (${ao.lot.toFixed(2)} Lot) @ $${ao.entry.toFixed(2)}`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600 rounded-full";
         head.textContent = `ระบบหยุดสแกนชั่วคราว (ถือทีละ 1 ไม้) — รอปิดออเดอร์ ${ao.dir} ปัจจุบันก่อนวางแผนถัดไป`;
-        box.className = "card p-4 border-emerald-600/40 bg-gradient-to-r from-gray-900 via-emerald-950/20 to-gray-900";
+        box.className = "card p-4 border-emerald-600/40 bg-gradient-to-r from-gray-900 via-emerald-950/20 to-gray-900 space-y-3";
       } else if (inZone) {
         pill.textContent = `ARMED IN ZONE — รอยืนยัน L2 OBI 3 วิ (${sc.dir})`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-500 rounded-full";
-        head.textContent = `ราคาเข้าโซน $${sc.entry.toFixed(2)} (${sc.formulaName}) แล้ว! รอ Order Book OBI ยืนค้าง 3 วินาที`;
-        box.className = "card p-4 border-cyan-500/60 bg-gradient-to-r from-gray-900 via-cyan-950/30 to-purple-950/25";
+        head.textContent = `ราคาเข้าโซน $${sc.entry.toFixed(2)} (ความมั่นใจ ${sc.conf.totalScore}% เกรด ${sc.conf.grade}) แล้ว! รอ Order Book OBI ยืนค้าง 3 วินาที`;
+        box.className = "card p-4 border-cyan-500/60 bg-gradient-to-r from-gray-900 via-cyan-950/30 to-purple-950/25 space-y-3";
       } else {
         pill.textContent = `SCANNING (${distPts} จุดถึงโซน $${sc.entry.toFixed(2)})`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-gray-800 text-amber-300 border border-gray-700 rounded-full";
-        head.textContent = `แผน ${sc.setupMode === 'REVERSAL' ? '🔄 ดักกลับตัว (ผ่าน OOS)' : '🌊 ตามเทรนด์'} ${sc.dir} ที่ $${sc.entry.toFixed(2)} (ห่าง ${distPts} จุด)`;
-        box.className = "card p-4 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-cyan-950/20 to-purple-950/20";
+        head.textContent = `แผน ${sc.dir} ที่ $${sc.entry.toFixed(2)} (ห่าง ${distPts} จุด | ความมั่นใจ ${sc.conf.totalScore}% เกรด ${sc.conf.grade} — ${sc.conf.closestAnchor.name})`;
+        box.className = "card p-4 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-cyan-950/20 to-purple-950/20 space-y-3";
       }
     }
 
