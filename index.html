@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD Autonomous OrderFlow & MUE-X Quant V15.0</title>
+  <title>XAU/USD ATR-Adaptive OrderFlow & MUE-X Quant V15.1</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -22,12 +22,12 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Autonomous OrderFlow & MUE-X Quant V15.0</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">ATR-Adaptive OrderFlow & MUE-X Quant V15.1</h1>
           <span class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE ENGINE
           </span>
           <span id="mue-gen-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full">
-            MUE-X Regime-Aware Gen #1
+            MUE-X ATR-Adaptive Gen #1
           </span>
         </div>
         <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังเชื่อมต่อ Live M15 Institutional Feed...</p>
@@ -61,7 +61,7 @@
             </span>
           </div>
           <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังจับคู่ราคา Spot กับโซน Session VP และแรงซื้อขาย L2 Order Book...</h2>
-          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">เงื่อนไขลั่นไก 3 ชั้น: (1) ราคาเข้าใกล้จุดยิง ±200 จุด + (2) OBI ยืนค้าง 3 วินาที + (3) 60s Tape Delta สอดคล้อง</p>
+          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">เงื่อนไขลั่นไก 3 ชั้น: (1) ราคาเข้าโซนยิง + (2) OBI ยืนค้าง 3 วินาที + (3) 60s Tape Delta สอดคล้อง</p>
         </div>
         <div class="grid grid-cols-3 gap-2.5 font-mono-num text-center shrink-0">
           <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
@@ -112,13 +112,13 @@
       </div>
     </section>
 
-    <!-- Prop-Firm Position Sizing & Drawdown Guard Bar -->
+    <!-- Prop-Firm Dynamic ATR Position Sizing Bar -->
     <section class="card p-4 border-emerald-700/40 bg-gradient-to-r from-gray-900 via-gray-900 to-emerald-950/20">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-4 flex flex-wrap items-center gap-3">
           <div>
             <label class="block text-[10px] text-gray-400 uppercase">พอร์ตกองทุน (USD)</label>
-            <input id="input-balance" type="number" value="10000" min="500" step="500" oninput="recalcPropMath()"
+            <input id="input-balance" type="number" value="5000" min="500" step="500" oninput="recalcPropMath()"
               class="w-28 mt-1 px-2.5 py-1 text-sm font-mono-num font-bold bg-gray-800 border border-gray-700 rounded text-white" />
           </div>
           <div>
@@ -128,30 +128,30 @@
           </div>
           <div>
             <label class="block text-[10px] text-gray-400 uppercase">Daily DD Max (%)</label>
-            <input id="input-dd-pct" type="number" value="4.0" min="1" max="10" step="0.5" oninput="recalcPropMath()"
+            <input id="input-dd-pct" type="number" value="3.0" min="1" max="10" step="0.5" oninput="recalcPropMath()"
               class="w-20 mt-1 px-2.5 py-1 text-sm font-mono-num font-bold bg-gray-800 border border-gray-700 rounded text-rose-400" />
           </div>
         </div>
         <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono-num text-center">
           <div class="bg-purple-950/35 border border-purple-700/50 rounded-lg p-2">
-            <span class="block text-[10px] text-purple-300">Lot Scalp (SL 500 จุด)</span>
-            <span id="calc-scalp-lot" class="text-sm font-bold text-purple-300">0.15 Lot</span>
-            <span id="calc-scalp-risk" class="block text-[10px] text-rose-300">เสี่ยง -$75 / ไม้</span>
+            <span id="calc-scalp-lot-lbl" class="block text-[10px] text-purple-300">Lot Scalp (ATR SL)</span>
+            <span id="calc-scalp-lot" class="text-sm font-bold text-purple-300">0.04 Lot</span>
+            <span id="calc-scalp-risk" class="block text-[10px] text-rose-300">เสี่ยง -$38 / ไม้</span>
           </div>
           <div class="bg-gray-800/80 border border-gray-700 rounded-lg p-2">
             <span class="block text-[10px] text-gray-400">Lot Trend Sniper (1.0%)</span>
-            <span id="calc-trend-lot" class="text-sm font-bold text-cyan-400">0.05 Lot</span>
-            <span id="calc-trend-risk" class="block text-[10px] text-gray-400">เสี่ยง -$100 / ไม้</span>
+            <span id="calc-trend-lot" class="text-sm font-bold text-cyan-400">0.01 Lot</span>
+            <span id="calc-trend-risk" class="block text-[10px] text-gray-400">เสี่ยง -$50 / ไม้</span>
           </div>
           <div class="bg-gray-800/80 border border-emerald-800/50 rounded-lg p-2">
             <span class="block text-[10px] text-gray-400">เป้าสอบผ่าน (8%)</span>
-            <span id="calc-target-usd" class="text-sm font-bold text-emerald-400">+$800</span>
-            <span id="calc-wins-needed" class="block text-[10px] text-emerald-300">~8 ไม้ชนะ Scalp</span>
+            <span id="calc-target-usd" class="text-sm font-bold text-emerald-400">+$400</span>
+            <span id="calc-wins-needed" class="block text-[10px] text-emerald-300">~7 ไม้ชนะ Scalp</span>
           </div>
           <div class="bg-gray-800/80 border border-rose-900/50 rounded-lg p-2">
             <span class="block text-[10px] text-gray-400">เบรกเกอร์รายวัน (-2R)</span>
-            <span id="calc-daily-stop" class="text-sm font-bold text-rose-400">-$150 (-1.5%)</span>
-            <span id="calc-dd-room" class="block text-[10px] text-gray-400">เหลือระยะ DD: $250</span>
+            <span id="calc-daily-stop" class="text-sm font-bold text-rose-400">-$75 (-1.5%)</span>
+            <span id="calc-dd-room" class="block text-[10px] text-gray-400">เหลือระยะ DD: $75</span>
           </div>
         </div>
       </div>
@@ -159,7 +159,6 @@
 
     <!-- LIVE ORDERFLOW & MUE-X SESSION VP UNIFIED GRID -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <!-- L2 OrderBook Ladder -->
       <div class="card p-5 lg:col-span-5 border-cyan-600/40 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
           <h2 class="text-sm font-bold text-cyan-300">L2 Order Book Depth & Liquidity Walls</h2>
@@ -191,11 +190,11 @@
         </div>
       </div>
 
-      <!-- Session 8H Micro-VP & Regime-Aligned Scalp Trigger Plan -->
+      <!-- Session 8H Micro-VP & ATR-Adaptive Scalp Trigger Plan -->
       <div class="card p-5 lg:col-span-7 border-purple-600/40 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
           <div>
-            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">Session 8H Micro-VP + Regime Filter (ตามเทรนด์หลัก)</span>
+            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">Session 8H Micro-VP + ATR-Adaptive Risk (กันไส้เทียนสะบัด)</span>
             <h2 id="anatomy-title" class="text-base font-bold text-amber-400">กำลังคำนวณโครงสร้าง Session VP...</h2>
           </div>
           <span id="scalp-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">Scalp WR: -%</span>
@@ -212,12 +211,12 @@
         <div class="bg-gray-900/90 border border-purple-700/50 rounded-lg p-3.5">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
             <span id="scalp-bias" class="text-xs font-bold text-purple-300">กำลังคำนวณจุดเข้า Scalp...</span>
-            <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400">SL 500 จุด / TP 750 จุด</span>
+            <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400">SL ATR / TP 1.5R</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
             <div class="bg-gray-800/80 rounded p-2"><span class="block text-[10px] text-gray-400">Scalp Entry</span><span id="sc-entry" class="font-bold text-white text-sm">$0.00</span></div>
-            <div class="bg-rose-950/40 border border-rose-900/50 rounded p-2"><span class="block text-[10px] text-rose-300">Stop Loss</span><span id="sc-sl" class="font-bold text-rose-400 text-sm">$0.00</span></div>
-            <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2"><span class="block text-[10px] text-cyan-300">BE (+250 จุด)</span><span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span></div>
+            <div class="bg-rose-950/40 border border-rose-900/50 rounded p-2"><span id="sc-sl-label" class="block text-[10px] text-rose-300">Stop Loss</span><span id="sc-sl" class="font-bold text-rose-400 text-sm">$0.00</span></div>
+            <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2"><span class="block text-[10px] text-cyan-300">BE (+0.8R)</span><span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span></div>
             <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2"><span id="sc-tp-label" class="block text-[10px] text-emerald-300">Final TP</span><span id="sc-tp" class="font-bold text-emerald-400 text-sm">$0.00</span></div>
           </div>
         </div>
@@ -226,7 +225,7 @@
       </div>
     </section>
 
-    <!-- Bottom Grid: Live AI Strategist + 5D VP + Backtest Constants -->
+    <!-- Bottom Grid -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-7 space-y-6">
         <div class="card p-5 border-amber-500/20">
@@ -236,7 +235,7 @@
               <button onclick="promptApiKey()" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700">
                 ตั้งค่า Typhoon Key
               </button>
-              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">LIVE-QUANT-AI V15</span>
+              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">LIVE-QUANT-AI V15.1</span>
             </div>
           </div>
           <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3 mb-4">
@@ -256,14 +255,14 @@
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-purple-300">ผลวิวัฒนาการ MUE-X Regime-Filtered (คำนวณสดจากแท่ง M15 ล่าสุด)</span>
+            <span class="text-xs font-bold text-purple-300">ผลวิวัฒนาการ MUE-X ATR-Adaptive (คำนวณสดจากแท่ง M15 ล่าสุด)</span>
             <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">1,000 M15 Bars Live</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs font-mono-num">
               <thead>
                 <tr class="border-b border-gray-800 text-gray-400">
-                  <th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">โหมดกลยุทธ์</th><th class="py-1.5 pr-2">TP (จุด)</th>
+                  <th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">โหมดกลยุทธ์</th><th class="py-1.5 pr-2">R:R</th>
                   <th class="py-1.5 pr-2 text-right">ไม้</th><th class="py-1.5 pr-2 text-right">WR</th><th class="py-1.5 pr-2 text-right">R-PF</th><th class="py-1.5 text-right">Net R</th>
                 </tr>
               </thead>
@@ -291,8 +290,8 @@
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-bold text-white">ประวัติสัญญาณ Backtest ล่าสุด (Regime-Filtered)</h2>
-            <span class="text-xs text-emerald-400">No Counter-Trend</span>
+            <h2 class="text-sm font-bold text-white">ประวัติสัญญาณ Backtest ล่าสุด (ATR-Adaptive)</h2>
+            <span class="text-xs text-emerald-400">BE @ +0.8R</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px] font-mono-num">
@@ -346,7 +345,6 @@
       } catch (e) {}
     }
 
-    // 15-Minute Auto-Execution Clock (:00, :15, :30, :45)
     setInterval(() => {
       const now = new Date();
       const mins = now.getMinutes(), secs = now.getSeconds();
@@ -365,23 +363,25 @@
     }, 1000);
 
     function recalcPropMath() {
-      const bal = Math.max(500, parseFloat(document.getElementById('input-balance').value) || 10000);
+      const bal = Math.max(500, parseFloat(document.getElementById('input-balance').value) || 5000);
       const riskPct = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct').value) || 0.75);
-      const ddPct = Math.max(1.0, parseFloat(document.getElementById('input-dd-pct').value) || 4.0);
+      const ddPct = Math.max(1.0, parseFloat(document.getElementById('input-dd-pct').value) || 3.0);
 
       const scRiskUsd = bal * (riskPct / 100.0);
-      const scLot = Math.max(0.01, Math.round((scRiskUsd / 500.0) * 100) / 100);
+      const slPts = (liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.slPts : 800;
+      const scLot = Math.max(0.01, Math.round((scRiskUsd / slPts) * 100) / 100);
+      document.getElementById('calc-scalp-lot-lbl').textContent = `Lot Scalp (SL ${slPts} จุด)`;
       document.getElementById('calc-scalp-lot').textContent = `${scLot.toFixed(2)} Lot`;
       document.getElementById('calc-scalp-risk').textContent = `เสี่ยง -$${scRiskUsd.toFixed(0)} / ไม้`;
 
       const trRiskUsd = bal * 0.01;
-      const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 15.0;
+      const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 20.0;
       const trLot = Math.max(0.01, Math.round((trRiskUsd / (trSlDist * 100.0)) * 100) / 100);
       document.getElementById('calc-trend-lot').textContent = `${trLot.toFixed(2)} Lot`;
       document.getElementById('calc-trend-risk').textContent = `เสี่ยง -$${trRiskUsd.toFixed(0)} / ไม้`;
 
       const targetUsd = bal * 0.08;
-      const winsNeed = Math.ceil(targetUsd / Math.max(1, scRiskUsd * 1.4));
+      const winsNeed = Math.ceil(targetUsd / Math.max(1, scRiskUsd * 1.5));
       document.getElementById('calc-target-usd').textContent = `+$${targetUsd.toFixed(0)}`;
       document.getElementById('calc-wins-needed').textContent = `~${winsNeed} ไม้ชนะ Scalp`;
 
@@ -399,14 +399,13 @@
         const res = await fetch("https://ntfy.sh", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic: NTFY_TOPIC, title: "ทดสอบ XAU/USD V15.0 Live Engine", message: `เชื่อมต่อสำเร็จ! Spot: $${lastRenderedMid || '-'}`, priority: 4, tags: ["white_check_mark"] })
+          body: JSON.stringify({ topic: NTFY_TOPIC, title: "ทดสอบ XAU/USD V15.1 ATR-Adaptive", message: `เชื่อมต่อสำเร็จ! Spot: $${lastRenderedMid || '-'}`, priority: 4, tags: ["white_check_mark"] })
         });
         btn.textContent = res.ok ? "ส่งแล้ว! เช็กมือถือ" : "ส่งไม่สำเร็จ";
       } catch (e) { btn.textContent = "เชื่อมต่อไม่ได้"; }
       setTimeout(() => { btn.textContent = "ทดสอบ ntfy"; }, 3000);
     }
 
-    // --- LIVE VOLUME PROFILE & REGIME-AWARE MUE-X ENGINE (IN-BROWSER) ---
     function computeVP(bars, bins = 24) {
       let lo = Infinity, hi = -Infinity;
       bars.forEach(b => { if (b.l < lo) lo = b.l; if (b.h > hi) hi = b.h; });
@@ -433,18 +432,15 @@
         else if (lIdx > 0) { lIdx--; acc += vols[lIdx]; }
         else break;
       }
+      if (lIdx === pocIdx && lIdx > 0) lIdx--;
+      if (rIdx === pocIdx && rIdx < bins - 1) rIdx++;
+
       const val = centers[lIdx], vah = centers[rIdx];
       const pocPos = ((poc - lo) / (hi - lo)) * 100;
 
-      // Detect Double Zone vs Single Peak
-      const smooth = vols.map((_, i) => {
-        const a = i > 0 ? vols[i - 1] : vols[i], b = vols[i], c = i < bins - 1 ? vols[i + 1] : vols[i];
-        return (a + b + c) / 3;
-      });
+      const smooth = vols.map((_, i) => ((i > 0 ? vols[i - 1] : vols[i]) + vols[i] + (i < bins - 1 ? vols[i + 1] : vols[i])) / 3);
       const peaks = [];
-      for (let i = 1; i < bins - 1; i++) {
-        if (smooth[i] >= smooth[i - 1] && smooth[i] >= smooth[i + 1]) peaks.push({ i, v: smooth[i] });
-      }
+      for (let i = 1; i < bins - 1; i++) if (smooth[i] >= smooth[i - 1] && smooth[i] >= smooth[i + 1]) peaks.push({ i, v: smooth[i] });
       peaks.sort((a, b) => b.v - a.v);
 
       let isDouble = false, valley = null;
@@ -455,8 +451,8 @@
         if (minV <= 0.72 * peaks[1].v) { isDouble = true; valley = centers[minI]; }
       }
 
-      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "โวลุ่มสมดุลกลางกรอบ Session 8H — ใช้ Regime Filter คัดเฉพาะฝั่งตามเทรนด์หลัก";
-      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — เทรดเฉพาะจังหวะ Retest ตามแรงเทรนด์หลัก"; }
+      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "โวลุ่มสมดุลกลางกรอบ Session 8H — ใช้ ATR-Adaptive Risk ตามเทรนด์หลัก";
+      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — รอยิงตามแรง OrderFlow ทะลุหรือเด้งโซน"; }
       else if (pocPos <= 36) { shape = "B_SHAPED"; title = "② b-SHAPED (ฐานสะสมล่าง)"; desc = "โวลุ่มกองอยู่ฐานล่างใกล้ราคาปัจจุบัน — รอยืนยัน L2 Order Book ก่อนยิง"; }
       else if (pocPos >= 64) { shape = "P_SHAPED"; title = "③ P-SHAPED (ยอดสะสมบน)"; desc = "โวลุ่มกองอยู่ด้านบน — ใช้เป็นแนวต้าน/ฐานพักตัวตามสภาวะ ADX"; }
 
@@ -475,7 +471,6 @@
         if (i > 0) { ema21 = b.c * k21 + ema21 * (1 - k21); ema200 = b.c * k200 + ema200 * (1 - k200); }
         b.ema21 = ema21; b.ema200 = ema200;
 
-        // ATR14 & ADX14
         if (i >= 14) {
           let trSum = 0, pdmSum = 0, mdmSum = 0, gain = 0, loss = 0;
           for (let j = i - 13; j <= i; j++) {
@@ -495,75 +490,76 @@
           const rs = (gain / 14) / Math.max(0.001, loss / 14);
           b.rsi = 100 - (100 / (1 + rs));
         } else {
-          b.atr = 4.0; b.adx = 22.0; b.rsi = 50.0;
+          b.atr = 6.0; b.adx = 22.0; b.rsi = 50.0;
         }
       });
     }
 
-    function runRegimeAwareMueX(bars) {
+    function runAtrAdaptiveMueX(bars) {
       const shapes = ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"];
-      const tpCandidates = [650, 800, 950];
+      const rrCandidates = [1.4, 1.8];
       const results = [], recentTrades = [];
 
       shapes.forEach(targetShape => {
-        let best = { shape: targetShape, mode: "REGIME_PULLBACK", tp: 750, trades: 0, wins: 0, losses: 0, netR: -999, rPf: 0 };
+        let best = { shape: targetShape, mode: "ATR_FLOW", rr: 1.5, trades: 0, wins: 0, losses: 0, netR: -999, rPf: 0 };
 
-        tpCandidates.forEach(tpPts => {
-          const slUsd = 5.0, tpUsd = tpPts / 100.0;
+        rrCandidates.forEach(rrMult => {
           let wins = 0, losses = 0, netR = 0, grossWin = 0, grossLoss = 0;
           const localRecs = [];
 
-          for (let i = 60; i < bars.length - 20; i += 2) {
+          for (let i = 60; i < bars.length - 24; i += 2) {
             const vp = computeVP(bars.slice(i - 32, i), 20);
             if (vp.shape !== targetShape) continue;
 
-            const b = bars[i];
-            const isBearTrend = (b.c < b.ema200 && b.adx >= 23);
-            const isBullTrend = (b.c > b.ema200 && b.adx >= 23);
+            const b = bars[i], prev = bars[i - 1];
+            const isBear = (b.c < b.ema200 && b.adx >= 23);
+            const isBull = (b.c > b.ema200 && b.adx >= 23);
             let side = null, entry = b.c;
 
-            // REGIME FILTER: NEVER trade counter-trend when ADX >= 23!
-            if (isBearTrend) {
-              // Short bounces into Session VAH, POC, or EMA21
-              if (Math.abs(b.c - vp.vah) <= 2.2 || Math.abs(b.c - vp.poc) <= 1.8 || Math.abs(b.c - b.ema21) <= 1.8) {
-                if (b.rsi >= 44) { side = "SHORT"; entry = b.c; }
-              }
-            } else if (isBullTrend) {
-              // Long dips into Session VAL, POC, or EMA21
-              if (Math.abs(b.c - vp.val) <= 2.2 || Math.abs(b.c - vp.poc) <= 1.8 || Math.abs(b.c - b.ema21) <= 1.8) {
-                if (b.rsi <= 56) { side = "LONG"; entry = b.c; }
-              }
-            } else {
-              // Range regime: Mean reversion at edges
-              if (Math.abs(b.c - vp.val) <= 1.8 && b.rsi < 45) { side = "LONG"; entry = vp.val; }
-              else if (Math.abs(b.c - vp.vah) <= 1.8 && b.rsi > 55) { side = "SHORT"; entry = vp.vah; }
+            // ATR-scaled tolerance & confirmation candle so wicks don't trigger prematurely
+            const tol = Math.max(2.0, b.atr * 0.35);
+
+            if (isBear && b.rsi > 28) {
+              const nearRes = (Math.abs(b.h - vp.vah) <= tol || Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol || (b.c < vp.val && b.c < prev.l));
+              if (nearRes && b.c < b.o) { side = "SHORT"; entry = b.c; }
+            } else if (isBull && b.rsi < 72) {
+              const nearSup = (Math.abs(b.l - vp.val) <= tol || Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol || (b.c > vp.vah && b.c > prev.h));
+              if (nearSup && b.c > b.o) { side = "LONG"; entry = b.c; }
+            } else if (!isBear && !isBull) {
+              if (Math.abs(b.l - vp.val) <= tol && b.c > b.o && b.rsi < 46) { side = "LONG"; entry = b.c; }
+              else if (Math.abs(b.h - vp.vah) <= tol && b.c < b.o && b.rsi > 54) { side = "SHORT"; entry = b.c; }
             }
 
             if (!side) continue;
 
+            // Dynamic ATR Stop Loss (0.60x ATR, clamped $5.0 - $13.5) & BE at +0.80R
+            const slUsd = Math.max(5.0, Math.min(13.5, +(b.atr * 0.60).toFixed(2)));
+            const tpUsd = +(slUsd * rrMult).toFixed(2);
+            const beTrigger = slUsd * 0.80;
+
             let beHit = false, resR = 0, exitIdx = i + 1;
-            for (let j = i + 1; j < Math.min(bars.length, i + 24); j++) {
+            for (let j = i + 1; j < Math.min(bars.length, i + 28); j++) {
               const fut = bars[j];
               if (side === "LONG") {
-                if (fut.h >= entry + 2.5) beHit = true;
-                const slLvl = beHit ? entry : (entry - slUsd);
-                if (fut.l <= slLvl) { resR = beHit ? 0 : -1.0; exitIdx = j; break; }
-                if (fut.h >= entry + tpUsd + 0.20) { resR = +(tpUsd / slUsd).toFixed(2); exitIdx = j; break; }
+                if (fut.h >= entry + beTrigger) beHit = true;
+                const slLvl = beHit ? (entry + 0.25) : (entry - slUsd);
+                if (fut.l <= slLvl) { resR = beHit ? 0.05 : -1.0; exitIdx = j; break; }
+                if (fut.h >= entry + tpUsd + 0.20) { resR = rrMult; exitIdx = j; break; }
               } else {
-                if (fut.l <= entry - 2.5) beHit = true;
-                const slLvl = beHit ? entry : (entry + slUsd);
-                if (fut.h >= slLvl) { resR = beHit ? 0 : -1.0; exitIdx = j; break; }
-                if (fut.l <= entry - tpUsd - 0.20) { resR = +(tpUsd / slUsd).toFixed(2); exitIdx = j; break; }
+                if (fut.l <= entry - beTrigger) beHit = true;
+                const slLvl = beHit ? (entry - 0.25) : (entry + slUsd);
+                if (fut.h >= slLvl) { resR = beHit ? 0.05 : -1.0; exitIdx = j; break; }
+                if (fut.l <= entry - tpUsd - 0.20) { resR = rrMult; exitIdx = j; break; }
               }
             }
 
-            if (resR > 0) { wins++; grossWin += resR; }
+            if (resR > 0.1) { wins++; grossWin += resR; }
             else if (resR < 0) { losses++; grossLoss += Math.abs(resR); }
             netR += resR;
 
             localRecs.push({
               time: new Date(b.t).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-              shape: targetShape, side, entry: entry.toFixed(2), r: resR
+              shape: targetShape, side, entry: entry.toFixed(2), r: +resR.toFixed(2)
             });
             i = exitIdx + 1;
           }
@@ -574,8 +570,8 @@
           if (netR > best.netR) {
             best = {
               shape: targetShape,
-              mode: "TREND_VP_RETEST",
-              tp: tpPts,
+              mode: "ATR_ADAPTIVE",
+              rr: rrMult,
               trades: totalT,
               wins, losses,
               wr,
@@ -594,11 +590,28 @@
       return { results, recentTrades: recentTrades.slice(-10).reverse() };
     }
 
+    async function seedInitial60sTape() {
+      try {
+        const r = await fetch("https://fapi.binance.com/fapi/v1/aggTrades?symbol=XAUUSDT&limit=150", { cache: "no-store" });
+        if (r.ok) {
+          const arr = await r.json();
+          const nowMs = Date.now();
+          tradeBuffer60s = arr.filter(t => nowMs - t.T <= 60000).map(t => ({
+            ts: t.T,
+            delta: t.m ? -parseFloat(t.q || 0) : parseFloat(t.q || 0)
+          }));
+          const d60 = tradeBuffer60s.reduce((a, x) => a + x.delta, 0);
+          const cvdEl = document.getElementById('kpi-cvd');
+          cvdEl.textContent = `${d60 >= 0 ? '+' : ''}${d60.toFixed(1)}`;
+          cvdEl.className = `text-2xl font-bold font-mono-num mt-1 ${d60 >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+      } catch (e) {}
+    }
+
     async function runFullLiveQuantAndAI(notify = false) {
       const btn = document.getElementById('btn-run-ai');
       btn.textContent = "⏳ กำลังคำนวณ...";
       try {
-        // 1. Fetch Swissquote Live Spot + Binance 1000 M15 Bars + OI + Funding in parallel
         const [rSq, rKl, rOi, rPr] = await Promise.all([
           fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" }).catch(() => null),
           fetch("https://fapi.binance.com/fapi/v1/klines?symbol=XAUUSDT&interval=15m&limit=1000", { cache: "no-store" }),
@@ -635,46 +648,53 @@
         const pdh = Math.max(...prevDayBars.map(b => b.h));
         const pdl = Math.min(...prevDayBars.map(b => b.l));
 
-        // OI & Funding
         let oiVal = "-", fundVal = "-";
         if (rOi && rOi.ok) { const d = await rOi.json(); oiVal = parseFloat(d.openInterest).toLocaleString('en-US', { maximumFractionDigits: 1 }); }
         if (rPr && rPr.ok) { const d = await rPr.json(); fundVal = (parseFloat(d.lastFundingRate) * 100).toFixed(4) + "%"; }
         document.getElementById('kpi-oi').textContent = `OI: ${oiVal} | Fund: ${fundVal}`;
 
-        // Compute Session 8H VP (32 bars) & 5D VP (480 bars)
         const vpSession = computeVP(bars.slice(-32), 22);
         const vp5d = computeVP(bars.slice(-480), 30);
-
-        // Run Regime-Aware MUE-X Backtest
-        const mueRes = runRegimeAwareMueX(bars);
+        const mueRes = runAtrAdaptiveMueX(bars);
         const activeGene = mueRes.results.find(x => x.shape === vpSession.shape) || mueRes.results[0];
 
-        // Determine Regime-Aligned Scalp Setup anchored to current price
+        // ATR-Adaptive Scalp SL/TP/BE
+        const scSlUsd = Math.max(5.0, Math.min(13.5, +(last.atr * 0.60).toFixed(2)));
+        const scSlPts = Math.round(scSlUsd * 100);
+        const rrMult = activeGene.rr || 1.5;
+        const scTpUsd = +(scSlUsd * rrMult).toFixed(2);
+        const scTpPts = Math.round(scTpUsd * 100);
+        const scBeDist = +(scSlUsd * 0.80).toFixed(2);
+
         const isBear = last.c < last.ema200;
         const regimeTxt = isBear ? "BEAR" : "BULL";
         let scDir, scEntry, scBias;
 
         if (isBear) {
-          // In BEAR regime, ONLY look for SHORT rallies into resistance near current price!
-          const resCandidates = [vpSession.vah, vpSession.poc, last.ema21].filter(lvl => lvl >= spotMid - 1.5);
-          scEntry = +(resCandidates.length ? Math.min(...resCandidates) : (spotMid + 1.5)).toFixed(2);
-          scDir = "SHORT";
-          scBias = `${vpSession.shape} REGIME-SHORT (ดักเด้งชนแนวต้าน $${scEntry} + ยืนยัน OBI <= -0.18)`;
+          // If RSI is deeply oversold (<28), allow bounce scalp up to Session VAL/POC; otherwise sell nearest Session level/wall
+          if (last.rsi < 27) {
+            scDir = "LONG";
+            scEntry = +(Math.min(spotMid, vpSession.val)).toFixed(2);
+            scBias = `${vpSession.shape} OVERSOLD BOUNCE BUY (RSI ${last.rsi.toFixed(1)} ดักเด้งรับ $${scEntry} + OBI >= +0.18)`;
+          } else {
+            scDir = "SHORT";
+            const nearLevels = [vpSession.val, vpSession.poc, vpSession.vah].filter(lvl => lvl >= spotMid - 1.5);
+            scEntry = +(nearLevels.length ? Math.min(...nearLevels) : (spotMid + 2.0)).toFixed(2);
+            scBias = `${vpSession.shape} ATR-ADAPTIVE SHORT (ดักเด้งชนโซน $${scEntry} + OBI <= -0.18)`;
+          }
         } else {
-          const supCandidates = [vpSession.val, vpSession.poc, last.ema21].filter(lvl => lvl <= spotMid + 1.5);
-          scEntry = +(supCandidates.length ? Math.max(...supCandidates) : (spotMid - 1.5)).toFixed(2);
           scDir = "LONG";
-          scBias = `${vpSession.shape} REGIME-LONG (รอย่อรับแนวรับ $${scEntry} + ยืนยัน OBI >= +0.18)`;
+          const nearLevels = [vpSession.vah, vpSession.poc, vpSession.val].filter(lvl => lvl <= spotMid + 1.5);
+          scEntry = +(nearLevels.length ? Math.max(...nearLevels) : (spotMid - 2.0)).toFixed(2);
+          scBias = `${vpSession.shape} ATR-ADAPTIVE LONG (รอย่อรับโซน $${scEntry} + OBI >= +0.18)`;
         }
 
-        const tpPts = activeGene.tp || 750;
-        const tpUsd = tpPts / 100.0;
-        const scSl = scDir === "SHORT" ? +(scEntry + 5.0).toFixed(2) : +(scEntry - 5.0).toFixed(2);
-        const scBe = scDir === "SHORT" ? +(scEntry - 2.5).toFixed(2) : +(scEntry + 2.5).toFixed(2);
-        const scTp = scDir === "SHORT" ? +(scEntry - tpUsd).toFixed(2) : +(scEntry + tpUsd).toFixed(2);
+        const scSl = scDir === "SHORT" ? +(scEntry + scSlUsd).toFixed(2) : +(scEntry - scSlUsd).toFixed(2);
+        const scBe = scDir === "SHORT" ? +(scEntry - scBeDist).toFixed(2) : +(scEntry + scBeDist).toFixed(2);
+        const scTp = scDir === "SHORT" ? +(scEntry - scTpUsd).toFixed(2) : +(scEntry + scTpUsd).toFixed(2);
+        const tolPts = Math.max(200, Math.round(last.atr * 15));
 
-        // Trend Sniper Setup
-        const trSlDist = +(Math.max(4.0, last.atr * 1.8)).toFixed(2);
+        const trSlDist = +(Math.max(6.0, last.atr * 1.5)).toFixed(2);
         const trTpDist = +(trSlDist * 2.2).toFixed(2);
         const trEntry = +(last.ema21).toFixed(2);
         const trDir = isBear ? "SHORT" : "LONG";
@@ -685,14 +705,13 @@
         liveModel = {
           spot: +spotMid.toFixed(2),
           vpSession, vp5d, mueRes, activeGene,
-          scalpSetup: { shape: vpSession.shape, dir: scDir, bias: scBias, entry: scEntry, sl: scSl, be: scBe, tp: scTp, tpPts, tolPts: 200 },
+          scalpSetup: { shape: vpSession.shape, dir: scDir, bias: scBias, entry: scEntry, sl: scSl, be: scBe, tp: scTp, slPts: scSlPts, tpPts: scTpPts, tolPts },
           trendSetup: { dir: trDir, entry: trEntry, sl: trSl, be: trBe, tp: trTp, slDist: trSlDist }
         };
 
-        // Update UI Elements
         const nowStr = new Date().toLocaleTimeString('th-TH');
         document.getElementById('last-updated').textContent = `AI อัปเดตสด: ${nowStr} (0 นาทีที่แล้ว)`;
-        document.getElementById('mue-gen-badge').textContent = `MUE-X Regime Gen #${genCounter++} (${regimeTxt} LOCK)`;
+        document.getElementById('mue-gen-badge').textContent = `MUE-X ATR-Adaptive Gen #${genCounter++}`;
         document.getElementById('data-audit-line').textContent = `Live Vault: ${bars.length.toLocaleString()} แท่ง M15 (~10.4 วัน) | ${feedName}`;
         document.getElementById('kpi-regime').textContent = `ADX ${last.adx.toFixed(1)} (${regimeTxt})`;
         document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${pdh.toFixed(2)} | PDL: $${pdl.toFixed(2)}`;
@@ -712,47 +731,45 @@
 
         document.getElementById('scalp-bt-badge').textContent = `Scalp WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
         document.getElementById('scalp-bias').textContent = scBias;
-        document.getElementById('scalp-rr-badge').textContent = `SL 500 จุด / TP ${tpPts} จุด`;
+        document.getElementById('scalp-rr-badge').textContent = `SL ${scSlPts} จุด / TP ${scTpPts} จุด (1:${rrMult})`;
         document.getElementById('sc-entry').textContent = `$${scEntry}`;
+        document.getElementById('sc-sl-label').textContent = `SL (${scSlPts} จุด)`;
         document.getElementById('sc-sl').textContent = `$${scSl}`;
         document.getElementById('sc-be').textContent = `$${scBe}`;
-        document.getElementById('sc-tp-label').textContent = `TP (${tpPts} จุด)`;
+        document.getElementById('sc-tp-label').textContent = `TP (${scTpPts} จุด)`;
         document.getElementById('sc-tp').textContent = `$${scTp}`;
 
         document.getElementById('setup-bias').textContent = `${trDir} EMA21 RETEST (ตามเทรนด์ ${regimeTxt})`;
-        document.getElementById('trend-bt-badge').textContent = `Regime Filter: ${regimeTxt} ONLY`;
+        document.getElementById('trend-bt-badge').textContent = `ATR SL: $${trSlDist} (1:2.2)`;
         document.getElementById('setup-entry').textContent = `$${trEntry}`;
         document.getElementById('setup-sl').textContent = `$${trSl}`;
         document.getElementById('setup-be').textContent = `$${trBe}`;
         document.getElementById('setup-tp').textContent = `$${trTp}`;
 
-        // Render 4 VP Shape Cards
         document.getElementById('anatomy-cards-grid').innerHTML = mueRes.results.map(r => `
           <div class="bg-gray-900/90 border ${r.netR >= 0 ? 'border-emerald-700/50' : 'border-purple-700/50'} rounded-lg p-2">
             <div class="flex items-center justify-between gap-1 mb-1">
               <span class="text-[9px] font-bold text-purple-300 truncate">${r.shape}</span>
-              <span class="text-[8px] px-1 rounded bg-cyan-950 text-cyan-300">TP ${r.tp}</span>
+              <span class="text-[8px] px-1 rounded bg-cyan-950 text-cyan-300">1:${r.rr}</span>
             </div>
-            <div class="text-[9px] text-amber-300 truncate mb-0.5">${regimeTxt}_FILTERED</div>
+            <div class="text-[9px] text-amber-300 truncate mb-0.5">ATR_ADAPTIVE</div>
             <div class="flex items-center justify-between text-[11px]">
               <span class="text-cyan-400 font-bold">${r.wr}% (${r.trades})</span>
               <span class="${r.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">${r.netR >= 0 ? '+' : ''}${r.netR}R</span>
             </div>
           </div>`).join('');
 
-        // Render Backtest Constants Table
         document.getElementById('scalp-bt-table-body').innerHTML = mueRes.results.map(r => `
           <tr class="hover:bg-gray-800/40 text-gray-300">
             <td class="py-1.5 pr-2 font-bold text-purple-300">${r.shape}</td>
-            <td class="py-1.5 pr-2 text-amber-300">${regimeTxt}_RETEST</td>
-            <td class="py-1.5 pr-2">${r.tp} จุด</td>
+            <td class="py-1.5 pr-2 text-amber-300">ATR_0.6x_FLOW</td>
+            <td class="py-1.5 pr-2">1:${r.rr}</td>
             <td class="py-1.5 pr-2 text-right">${r.trades}</td>
             <td class="py-1.5 pr-2 text-right text-cyan-400">${r.wr}%</td>
             <td class="py-1.5 pr-2 text-right text-emerald-400">${r.rPf}</td>
             <td class="py-1.5 text-right font-bold ${r.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${r.netR >= 0 ? '+' : ''}${r.netR}R</td>
           </tr>`).join('');
 
-        // Render Recent Sim Trades
         document.getElementById('sim-audit-table-body').innerHTML = mueRes.recentTrades.map(t => `
           <tr>
             <td class="py-1 pr-2 text-gray-400">${t.time}</td>
@@ -762,16 +779,14 @@
             <td class="py-1 text-right font-bold ${t.r >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${t.r >= 0 ? '+' : ''}${t.r}R</td>
           </tr>`).join('');
 
-        // Render 5D Volume Profile Chart
         document.getElementById('vp-vah').textContent = `$${vp5d.vah}`;
         document.getElementById('vp-poc').textContent = `$${vp5d.poc}`;
         document.getElementById('vp-val').textContent = `$${vp5d.val}`;
         renderVolumeProfileChart(vp5d);
 
-        // Generate Live AI Brief (Typhoon API if key exists, plus real-time Multi-Agent Quant Synthesis)
         await generateLiveAIBrief(spotMid, last, vpSession, liveModel.scalpSetup, liveModel.trendSetup, totalWr, totalNetR, regimeTxt, nowStr);
-
         recalcPropMath();
+
         if (notify) {
           fetch("https://ntfy.sh", {
             method: "POST",
@@ -779,7 +794,7 @@
             body: JSON.stringify({
               topic: NTFY_TOPIC,
               title: `⚡ AI อัปเดตสด (${nowStr}) | XAU/USD $${spotMid.toFixed(2)}`,
-              message: `Regime: ${regimeTxt} (ADX ${last.adx.toFixed(1)}) | Scalp ${scDir} @ $${scEntry} (SL $${scSl} / TP $${scTp}) | Net Backtest: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`,
+              message: `ATR: $${last.atr.toFixed(2)} | Scalp ${scDir} @ $${scEntry} (SL ${scSlPts} จุด / TP ${scTpPts} จุด) | Backtest: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`,
               priority: 4, tags: ["zap", "chart_with_upwards_trend"]
             })
           }).catch(() => {});
@@ -794,12 +809,12 @@
     async function generateLiveAIBrief(spot, last, vpSession, sc, tr, totalWr, totalNetR, regimeTxt, nowStr) {
       const apiKey = localStorage.getItem("THAILLM_KEY") || "";
       let aiText =
-        `<strong class="text-amber-400">1. สถานะตลาดสด (${nowStr} น.):</strong> Spot XAU/USD อยู่ที่ <strong class="text-white">$${spot.toFixed(2)}</strong> สภาวะหลักเป็น <strong class="text-cyan-400">${regimeTxt} (ADX ${last.adx.toFixed(1)})</strong> ราคาอยู่${regimeTxt === 'BEAR' ? 'ต่ำกว่า' : 'เหนือ'} EMA200 ($${last.ema200.toFixed(2)}) โครงสร้าง Session 8H เป็นทรง <strong class="text-purple-300">${vpSession.title}</strong> (VAL $${vpSession.val} / POC $${vpSession.poc} / VAH $${vpSession.vah})\n\n` +
-        `<strong class="text-amber-400">2. ผลวิวัฒนาการ MUE-X Regime-Filtered:</strong> หลังล็อกกฎห้ามสวนเทรนด์หลัก อัตราชนะรวมเพิ่มเป็น <strong class="text-emerald-400">${totalWr}%</strong> กำไรสะสม <strong class="text-emerald-400">${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R</strong> จากแท่ง M15 ล่าสุด 1,000 แท่ง\n\n` +
-        `<strong class="text-amber-400">3. แผนเข้ายิง Scalp (${sc.dir} ตามเทรนด์):</strong> รอราคาทดสอบโซน <strong class="text-white">$${sc.entry}</strong> และรอ L2 OrderBook OBI ยืนค้าง 3 วินาที | SL <strong class="text-rose-400">$${sc.sl}</strong> | BE <strong class="text-cyan-300">$${sc.be}</strong> | TP <strong class="text-emerald-400">$${sc.tp}</strong>\n` +
-        `<strong class="text-amber-400">4. แผน Trend Sniper (${tr.dir}):</strong> ดักจังหวะทดสอบ EMA21 ที่ <strong class="text-white">$${tr.entry}</strong> | SL <strong class="text-rose-400">$${tr.sl}</strong> | TP <strong class="text-emerald-400">$${tr.tp}</strong>`;
+        `<strong class="text-amber-400">1. สถานะตลาดสด (${nowStr} น.):</strong> Spot XAU/USD อยู่ที่ <strong class="text-white">$${spot.toFixed(2)}</strong> สภาวะหลัก <strong class="text-cyan-400">${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)})</strong> ความผันผวน <strong class="text-amber-300">ATR $${last.atr.toFixed(2)}</strong>\n\n` +
+        `<strong class="text-amber-400">2. การปรับระยะความเสี่ยงตาม ATR (V15.1):</strong> ปรับระยะ SL เป็น <strong class="text-rose-400">${sc.slPts} จุด</strong> และเลื่อน BE ที่ +0.8R เพื่อป้องกันไส้เทียนสะบัด ผลทดสอบ 1,000 แท่ง M15 ล่าสุด: WR <strong class="text-emerald-400">${totalWr}%</strong> | กำไรสะสม <strong class="text-emerald-400">${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R</strong>\n\n` +
+        `<strong class="text-amber-400">3. แผน Scalp (${sc.dir}):</strong> โซนเข้า <strong class="text-white">$${sc.entry}</strong> (รัศมี ±${sc.tolPts} จุด) | SL <strong class="text-rose-400">$${sc.sl}</strong> | BE <strong class="text-cyan-300">$${sc.be}</strong> | TP <strong class="text-emerald-400">$${sc.tp}</strong>\n` +
+        `<strong class="text-amber-400">4. แผน Trend Sniper (${tr.dir}):</strong> ดักทดสอบ EMA21 ที่ <strong class="text-white">$${tr.entry}</strong> | SL <strong class="text-rose-400">$${tr.sl}</strong> | TP <strong class="text-emerald-400">$${tr.tp}</strong>`;
 
-      let badge = `LIVE-QUANT-AI (${nowStr})`;
+      let badge = `ATR-ADAPTIVE AI (${nowStr})`;
 
       if (apiKey) {
         try {
@@ -810,7 +825,7 @@
               model: "/model/typhoon-v2.5-30b-a3b-instruct",
               messages: [{
                 role: "user",
-                content: `วิเคราะห์พอร์ตกองทุน XAU/USD เวลา ${nowStr}: Spot $${spot.toFixed(2)}, Regime ${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)}), Session VP ${vpSession.shape} (VAL $${vpSession.val}, POC $${vpSession.poc}, VAH $${vpSession.vah}), แผน Scalp ${sc.dir} @ $${sc.entry} (SL $${sc.sl}, TP $${sc.tp}). สรุปกลยุทธ์สั้นกระชับ 4 ข้อ`
+                content: `วิเคราะห์พอร์ตกองทุน XAU/USD เวลา ${nowStr}: Spot $${spot.toFixed(2)}, Regime ${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)}, ATR $${last.atr.toFixed(2)}), แผน Scalp ${sc.dir} @ $${sc.entry} (SL ${sc.slPts} จุด, TP ${sc.tpPts} จุด). สรุปกลยุทธ์สั้นกระชับ 4 ข้อ`
               }],
               max_tokens: 550,
               temperature: 0.25
@@ -844,13 +859,12 @@
       });
     }
 
-    // --- LIVE L2 ORDERBOOK & EXECUTION GATE ---
     function evaluateLiveOrderFlowGate(mid, obi, delta60s) {
       if (!liveModel || !liveModel.scalpSetup) return;
       const sc = liveModel.scalpSetup;
       const distUsd = Math.abs(mid - sc.entry);
       const distPts = Math.round(distUsd * 100);
-      const inZone = distUsd <= 2.0;
+      const inZone = distPts <= sc.tolPts;
 
       const isLong = sc.dir === 'LONG';
       const obiAligned = isLong ? (obi >= 0.18) : (obi <= -0.18);
@@ -861,7 +875,7 @@
       const sustainSecs = obiSustainStart ? Math.min(3.0, (Date.now() - obiSustainStart) / 1000.0) : 0.0;
       const obiConfirmed = sustainSecs >= 3.0;
 
-      document.getElementById('cond-1-val').textContent = `${distPts} จุด ${inZone ? '✓' : ''}`;
+      document.getElementById('cond-1-val').textContent = `${distPts} / ${sc.tolPts} จุด ${inZone ? '✓' : ''}`;
       document.getElementById('cond-1-val').className = `text-sm font-bold ${inZone ? 'text-emerald-400' : 'text-amber-400'}`;
       document.getElementById('cond-2-val').textContent = `${sustainSecs.toFixed(1)}s / 3.0s ${obiConfirmed ? '✓' : ''}`;
       document.getElementById('cond-2-val').className = `text-sm font-bold ${obiConfirmed ? 'text-emerald-400' : (obiAligned ? 'text-cyan-300' : 'text-gray-400')}`;
@@ -968,7 +982,7 @@
       };
     }
 
-    // Boot immediately on load
+    seedInitial60sTape();
     runFullLiveQuantAndAI(false).then(() => connectLiveStreams());
   </script>
 </body>
