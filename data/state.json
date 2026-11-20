@@ -1,299 +1,303 @@
 {
-  "updated_at": "2026-11-19T16:53:56.104835+00:00",
+  "updated_at": "2026-11-20T02:16:05.106153+00:00",
   "quant": {
-    "spot_price": 3689.11,
-    "bid": 3688.79,
-    "ask": 3689.43,
-    "feed_source": "XAU/USD Institutional Composite",
-    "futures_price": 3689.8,
-    "spot_offset": -0.69,
+    "spot_price": 3541.32,
+    "bid": 3541.0,
+    "ask": 3541.65,
+    "feed_source": "Swissquote XAU/USD Spot",
+    "futures_price": 3558.0,
+    "spot_offset": -16.68,
     "data_audit": {
-      "source": "Hydra Local Vault + XAU/USD Institutional Composite",
-      "total_bars": 4559,
-      "vault_days": 49.6,
-      "date_range": "11/09/2026 - 19/11/2026 23:30",
-      "spot_offset": -0.69
+      "source": "Hydra Local Vault + Swissquote XAU/USD Spot",
+      "total_bars": 4594,
+      "vault_days": 49.9,
+      "date_range": "11/09/2026 - 20/11/2026 09:00",
+      "spot_offset": -16.68
     },
-    "mean_20_spot": 3966.3,
-    "std_20": 119.31,
-    "cme_open_interest": 180952,
-    "z_score_price": -2.32,
-    "z_score_volume": -0.49,
-    "parkinson_vol_pct": 1.55,
-    "expected_move_usd": 57.36,
-    "cvd_6h_proxy": -9951.0,
-    "dxy_price": 103.84,
-    "us10y_yield": 5.09,
-    "corr_gold_dxy_20d": -0.42,
+    "mean_20_spot": 3943.72,
+    "std_20": 137.66,
+    "cme_open_interest": 174400,
+    "z_score_price": -2.92,
+    "z_score_volume": 1.7,
+    "parkinson_vol_pct": 1.56,
+    "expected_move_usd": 55.08,
+    "cvd_6h_proxy": -20812.0,
+    "dxy_price": 103.94,
+    "us10y_yield": 5.05,
+    "corr_gold_dxy_20d": -0.36,
     "technicals": {
-      "ema21": 3703.08,
-      "ema50": 3717.1,
-      "ema200": 3765.69,
-      "h1_ema50": 3766.6,
-      "h1_ema200": 3886.06,
-      "atr14": 11.68,
-      "rsi14": 32.4,
-      "adx14": 32.6,
-      "pdh": 3758.81,
-      "pdl": 3670.31,
-      "asian_high": 3758.81,
-      "asian_low": 3693.81,
-      "rsi_exhausted": false,
-      "in_killzone": true,
-      "session_name": "LONDON / NY KILLZONE ACTIVE"
+      "ema21": 3593.84,
+      "ema50": 3631.91,
+      "ema200": 3711.69,
+      "h1_ema50": 3707.29,
+      "h1_ema200": 3846.52,
+      "atr14": 18.86,
+      "rsi14": 17.1,
+      "adx14": 59.0,
+      "pdh": 3736.72,
+      "pdl": 3541.12,
+      "asian_high": 3611.32,
+      "asian_low": 3535.42,
+      "rsi_exhausted": true,
+      "in_killzone": false,
+      "session_name": "NO TRADE ZONE (รอ 13:00 น.)"
     },
     "tuned_params": {
       "atr_sl_mult": 2.0,
-      "rr_mult": 3.2,
+      "rr_mult": 2.5,
       "adx_thresh": 28.0,
       "enabled_factors": [
         "LONDON_BREAKOUT",
-        "VALUE_AREA_FADE",
-        "MOMENTUM_BREAKOUT"
+        "MOMENTUM_BREAKOUT",
+        "VALUE_AREA_FADE"
       ],
       "is_profitable_edge": true
     },
     "gates": {
-      "session_ok": true,
+      "session_ok": false,
       "edge_ok": true,
       "proximity_ok": false,
       "all_passed": false,
-      "dist_to_entry": 19.3,
-      "verdict_text": "NO (ราคา Spot ปัจจุบันอยู่ห่าง Entry $19.30 > $8.00)"
+      "dist_to_entry": 52.52,
+      "verdict_text": "NO (อยู่นอกเวลา Killzone — รอปลดล็อก 13:00 น.)"
     },
     "setup": {
-      "active_factor": "MOMENTUM_BREAKOUT",
-      "regime": "STRONG BEARISH EXPANSION (ADX 32.6 | H1+M15 ใต้ EMA200)",
-      "bias": "MOMENTUM BREAKDOWN SHORT (รอเบรกหลุด PDL $3670.31 ตามน้ำ)",
+      "active_factor": "ANTI_CHASE_RETEST",
+      "regime": "OVERSOLD EXHAUSTION (ADX 59.0 | RSI 17.1 < 28)",
+      "bias": "ANTI-CHASE RETEST SHORT (ห้ามไล่ Short ใต้ PDL — รอเด้งชน PDL $3541.12 / EMA21 $3593.84)",
       "direction": "SHORT",
-      "entry": 3669.81,
-      "sl": 3693.17,
-      "be_target": 3646.45,
-      "tp": 3595.06,
-      "sl_dist": 23.36,
-      "tp_dist": 74.75,
-      "rr": 3.2,
+      "entry": 3593.84,
+      "sl": 3631.56,
+      "be_target": 3556.12,
+      "tp": 3499.54,
+      "sl_dist": 37.72,
+      "tp_dist": 94.3,
+      "rr": 2.5,
       "has_edge": true,
-      "in_killzone": true,
-      "session_name": "LONDON / NY KILLZONE ACTIVE"
+      "in_killzone": false,
+      "session_name": "NO TRADE ZONE (รอ 13:00 น.)"
     }
   },
   "volume_profile": {
-    "poc": 3880.25,
-    "vah": 3926.51,
-    "val": 3769.94,
+    "poc": 3853.21,
+    "vah": 3910.52,
+    "val": 3722.97,
     "histogram": [
       {
-        "price": 3923.0,
-        "volume": 5438
+        "price": 3905.3,
+        "volume": 7860
       },
       {
-        "price": 3915.8,
-        "volume": 10178
+        "price": 3894.9,
+        "volume": 7111
       },
       {
-        "price": 3908.7,
-        "volume": 8905
+        "price": 3884.5,
+        "volume": 37459
       },
       {
-        "price": 3901.6,
-        "volume": 26634
+        "price": 3874.1,
+        "volume": 55431
       },
       {
-        "price": 3894.5,
-        "volume": 34559
+        "price": 3863.6,
+        "volume": 101279
       },
       {
-        "price": 3887.4,
-        "volume": 60965
+        "price": 3853.2,
+        "volume": 112869
       },
       {
-        "price": 3880.3,
-        "volume": 94767
+        "price": 3842.8,
+        "volume": 81166
       },
       {
-        "price": 3873.1,
-        "volume": 63823
+        "price": 3832.4,
+        "volume": 51060
       },
       {
-        "price": 3866.0,
-        "volume": 82966
+        "price": 3822.0,
+        "volume": 2596
       },
       {
-        "price": 3858.9,
-        "volume": 61271
+        "price": 3811.5,
+        "volume": 3725
       },
       {
-        "price": 3851.8,
-        "volume": 50162
+        "price": 3801.1,
+        "volume": 13088
       },
       {
-        "price": 3844.7,
-        "volume": 10333
+        "price": 3790.7,
+        "volume": 13615
       },
       {
-        "price": 3837.6,
-        "volume": 2595
+        "price": 3780.3,
+        "volume": 11165
       },
       {
-        "price": 3830.4,
+        "price": 3769.9,
+        "volume": 31606
+      },
+      {
+        "price": 3759.4,
+        "volume": 44980
+      },
+      {
+        "price": 3749.0,
+        "volume": 35643
+      },
+      {
+        "price": 3738.6,
+        "volume": 29457
+      },
+      {
+        "price": 3728.2,
+        "volume": 48322
+      },
+      {
+        "price": 3717.8,
+        "volume": 42775
+      },
+      {
+        "price": 3707.3,
+        "volume": 28612
+      },
+      {
+        "price": 3696.9,
+        "volume": 31448
+      },
+      {
+        "price": 3686.5,
+        "volume": 10756
+      },
+      {
+        "price": 3676.1,
+        "volume": 20402
+      },
+      {
+        "price": 3665.7,
+        "volume": 37096
+      },
+      {
+        "price": 3655.2,
+        "volume": 14277
+      },
+      {
+        "price": 3644.8,
+        "volume": 3551
+      },
+      {
+        "price": 3634.4,
         "volume": 0
       },
       {
-        "price": 3823.3,
-        "volume": 9417
+        "price": 3624.0,
+        "volume": 5050
       },
       {
-        "price": 3816.2,
-        "volume": 7396
+        "price": 3613.6,
+        "volume": 8316
       },
       {
-        "price": 3809.1,
-        "volume": 2496
+        "price": 3603.1,
+        "volume": 3918
       },
       {
-        "price": 3802.0,
-        "volume": 14627
+        "price": 3592.7,
+        "volume": 7613
       },
       {
-        "price": 3794.9,
-        "volume": 7657
+        "price": 3582.3,
+        "volume": 14642
       },
       {
-        "price": 3787.7,
-        "volume": 14783
+        "price": 3571.9,
+        "volume": 0
       },
       {
-        "price": 3780.6,
-        "volume": 22087
+        "price": 3561.5,
+        "volume": 9489
       },
       {
-        "price": 3773.5,
-        "volume": 39714
+        "price": 3551.0,
+        "volume": 3465
       },
       {
-        "price": 3766.4,
-        "volume": 28891
-      },
-      {
-        "price": 3759.3,
-        "volume": 20763
-      },
-      {
-        "price": 3752.2,
-        "volume": 20382
-      },
-      {
-        "price": 3745.0,
-        "volume": 31312
-      },
-      {
-        "price": 3737.9,
-        "volume": 33986
-      },
-      {
-        "price": 3730.8,
-        "volume": 26740
-      },
-      {
-        "price": 3723.7,
-        "volume": 11532
-      },
-      {
-        "price": 3716.6,
-        "volume": 24191
-      },
-      {
-        "price": 3709.5,
-        "volume": 23411
-      },
-      {
-        "price": 3702.3,
-        "volume": 5808
-      },
-      {
-        "price": 3695.2,
-        "volume": 8028
-      },
-      {
-        "price": 3688.1,
-        "volume": 9114
-      },
-      {
-        "price": 3681.0,
-        "volume": 8667
-      },
-      {
-        "price": 3673.9,
-        "volume": 5233
+        "price": 3540.6,
+        "volume": 3236
       }
     ]
   },
   "backtest": {
     "best": {
       "atr_sl_mult": 2.0,
-      "rr_mult": 3.2,
+      "rr_mult": 2.5,
       "adx_thresh": 28,
       "enabled_factors": [
         "VALUE_AREA_FADE",
         "LONDON_BREAKOUT",
         "MOMENTUM_BREAKOUT"
       ],
-      "trades": 14,
-      "win_rate": 78.6,
-      "profit_factor": 6.89,
-      "r_profit_factor": 5.3,
-      "net_pnl": 253.8,
-      "net_r": 13.47,
-      "expectancy_r": 0.96,
+      "trades": 16,
+      "win_rate": 68.8,
+      "profit_factor": 3.34,
+      "r_profit_factor": 3.24,
+      "net_pnl": 197.42,
+      "net_r": 11.61,
+      "expectancy_r": 0.73,
       "max_consec_loss": 3,
-      "max_dd": 43.07,
-      "max_dd_r": 3.13,
-      "sharpe": 4.36,
+      "max_dd": 64.96,
+      "max_dd_r": 4.12,
+      "sharpe": 3.84,
       "sortino": 9.0,
       "calmar": 12.0,
       "var_95_r": -1.04,
-      "mc_dd_95_r": 3.15,
-      "mc_prob_profit": 99.2,
-      "total_fee_drag": 8.4,
-      "oos_trades": 3,
-      "oos_win_rate": 100.0,
-      "oos_profit_factor": 2.0,
-      "oos_net_r": 1.96,
-      "oos_net_pnl": 30.4,
+      "mc_dd_95_r": 5.14,
+      "mc_prob_profit": 97.5,
+      "total_fee_drag": 9.6,
+      "oos_trades": 4,
+      "oos_win_rate": 75.0,
+      "oos_profit_factor": 3.36,
+      "oos_net_r": 2.43,
+      "oos_net_pnl": 27.65,
       "is_profitable_edge": true,
-      "score": 24.95,
+      "score": 18.553,
       "equity_curve_r": [
         0.0,
         0.97,
-        1.92,
-        1.97,
-        1.98,
-        5.16,
-        8.31,
-        11.48,
-        14.64,
-        13.59,
-        12.55,
-        11.51,
-        11.55,
-        12.5,
-        13.47
+        3.42,
+        3.47,
+        3.48,
+        5.96,
+        4.93,
+        7.38,
+        9.85,
+        12.31,
+        11.26,
+        10.22,
+        9.18,
+        9.22,
+        8.19,
+        10.64,
+        11.61
       ],
       "trade_r_list": [
         0.97,
-        0.95,
+        2.45,
         0.05,
         0.01,
-        3.18,
-        3.15,
-        3.17,
-        3.16,
+        2.48,
+        -1.03,
+        2.45,
+        2.47,
+        2.46,
         -1.05,
         -1.04,
         -1.04,
         0.04,
-        0.95,
+        -1.03,
+        2.45,
         0.97
       ],
       "recent_sim_trades": [
@@ -303,8 +307,8 @@
           "side": "SHORT",
           "entry_time": "18/11 16:45",
           "exit_time": "18/11 20:00",
-          "entry": 3780.51,
-          "exit": 3762.81,
+          "entry": 3764.52,
+          "exit": 3746.82,
           "pnl": 17.1,
           "r": 0.97
         },
@@ -313,11 +317,22 @@
           "factor": "LONDON_BREAKOUT",
           "side": "SHORT",
           "entry_time": "12/11 13:45",
-          "exit_time": "12/11 17:30",
-          "entry": 3970.41,
-          "exit": 3957.22,
-          "pnl": 12.59,
-          "r": 0.95
+          "exit_time": "12/11 15:45",
+          "entry": 3954.42,
+          "exit": 3921.38,
+          "pnl": 32.44,
+          "r": 2.45
+        },
+        {
+          "engine": "TREND",
+          "factor": "VALUE_AREA_FADE",
+          "side": "SHORT",
+          "entry_time": "05/11 00:00",
+          "exit_time": "05/11 07:30",
+          "entry": 4058.72,
+          "exit": 4080.71,
+          "pnl": -22.59,
+          "r": -1.03
         },
         {
           "engine": "TREND",
@@ -325,9 +340,9 @@
           "side": "SHORT",
           "entry_time": "30/10 13:30",
           "exit_time": "30/10 15:00",
-          "entry": 3995.61,
-          "exit": 3994.3,
-          "pnl": 0.71,
+          "entry": 3979.62,
+          "exit": 3978.32,
+          "pnl": 0.7,
           "r": 0.04
         },
         {
@@ -336,8 +351,8 @@
           "side": "SHORT",
           "entry_time": "27/10 13:30",
           "exit_time": "27/10 17:45",
-          "entry": 4011.41,
-          "exit": 4025.31,
+          "entry": 3995.42,
+          "exit": 4009.32,
           "pnl": -14.5,
           "r": -1.04
         },
@@ -347,8 +362,8 @@
           "side": "SHORT",
           "entry_time": "20/10 16:45",
           "exit_time": "20/10 18:45",
-          "entry": 4130.11,
-          "exit": 4144.64,
+          "entry": 4114.12,
+          "exit": 4128.65,
           "pnl": -15.13,
           "r": -1.04
         },
@@ -358,8 +373,8 @@
           "side": "LONG",
           "entry_time": "16/10 14:15",
           "exit_time": "16/10 17:45",
-          "entry": 4208.21,
-          "exit": 4195.37,
+          "entry": 4192.22,
+          "exit": 4179.38,
           "pnl": -13.44,
           "r": -1.05
         },
@@ -369,21 +384,21 @@
           "side": "SHORT",
           "entry_time": "14/10 15:30",
           "exit_time": "14/10 19:30",
-          "entry": 4165.91,
-          "exit": 4116.22,
-          "pnl": 49.09,
-          "r": 3.16
+          "entry": 4149.92,
+          "exit": 4111.1,
+          "pnl": 38.22,
+          "r": 2.46
         },
         {
           "engine": "TREND",
           "factor": "VALUE_AREA_FADE",
           "side": "LONG",
           "entry_time": "08/10 22:15",
-          "exit_time": "09/10 09:45",
-          "entry": 4139.91,
-          "exit": 4202.81,
-          "pnl": 62.3,
-          "r": 3.17
+          "exit_time": "09/10 08:30",
+          "entry": 4123.92,
+          "exit": 4173.13,
+          "pnl": 48.61,
+          "r": 2.47
         },
         {
           "engine": "TREND",
@@ -391,43 +406,32 @@
           "side": "SHORT",
           "entry_time": "07/10 15:15",
           "exit_time": "07/10 19:15",
-          "entry": 4151.61,
-          "exit": 4110.33,
-          "pnl": 40.68,
-          "r": 3.15
+          "entry": 4135.62,
+          "exit": 4103.37,
+          "pnl": 31.65,
+          "r": 2.45
+        },
+        {
+          "engine": "TREND",
+          "factor": "VALUE_AREA_FADE",
+          "side": "LONG",
+          "entry_time": "05/10 21:00",
+          "exit_time": "05/10 22:15",
+          "entry": 4153.82,
+          "exit": 4135.55,
+          "pnl": -18.87,
+          "r": -1.03
         },
         {
           "engine": "TREND",
           "factor": "VALUE_AREA_FADE",
           "side": "SHORT",
           "entry_time": "02/10 20:00",
-          "exit_time": "06/10 09:30",
-          "entry": 4224.71,
-          "exit": 4140.37,
-          "pnl": 83.74,
-          "r": 3.18
-        },
-        {
-          "engine": "TREND",
-          "factor": "VALUE_AREA_FADE",
-          "side": "LONG",
-          "entry_time": "30/09 22:30",
-          "exit_time": "01/10 14:15",
-          "entry": 4187.71,
-          "exit": 4188.59,
-          "pnl": 0.29,
-          "r": 0.01
-        },
-        {
-          "engine": "TREND",
-          "factor": "MOMENTUM_BREAKOUT",
-          "side": "SHORT",
-          "entry_time": "25/09 20:15",
-          "exit_time": "25/09 21:45",
-          "entry": 4312.81,
-          "exit": 4311.21,
-          "pnl": 1.0,
-          "r": 0.05
+          "exit_time": "02/10 22:45",
+          "entry": 4208.52,
+          "exit": 4142.63,
+          "pnl": 65.29,
+          "r": 2.48
         }
       ]
     },
@@ -435,29 +439,29 @@
       {
         "factor": "VALUE_AREA_FADE",
         "enabled": true,
-        "trades": 4,
-        "win_rate": 100.0,
-        "r_profit_factor": 2.0,
-        "net_pnl": 164.79,
-        "net_r": 7.33
+        "trades": 6,
+        "win_rate": 66.7,
+        "r_profit_factor": 2.88,
+        "net_pnl": 91.19,
+        "net_r": 3.87
       },
       {
         "factor": "LIQUIDITY_SWEEP",
         "enabled": false,
-        "trades": 29,
-        "win_rate": 41.4,
-        "r_profit_factor": 0.64,
-        "net_pnl": -60.95,
-        "net_r": -6.38
+        "trades": 31,
+        "win_rate": 41.9,
+        "r_profit_factor": 0.61,
+        "net_pnl": -82.38,
+        "net_r": -7.3
       },
       {
         "factor": "LONDON_BREAKOUT",
         "enabled": true,
         "trades": 9,
         "win_rate": 66.7,
-        "r_profit_factor": 2.95,
-        "net_pnl": 88.01,
-        "net_r": 6.09
+        "r_profit_factor": 3.46,
+        "net_pnl": 105.23,
+        "net_r": 7.69
       },
       {
         "factor": "MOMENTUM_BREAKOUT",
@@ -473,46 +477,12 @@
         "enabled": false,
         "trades": 19,
         "win_rate": 47.4,
-        "r_profit_factor": 1.11,
-        "net_pnl": 58.23,
-        "net_r": 1.16
+        "r_profit_factor": 1.05,
+        "net_pnl": 32.62,
+        "net_r": 0.56
       }
     ],
     "top_5": [
-      {
-        "atr_sl_mult": 2.0,
-        "rr_mult": 3.2,
-        "adx_thresh": 28,
-        "enabled_factors": [
-          "VALUE_AREA_FADE",
-          "LONDON_BREAKOUT",
-          "MOMENTUM_BREAKOUT"
-        ],
-        "trades": 14,
-        "win_rate": 78.6,
-        "profit_factor": 6.89,
-        "r_profit_factor": 5.3,
-        "net_pnl": 253.8,
-        "net_r": 13.47,
-        "expectancy_r": 0.96,
-        "max_consec_loss": 3,
-        "max_dd": 43.07,
-        "max_dd_r": 3.13,
-        "sharpe": 4.36,
-        "sortino": 9.0,
-        "calmar": 12.0,
-        "var_95_r": -1.04,
-        "mc_dd_95_r": 3.15,
-        "mc_prob_profit": 99.2,
-        "total_fee_drag": 8.4,
-        "oos_trades": 3,
-        "oos_win_rate": 100.0,
-        "oos_profit_factor": 2.0,
-        "oos_net_r": 1.96,
-        "oos_net_pnl": 30.4,
-        "is_profitable_edge": true,
-        "score": 24.95
-      },
       {
         "atr_sl_mult": 2.0,
         "rr_mult": 2.5,
@@ -522,63 +492,64 @@
           "LONDON_BREAKOUT",
           "MOMENTUM_BREAKOUT"
         ],
-        "trades": 15,
-        "win_rate": 73.3,
-        "profit_factor": 4.55,
-        "r_profit_factor": 4.04,
-        "net_pnl": 219.87,
-        "net_r": 12.64,
-        "expectancy_r": 0.84,
+        "trades": 16,
+        "win_rate": 68.8,
+        "profit_factor": 3.34,
+        "r_profit_factor": 3.24,
+        "net_pnl": 197.42,
+        "net_r": 11.61,
+        "expectancy_r": 0.73,
         "max_consec_loss": 3,
-        "max_dd": 43.07,
-        "max_dd_r": 3.13,
-        "sharpe": 4.3,
+        "max_dd": 64.96,
+        "max_dd_r": 4.12,
+        "sharpe": 3.84,
         "sortino": 9.0,
         "calmar": 12.0,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 4.15,
-        "mc_prob_profit": 98.8,
-        "total_fee_drag": 9.0,
-        "oos_trades": 3,
-        "oos_win_rate": 100.0,
-        "oos_profit_factor": 2.0,
-        "oos_net_r": 3.46,
-        "oos_net_pnl": 50.17,
+        "mc_dd_95_r": 5.14,
+        "mc_prob_profit": 97.5,
+        "total_fee_drag": 9.6,
+        "oos_trades": 4,
+        "oos_win_rate": 75.0,
+        "oos_profit_factor": 3.36,
+        "oos_net_r": 2.43,
+        "oos_net_pnl": 27.65,
         "is_profitable_edge": true,
         "score": 18.553
       },
       {
         "atr_sl_mult": 2.0,
         "rr_mult": 3.2,
-        "adx_thresh": 25,
+        "adx_thresh": 28,
         "enabled_factors": [
           "VALUE_AREA_FADE",
-          "LONDON_BREAKOUT"
+          "LONDON_BREAKOUT",
+          "MOMENTUM_BREAKOUT"
         ],
-        "trades": 12,
-        "win_rate": 75.0,
-        "profit_factor": 5.42,
-        "r_profit_factor": 4.27,
-        "net_pnl": 190.5,
-        "net_r": 10.25,
-        "expectancy_r": 0.85,
+        "trades": 16,
+        "win_rate": 68.8,
+        "profit_factor": 2.83,
+        "r_profit_factor": 2.77,
+        "net_pnl": 154.46,
+        "net_r": 9.21,
+        "expectancy_r": 0.58,
         "max_consec_loss": 3,
-        "max_dd": 43.07,
-        "max_dd_r": 3.13,
-        "sharpe": 3.71,
+        "max_dd": 64.96,
+        "max_dd_r": 4.12,
+        "sharpe": 3.24,
         "sortino": 9.0,
-        "calmar": 12.0,
+        "calmar": 10.24,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 3.35,
-        "mc_prob_profit": 97.1,
-        "total_fee_drag": 7.2,
-        "oos_trades": 3,
-        "oos_win_rate": 100.0,
-        "oos_profit_factor": 2.0,
-        "oos_net_r": 1.96,
-        "oos_net_pnl": 30.4,
+        "mc_dd_95_r": 5.19,
+        "mc_prob_profit": 94.5,
+        "total_fee_drag": 9.6,
+        "oos_trades": 4,
+        "oos_win_rate": 75.0,
+        "oos_profit_factor": 1.9,
+        "oos_net_r": 0.93,
+        "oos_net_pnl": 7.82,
         "is_profitable_edge": true,
-        "score": 17.287
+        "score": 17.152
       },
       {
         "atr_sl_mult": 2.0,
@@ -589,28 +560,28 @@
           "LONDON_BREAKOUT",
           "MOMENTUM_BREAKOUT"
         ],
-        "trades": 16,
-        "win_rate": 75.0,
-        "profit_factor": 4.01,
-        "r_profit_factor": 3.56,
-        "net_pnl": 188.13,
-        "net_r": 10.66,
-        "expectancy_r": 0.67,
+        "trades": 17,
+        "win_rate": 70.6,
+        "profit_factor": 2.95,
+        "r_profit_factor": 2.86,
+        "net_pnl": 165.65,
+        "net_r": 9.63,
+        "expectancy_r": 0.57,
         "max_consec_loss": 3,
-        "max_dd": 43.07,
-        "max_dd_r": 3.13,
-        "sharpe": 4.16,
-        "sortino": 9.0,
-        "calmar": 12.0,
+        "max_dd": 64.96,
+        "max_dd_r": 4.12,
+        "sharpe": 3.63,
+        "sortino": 8.88,
+        "calmar": 10.71,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 4.16,
-        "mc_prob_profit": 97.4,
-        "total_fee_drag": 9.6,
-        "oos_trades": 3,
-        "oos_win_rate": 100.0,
-        "oos_profit_factor": 2.0,
-        "oos_net_r": 3.96,
-        "oos_net_pnl": 61.28,
+        "mc_dd_95_r": 4.24,
+        "mc_prob_profit": 96.8,
+        "total_fee_drag": 10.2,
+        "oos_trades": 4,
+        "oos_win_rate": 75.0,
+        "oos_profit_factor": 3.84,
+        "oos_net_r": 2.93,
+        "oos_net_pnl": 38.74,
         "is_profitable_edge": true,
         "score": 15.292
       },
@@ -622,33 +593,67 @@
           "VALUE_AREA_FADE",
           "LONDON_BREAKOUT"
         ],
-        "trades": 13,
-        "win_rate": 69.2,
-        "profit_factor": 3.75,
-        "r_profit_factor": 3.43,
-        "net_pnl": 170.33,
-        "net_r": 10.12,
-        "expectancy_r": 0.78,
+        "trades": 14,
+        "win_rate": 64.3,
+        "profit_factor": 2.75,
+        "r_profit_factor": 2.75,
+        "net_pnl": 147.81,
+        "net_r": 9.09,
+        "expectancy_r": 0.65,
         "max_consec_loss": 3,
-        "max_dd": 43.07,
-        "max_dd_r": 3.13,
-        "sharpe": 3.69,
-        "sortino": 9.0,
-        "calmar": 12.0,
+        "max_dd": 64.96,
+        "max_dd_r": 4.12,
+        "sharpe": 3.21,
+        "sortino": 8.38,
+        "calmar": 10.11,
         "var_95_r": -1.04,
-        "mc_dd_95_r": 4.17,
-        "mc_prob_profit": 97.0,
-        "total_fee_drag": 7.8,
-        "oos_trades": 3,
-        "oos_win_rate": 100.0,
-        "oos_profit_factor": 2.0,
-        "oos_net_r": 3.46,
-        "oos_net_pnl": 50.17,
+        "mc_dd_95_r": 5.18,
+        "mc_prob_profit": 94.4,
+        "total_fee_drag": 8.4,
+        "oos_trades": 4,
+        "oos_win_rate": 75.0,
+        "oos_profit_factor": 3.36,
+        "oos_net_r": 2.43,
+        "oos_net_pnl": 27.65,
         "is_profitable_edge": true,
         "score": 13.355
+      },
+      {
+        "atr_sl_mult": 1.5,
+        "rr_mult": 2.5,
+        "adx_thresh": 28,
+        "enabled_factors": [
+          "VALUE_AREA_FADE",
+          "LONDON_BREAKOUT",
+          "MOMENTUM_BREAKOUT"
+        ],
+        "trades": 17,
+        "win_rate": 70.6,
+        "profit_factor": 2.49,
+        "r_profit_factor": 2.28,
+        "net_pnl": 97.68,
+        "net_r": 6.7,
+        "expectancy_r": 0.39,
+        "max_consec_loss": 3,
+        "max_dd": 39.35,
+        "max_dd_r": 3.22,
+        "sharpe": 2.57,
+        "sortino": 6.12,
+        "calmar": 9.53,
+        "var_95_r": -1.06,
+        "mc_dd_95_r": 5.23,
+        "mc_prob_profit": 90.5,
+        "total_fee_drag": 10.2,
+        "oos_trades": 4,
+        "oos_win_rate": 75.0,
+        "oos_profit_factor": 3.32,
+        "oos_net_r": 2.41,
+        "oos_net_pnl": 27.25,
+        "is_profitable_edge": true,
+        "score": 11.277
       }
     ],
-    "split_bar": 3206
+    "split_bar": 3229
   },
   "scalp": {
     "anatomy": {
@@ -656,20 +661,20 @@
       "title_th": "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)",
       "desc_th": "มียอดโวลุ่มที่ 2 (>= 60% ของ POC) และมีหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง",
       "rule_th": "ดัก BUY เมื่อเด้งขึ้นจากยอดโวลุ่มล่าง (Lower Peak) และดัก SELL ที่ยอดโวลุ่มบน (Upper Peak)",
-      "poc": 3738.07,
-      "vah": 3750.51,
-      "val": 3709.03,
-      "poc_pos_pct": 76.6,
-      "second_peak": 3718.71,
-      "valley": 3721.47,
-      "lower_peak": 3718.71,
-      "upper_peak": 3738.07
+      "poc": 3665.97,
+      "vah": 3723.65,
+      "val": 3644.71,
+      "poc_pos_pct": 67.2,
+      "second_peak": 3696.32,
+      "valley": 3684.18,
+      "lower_peak": 3665.97,
+      "upper_peak": 3696.32
     },
     "backtest": {
       "sl_usd": 5.0,
       "sl_points": 500,
-      "tp_usd": 6.0,
-      "tp_points": 600,
+      "tp_usd": 7.5,
+      "tp_points": 750,
       "tol_points": 120,
       "wick_mode": "NORMAL",
       "be_usd": 2.5,
@@ -677,85 +682,86 @@
       "enabled_shapes": [
         "B_SHAPED"
       ],
-      "trades": 26,
-      "win_rate": 50.0,
-      "r_profit_factor": 2.21,
-      "net_r": 7.89,
-      "net_pnl": 39.45,
-      "expectancy_r": 0.3,
+      "trades": 27,
+      "win_rate": 37.0,
+      "r_profit_factor": 1.85,
+      "net_r": 6.47,
+      "net_pnl": 32.35,
+      "expectancy_r": 0.24,
       "max_consec_loss": 2,
-      "max_dd_r": 3.27,
-      "sharpe": 3.29,
-      "sortino": 6.16,
-      "mc_dd_95_r": 5.41,
-      "mc_prob_profit": 95.7,
-      "oos_trades": 9,
-      "oos_win_rate": 22.2,
-      "oos_r_pf": 0.68,
-      "oos_net_r": -1.05,
+      "max_dd_r": 4.36,
+      "sharpe": 2.25,
+      "sortino": 3.62,
+      "mc_dd_95_r": 6.54,
+      "mc_prob_profit": 89.5,
+      "oos_trades": 10,
+      "oos_win_rate": 10.0,
+      "oos_r_pf": 0.32,
+      "oos_net_r": -2.95,
       "has_edge": true,
-      "score": 13.904,
+      "score": 11.858,
       "equity_curve_r": [
         0.0,
-        1.11,
-        0.02,
-        1.13,
-        1.13,
-        2.24,
-        3.35,
-        4.46,
-        5.57,
-        6.68,
-        7.79,
-        8.9,
-        7.81,
-        6.72,
-        7.83,
-        7.83,
-        8.94,
-        8.94,
-        8.94,
-        10.05,
-        8.96,
-        8.96,
-        7.87,
-        7.87,
-        7.87,
-        6.78,
-        7.89
+        1.41,
+        0.32,
+        0.32,
+        0.32,
+        1.73,
+        3.14,
+        4.55,
+        5.96,
+        7.37,
+        8.78,
+        10.19,
+        9.1,
+        8.01,
+        8.01,
+        8.01,
+        9.42,
+        9.42,
+        9.42,
+        10.83,
+        9.74,
+        8.65,
+        8.65,
+        7.56,
+        7.56,
+        7.56,
+        6.47,
+        6.47
       ],
       "anatomy_breakdown": [
         {
           "shape": "D_SHAPED",
           "enabled": false,
           "live_learned_mute": false,
-          "trades": 25,
-          "win_rate": 16.0,
-          "net_r": -11.91
+          "trades": 24,
+          "win_rate": 12.5,
+          "net_r": -9.94
         },
         {
           "shape": "B_SHAPED",
           "enabled": true,
           "live_learned_mute": false,
-          "trades": 26,
-          "win_rate": 50.0,
-          "net_r": 7.89
+          "trades": 27,
+          "win_rate": 37.0,
+          "net_r": 6.47
         },
         {
           "shape": "P_SHAPED",
           "enabled": false,
           "live_learned_mute": false,
           "trades": 14,
-          "win_rate": 28.6,
-          "net_r": -2.1
+          "win_rate": 14.3,
+          "net_r": -3.72
         },
         {
           "shape": "DOUBLE_ZONE",
           "enabled": false,
           "live_learned_mute": false,
-          "trades": 86,
-          "win_rate": 24.4,
-          "net_r": -18.11
+          "trades": 89,
+          "win_rate": 20.2,
+          "net_r": -16.04
         }
       ],
       "recent_sim_trades": [
@@ -764,11 +770,11 @@
           "shape": "B_SHAPED",
           "side": "SHORT",
           "entry_time": "18/11 22:00",
-          "exit_time": "18/11 22:15",
-          "entry": 3760.51,
-          "exit": 3754.51,
-          "pnl": 5.55,
-          "r": 1.11
+          "exit_time": "18/11 22:30",
+          "entry": 3744.52,
+          "exit": 3744.07,
+          "pnl": -0.0,
+          "r": -0.0
         },
         {
           "engine": "SCALP",
@@ -776,8 +782,8 @@
           "side": "SHORT",
           "entry_time": "13/11 23:45",
           "exit_time": "14/11 00:00",
-          "entry": 3882.41,
-          "exit": 3887.41,
+          "entry": 3866.42,
+          "exit": 3871.42,
           "pnl": -5.45,
           "r": -1.09
         },
@@ -787,8 +793,8 @@
           "side": "SHORT",
           "entry_time": "02/11 19:45",
           "exit_time": "02/11 20:15",
-          "entry": 3909.71,
-          "exit": 3909.26,
+          "entry": 3893.72,
+          "exit": 3893.27,
           "pnl": -0.0,
           "r": -0.0
         },
@@ -798,8 +804,8 @@
           "side": "SHORT",
           "entry_time": "02/11 16:45",
           "exit_time": "02/11 17:30",
-          "entry": 3906.11,
-          "exit": 3905.66,
+          "entry": 3890.12,
+          "exit": 3889.67,
           "pnl": -0.0,
           "r": -0.0
         },
@@ -809,8 +815,8 @@
           "side": "SHORT",
           "entry_time": "02/11 15:45",
           "exit_time": "02/11 16:00",
-          "entry": 3905.91,
-          "exit": 3910.91,
+          "entry": 3890.02,
+          "exit": 3895.02,
           "pnl": -5.45,
           "r": -1.09
         },
@@ -820,8 +826,8 @@
           "side": "SHORT",
           "entry_time": "02/11 14:30",
           "exit_time": "02/11 15:00",
-          "entry": 3908.61,
-          "exit": 3908.16,
+          "entry": 3892.62,
+          "exit": 3892.17,
           "pnl": -0.0,
           "r": -0.0
         },
@@ -829,10 +835,21 @@
           "engine": "SCALP",
           "shape": "B_SHAPED",
           "side": "SHORT",
+          "entry_time": "02/11 13:30",
+          "exit_time": "02/11 14:00",
+          "entry": 3896.92,
+          "exit": 3901.92,
+          "pnl": -5.45,
+          "r": -1.09
+        },
+        {
+          "engine": "SCALP",
+          "shape": "B_SHAPED",
+          "side": "SHORT",
           "entry_time": "02/11 10:15",
           "exit_time": "02/11 10:30",
-          "entry": 3909.31,
-          "exit": 3914.31,
+          "entry": 3893.32,
+          "exit": 3898.32,
           "pnl": -5.45,
           "r": -1.09
         },
@@ -842,10 +859,10 @@
           "side": "SHORT",
           "entry_time": "29/10 12:15",
           "exit_time": "29/10 12:30",
-          "entry": 4054.21,
-          "exit": 4048.21,
-          "pnl": 5.55,
-          "r": 1.11
+          "entry": 4038.22,
+          "exit": 4030.72,
+          "pnl": 7.05,
+          "r": 1.41
         },
         {
           "engine": "SCALP",
@@ -853,8 +870,8 @@
           "side": "SHORT",
           "entry_time": "29/10 10:45",
           "exit_time": "29/10 11:30",
-          "entry": 4050.41,
-          "exit": 4049.96,
+          "entry": 4034.42,
+          "exit": 4033.97,
           "pnl": -0.0,
           "r": -0.0
         },
@@ -864,8 +881,8 @@
           "side": "LONG",
           "entry_time": "21/10 20:00",
           "exit_time": "21/10 20:30",
-          "entry": 4154.11,
-          "exit": 4154.56,
+          "entry": 4138.12,
+          "exit": 4138.57,
           "pnl": -0.0,
           "r": -0.0
         },
@@ -875,89 +892,16 @@
           "side": "LONG",
           "entry_time": "21/10 18:15",
           "exit_time": "21/10 18:30",
-          "entry": 4148.11,
-          "exit": 4154.11,
-          "pnl": 5.55,
-          "r": 1.11
-        },
-        {
-          "engine": "SCALP",
-          "shape": "B_SHAPED",
-          "side": "SHORT",
-          "entry_time": "21/10 16:45",
-          "exit_time": "21/10 17:15",
-          "entry": 4135.91,
-          "exit": 4135.46,
-          "pnl": -0.0,
-          "r": -0.0
+          "entry": 4132.12,
+          "exit": 4139.62,
+          "pnl": 7.05,
+          "r": 1.41
         }
       ],
       "top_5": [
         {
           "sl_usd": 5.0,
           "sl_points": 500,
-          "tp_usd": 6.0,
-          "tp_points": 600,
-          "tol_points": 120,
-          "wick_mode": "NORMAL",
-          "be_usd": 2.5,
-          "be_points": 250,
-          "enabled_shapes": [
-            "B_SHAPED"
-          ],
-          "trades": 26,
-          "win_rate": 50.0,
-          "r_profit_factor": 2.21,
-          "net_r": 7.89,
-          "net_pnl": 39.45,
-          "expectancy_r": 0.3,
-          "max_consec_loss": 2,
-          "max_dd_r": 3.27,
-          "sharpe": 3.29,
-          "sortino": 6.16,
-          "mc_dd_95_r": 5.41,
-          "mc_prob_profit": 95.7,
-          "oos_trades": 9,
-          "oos_win_rate": 22.2,
-          "oos_r_pf": 0.68,
-          "oos_net_r": -1.05,
-          "has_edge": true,
-          "score": 13.904
-        },
-        {
-          "sl_usd": 5.0,
-          "sl_points": 500,
-          "tp_usd": 6.0,
-          "tp_points": 600,
-          "tol_points": 320,
-          "wick_mode": "NORMAL",
-          "be_usd": 2.5,
-          "be_points": 250,
-          "enabled_shapes": [
-            "B_SHAPED"
-          ],
-          "trades": 27,
-          "win_rate": 48.1,
-          "r_profit_factor": 2.21,
-          "net_r": 7.89,
-          "net_pnl": 39.45,
-          "expectancy_r": 0.29,
-          "max_consec_loss": 2,
-          "max_dd_r": 3.27,
-          "sharpe": 3.29,
-          "sortino": 6.16,
-          "mc_dd_95_r": 4.36,
-          "mc_prob_profit": 97.0,
-          "oos_trades": 9,
-          "oos_win_rate": 22.2,
-          "oos_r_pf": 0.68,
-          "oos_net_r": -1.05,
-          "has_edge": true,
-          "score": 13.904
-        },
-        {
-          "sl_usd": 5.0,
-          "sl_points": 500,
           "tp_usd": 7.5,
           "tp_points": 750,
           "tol_points": 120,
@@ -967,24 +911,24 @@
           "enabled_shapes": [
             "B_SHAPED"
           ],
-          "trades": 26,
-          "win_rate": 34.6,
-          "r_profit_factor": 1.94,
-          "net_r": 6.15,
-          "net_pnl": 30.75,
+          "trades": 27,
+          "win_rate": 37.0,
+          "r_profit_factor": 1.85,
+          "net_r": 6.47,
+          "net_pnl": 32.35,
           "expectancy_r": 0.24,
           "max_consec_loss": 2,
-          "max_dd_r": 3.27,
-          "sharpe": 2.45,
-          "sortino": 4.61,
-          "mc_dd_95_r": 5.58,
-          "mc_prob_profit": 90.1,
-          "oos_trades": 9,
-          "oos_win_rate": 11.1,
-          "oos_r_pf": 0.43,
-          "oos_net_r": -1.86,
+          "max_dd_r": 4.36,
+          "sharpe": 2.25,
+          "sortino": 3.62,
+          "mc_dd_95_r": 6.54,
+          "mc_prob_profit": 89.5,
+          "oos_trades": 10,
+          "oos_win_rate": 10.0,
+          "oos_r_pf": 0.32,
+          "oos_net_r": -2.95,
           "has_edge": true,
-          "score": 12.158
+          "score": 11.858
         },
         {
           "sl_usd": 5.0,
@@ -998,30 +942,30 @@
           "enabled_shapes": [
             "B_SHAPED"
           ],
-          "trades": 27,
-          "win_rate": 33.3,
-          "r_profit_factor": 1.94,
-          "net_r": 6.15,
-          "net_pnl": 30.75,
+          "trades": 28,
+          "win_rate": 35.7,
+          "r_profit_factor": 1.85,
+          "net_r": 6.47,
+          "net_pnl": 32.35,
           "expectancy_r": 0.23,
           "max_consec_loss": 2,
-          "max_dd_r": 3.27,
-          "sharpe": 2.45,
-          "sortino": 4.61,
-          "mc_dd_95_r": 5.58,
-          "mc_prob_profit": 90.7,
-          "oos_trades": 9,
-          "oos_win_rate": 11.1,
-          "oos_r_pf": 0.43,
-          "oos_net_r": -1.86,
+          "max_dd_r": 4.36,
+          "sharpe": 2.25,
+          "sortino": 3.62,
+          "mc_dd_95_r": 6.22,
+          "mc_prob_profit": 89.4,
+          "oos_trades": 10,
+          "oos_win_rate": 10.0,
+          "oos_r_pf": 0.32,
+          "oos_net_r": -2.95,
           "has_edge": true,
-          "score": 12.158
+          "score": 11.858
         },
         {
           "sl_usd": 5.0,
           "sl_points": 500,
-          "tp_usd": 5.0,
-          "tp_points": 500,
+          "tp_usd": 6.0,
+          "tp_points": 600,
           "tol_points": 120,
           "wick_mode": "NORMAL",
           "be_usd": 2.5,
@@ -1029,52 +973,114 @@
           "enabled_shapes": [
             "B_SHAPED"
           ],
-          "trades": 26,
-          "win_rate": 53.8,
-          "r_profit_factor": 1.95,
-          "net_r": 6.2,
-          "net_pnl": 31.0,
-          "expectancy_r": 0.24,
+          "trades": 27,
+          "win_rate": 44.4,
+          "r_profit_factor": 1.75,
+          "net_r": 5.69,
+          "net_pnl": 28.45,
+          "expectancy_r": 0.21,
           "max_consec_loss": 2,
-          "max_dd_r": 2.36,
-          "sharpe": 3.22,
-          "sortino": 6.37,
-          "mc_dd_95_r": 5.45,
-          "mc_prob_profit": 93.0,
-          "oos_trades": 9,
-          "oos_win_rate": 33.3,
-          "oos_r_pf": 0.83,
-          "oos_net_r": -0.54,
+          "max_dd_r": 4.36,
+          "sharpe": 2.06,
+          "sortino": 3.12,
+          "mc_dd_95_r": 6.46,
+          "mc_prob_profit": 90.2,
+          "oos_trades": 10,
+          "oos_win_rate": 20.0,
+          "oos_r_pf": 0.51,
+          "oos_net_r": -2.14,
           "has_edge": true,
-          "score": 12.108
+          "score": 10.261
+        },
+        {
+          "sl_usd": 5.0,
+          "sl_points": 500,
+          "tp_usd": 6.0,
+          "tp_points": 600,
+          "tol_points": 320,
+          "wick_mode": "NORMAL",
+          "be_usd": 2.5,
+          "be_points": 250,
+          "enabled_shapes": [
+            "B_SHAPED"
+          ],
+          "trades": 28,
+          "win_rate": 42.9,
+          "r_profit_factor": 1.75,
+          "net_r": 5.69,
+          "net_pnl": 28.45,
+          "expectancy_r": 0.2,
+          "max_consec_loss": 2,
+          "max_dd_r": 4.36,
+          "sharpe": 2.06,
+          "sortino": 3.12,
+          "mc_dd_95_r": 5.45,
+          "mc_prob_profit": 89.8,
+          "oos_trades": 10,
+          "oos_win_rate": 20.0,
+          "oos_r_pf": 0.51,
+          "oos_net_r": -2.14,
+          "has_edge": true,
+          "score": 10.261
+        },
+        {
+          "sl_usd": 5.0,
+          "sl_points": 500,
+          "tp_usd": 4.0,
+          "tp_points": 400,
+          "tol_points": 120,
+          "wick_mode": "NORMAL",
+          "be_usd": 2.5,
+          "be_points": 250,
+          "enabled_shapes": [
+            "B_SHAPED"
+          ],
+          "trades": 27,
+          "win_rate": 66.7,
+          "r_profit_factor": 1.67,
+          "net_r": 5.15,
+          "net_pnl": 25.75,
+          "expectancy_r": 0.19,
+          "max_consec_loss": 2,
+          "max_dd_r": 3.27,
+          "sharpe": 2.74,
+          "sortino": 4.42,
+          "mc_dd_95_r": 5.6,
+          "mc_prob_profit": 88.9,
+          "oos_trades": 10,
+          "oos_win_rate": 50.0,
+          "oos_r_pf": 0.81,
+          "oos_net_r": -0.81,
+          "has_edge": true,
+          "score": 9.502
         }
       ]
     },
     "setup": {
       "shape": "DOUBLE_ZONE",
       "shape_active": false,
-      "bias": "DOUBLE-ZONE LOWER PEAK BUY (ดักเด้งยอดโวลุ่มล่าง $3718.71)",
+      "bias": "DOUBLE-ZONE LOWER PEAK BUY (ดักเด้งยอดโวลุ่มล่าง $3665.97)",
       "direction": "LONG",
-      "entry": 3718.71,
-      "sl": 3713.71,
+      "entry": 3665.97,
+      "sl": 3660.97,
       "sl_usd": 5.0,
       "sl_points": 500,
-      "be_target": 3721.21,
+      "be_target": 3668.47,
       "be_points": 250,
-      "tp": 3724.71,
-      "tp_usd": 6.0,
-      "tp_points": 600,
-      "rr": 1.2,
-      "dist_usd": 29.6,
-      "dist_points": 2960
+      "tp": 3673.47,
+      "tp_usd": 7.5,
+      "tp_points": 750,
+      "rr": 1.5,
+      "dist_usd": 124.65,
+      "dist_points": 12465
     },
     "gates": {
-      "session_ok": true,
+      "session_ok": false,
       "shape_ok": false,
       "edge_ok": false,
       "proximity_ok": false,
       "all_passed": false,
-      "verdict_text": "NO (ทรง DOUBLE_ZONE ถูก MUTE จาก Backtest — รอทรง B_SHAPED)"
+      "verdict_text": "NO (อยู่นอกเวลา Scalp 10:00–00:30 น.)"
     }
   },
   "journal": {
@@ -1114,7 +1120,7 @@
     ]
   },
   "self_learning": {
-    "updated_at": "2026-11-19T16:53:38.483392+00:00",
+    "updated_at": "2026-11-20T02:15:40.561128+00:00",
     "total_closed": 1,
     "overall_wins": 0,
     "overall_losses": 1,
@@ -1146,9 +1152,9 @@
       "forecast": "51.7",
       "previous": "51.0",
       "actual": "-",
-      "hours_away": 22.1,
+      "hours_away": 12.7,
       "is_upcoming": true,
-      "status": "อีก 22.1 ชม."
+      "status": "อีก 12.7 ชม."
     },
     {
       "time_th": "20/11 22:00 น.",
@@ -1157,9 +1163,9 @@
       "forecast": "-",
       "previous": "4.3%",
       "actual": "-",
-      "hours_away": 22.1,
+      "hours_away": 12.7,
       "is_upcoming": true,
-      "status": "อีก 22.1 ชม."
+      "status": "อีก 12.7 ชม."
     },
     {
       "time_th": "17/11 20:30 น.",
@@ -1168,7 +1174,7 @@
       "forecast": "0.4%",
       "previous": "0.9%",
       "actual": "-",
-      "hours_away": -51.4,
+      "hours_away": -60.8,
       "is_upcoming": false,
       "status": "ออกแล้ว (ดูผล)"
     },
@@ -1179,7 +1185,7 @@
       "forecast": "0.1%",
       "previous": "0.8%",
       "actual": "-",
-      "hours_away": -51.4,
+      "hours_away": -60.8,
       "is_upcoming": false,
       "status": "ออกแล้ว (ดูผล)"
     },
@@ -1190,19 +1196,19 @@
       "forecast": "-",
       "previous": "-",
       "actual": "-",
-      "hours_away": -21.9,
+      "hours_away": -31.3,
       "is_upcoming": false,
       "status": "ออกแล้ว (ดูผล)"
     }
   ],
-  "ai_analysis": "1. **Daily Outlook & VP Anatomy**: ราคา Spot XAU/USD อยู่ที่ $3689.11 โครงสร้าง 24H Volume Profile เป็นทรง ④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม) (มียอดโวลุ่มที่ 2 (>= 60% ของ POC) และมีหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง) แนวรับ-ต้านหลักอยู่ที่ VAL $3709.03 / POC $3738.07 / VAH $3750.51\n2. **Dual-Engine Edge & Self-Learning**: ระบบ Trend ทำผลงาน 13.47R (WR 78.6%, Daily Sharpe 4.36) และระบบ Scalp 500 จุดทำผลงาน 7.89R (WR 50.0%, R-PF 2.21) | Self-Learning ปกติ (สถิติจริงสะสม 0W/1L | Net $-5.45)\n3. **Trend Execution Plan**: MOMENTUM BREAKDOWN SHORT (รอเบรกหลุด PDL $3670.31 ตามน้ำ) | Entry $3669.81 | SL $3693.17 | BE (+1.0R) $3646.45 | TP $3595.06 (R:R 1:3.2)\n4. **VP-Anatomy Scalp Plan (500 จุด)**: DOUBLE-ZONE LOWER PEAK BUY (ดักเด้งยอดโวลุ่มล่าง $3718.71) | Entry $3718.71 | SL $3713.71 (500 จุด) | BE +250 จุด ($3721.21) | TP $3724.71 (600 จุด)\n5. **Alert Trigger**: Trend: NO (ราคา Spot ปัจจุบันอยู่ห่าง Entry $19.30 > $8.00) | Scalp 500pt: NO (ทรง DOUBLE_ZONE ถูก MUTE จาก Backtest — รอทรง B_SHAPED)",
+  "ai_analysis": "1. **Daily Outlook & VP Anatomy**:  \n   ราคา XAU/USD อยู่ที่ $3541.32 ในช่วง NO TRADE ZONE (09:15 น.) โครงสร้าง Volume Profile 24H แสดงรูปทรง DOUBLE ZONE (2 ยอดโวลุ่ม) ที่มี POC ที่ $3665.97 (ยอดโวลุ่มที่ 2 >= 60% ของ POC) และมีหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง บ่งชี้แนวรับ-แนวต้านสำคัญในบริเวณ $3665.97 และ $3660.97  \n\n2. **Dual-Engine Edge & Self-Learning**:  \n   - **Trend System**: คุ้มเสี่ยงสูง (R-PF 3.24, Net 11.61R) แต่ต้องระวัง Overfitting ขณะที่ Self-Learning ยังไม่พร้อมใช้ (สถิติแย่ 0W/1L, Net -$5.45)  \n   - **Scalp 500 จุด**: คุ้มเสี่ยงปานกลาง (R-PF 1.85, Net 6.47R) ทรง B_SHAPED ช่วยเพิ่มประสิทธิภาพ แต่ WR ต่ำ ต้องระวังแรงขายฉับพลัน  \n   - **บทเรียนจาก Journal**: ต้องปรับปรุงโมเดล Self-Learning และระวัง Overfitting ใน Trend System  \n\n3. **Trend Execution Plan**:  \n   - **Entry**: $3593.84 (รอเด้งชน PDL)  \n   - **SL**: $3631.56 (ตัดขาดทุนหากหลุด PDL)  \n   - **BE**: $3556.12 (ปิดกำไรเมื่อราคาถอยกลับ)  \n   - **TP**: $3499.54 (เป้าหมายระยะยาว)  \n   - **R:R**: 1:2.5 (คุ้มเสี่ยงสูง)  \n\n4. **VP-Anatomy Scalp Plan (500 จุด)**:  \n   - **Entry**: $3665.97 (ดักเด้งยอดโวลุ่มล่าง)  \n   - **SL**: $3660.97 (500 จุด)  \n   - **BE**: $3668.47 (+250 จุด)  \n   - **TP**: $3673.47 (750 จุด)  \n   - **R:R**: 1:1.85 (คุ้มเสี่ยงปานกลาง)  \n\n5. **Alert Trigger**:  \n   Trend: NO (อยู่นอกเวลา Killzone — รอปลดล็อก 13:00 น.) | Scalp 500pt: NO (อยู่นอกเวลา Scalp 10:00–00:30 น.)",
   "ai_council": {
-    "final_report": "1. **Daily Outlook & VP Anatomy**: ราคา Spot XAU/USD อยู่ที่ $3689.11 โครงสร้าง 24H Volume Profile เป็นทรง ④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม) (มียอดโวลุ่มที่ 2 (>= 60% ของ POC) และมีหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง) แนวรับ-ต้านหลักอยู่ที่ VAL $3709.03 / POC $3738.07 / VAH $3750.51\n2. **Dual-Engine Edge & Self-Learning**: ระบบ Trend ทำผลงาน 13.47R (WR 78.6%, Daily Sharpe 4.36) และระบบ Scalp 500 จุดทำผลงาน 7.89R (WR 50.0%, R-PF 2.21) | Self-Learning ปกติ (สถิติจริงสะสม 0W/1L | Net $-5.45)\n3. **Trend Execution Plan**: MOMENTUM BREAKDOWN SHORT (รอเบรกหลุด PDL $3670.31 ตามน้ำ) | Entry $3669.81 | SL $3693.17 | BE (+1.0R) $3646.45 | TP $3595.06 (R:R 1:3.2)\n4. **VP-Anatomy Scalp Plan (500 จุด)**: DOUBLE-ZONE LOWER PEAK BUY (ดักเด้งยอดโวลุ่มล่าง $3718.71) | Entry $3718.71 | SL $3713.71 (500 จุด) | BE +250 จุด ($3721.21) | TP $3724.71 (600 จุด)\n5. **Alert Trigger**: Trend: NO (ราคา Spot ปัจจุบันอยู่ห่าง Entry $19.30 > $8.00) | Scalp 500pt: NO (ทรง DOUBLE_ZONE ถูก MUTE จาก Backtest — รอทรง B_SHAPED)",
-    "quant_audit": "ผลทดสอบ Walk-Forward Trend (14 ไม้): WR 78.6%, R-PF 5.3, Net 13.47R, Daily Sharpe 4.36 | ระบบ Scalp 500 จุด (26 ไม้): WR 50.0%, R-PF 2.21, Net 7.89R (Self-Learning ปกติ (สถิติจริงสะสม 0W/1L | Net $-5.45))",
-    "macro_audit": "Spot XAU/USD ปัจจุบันอยู่ที่ $3689.11 โครงสร้าง 24H Volume Profile เป็นทรง ④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม) (POC ตำแหน่ง 76.6% @ $3738.07) ขณะที่ DXY อยู่ที่ 103.84 และ US10Y 5.09%",
-    "contrarian_audit": "จุดระวังหลักคือ RSI14 อยู่ที่ 32.4 และ ADX14 อยู่ที่ 32.6 หากเข้าออเดอร์ก่อนราคาแตะโซน Entry จริง (Trend ห่าง $19.3 / Scalp ห่าง 2960 จุด) อาจโดนไส้เทียนสะบัดกิน SL",
-    "active_recall_q": "เหตุใดระบบจึงใช้ Daily Aggregated Returns ในการคำนวณ Sharpe/Sortino และใช้ Self-Learning Guard ปิดทรงที่แพ้ต่อเนื่อง?",
-    "active_recall_a": "เพื่อป้องกันตัวเลข Sharpe เฟ้อเกินจริงจากจำนวนไม้ที่น้อย และหยุดการขาดทุนซ้ำซากทันทีเมื่อพฤติกรรมราคาจริงเปลี่ยนไปจากผล Backtest",
+    "final_report": "1. **Daily Outlook & VP Anatomy**:  \n   ราคา XAU/USD อยู่ที่ $3541.32 ในช่วง NO TRADE ZONE (09:15 น.) โครงสร้าง Volume Profile 24H แสดงรูปทรง DOUBLE ZONE (2 ยอดโวลุ่ม) ที่มี POC ที่ $3665.97 (ยอดโวลุ่มที่ 2 >= 60% ของ POC) และมีหุบเขาโวลุ่มต่ำ (Valley) คั่นกลาง บ่งชี้แนวรับ-แนวต้านสำคัญในบริเวณ $3665.97 และ $3660.97  \n\n2. **Dual-Engine Edge & Self-Learning**:  \n   - **Trend System**: คุ้มเสี่ยงสูง (R-PF 3.24, Net 11.61R) แต่ต้องระวัง Overfitting ขณะที่ Self-Learning ยังไม่พร้อมใช้ (สถิติแย่ 0W/1L, Net -$5.45)  \n   - **Scalp 500 จุด**: คุ้มเสี่ยงปานกลาง (R-PF 1.85, Net 6.47R) ทรง B_SHAPED ช่วยเพิ่มประสิทธิภาพ แต่ WR ต่ำ ต้องระวังแรงขายฉับพลัน  \n   - **บทเรียนจาก Journal**: ต้องปรับปรุงโมเดล Self-Learning และระวัง Overfitting ใน Trend System  \n\n3. **Trend Execution Plan**:  \n   - **Entry**: $3593.84 (รอเด้งชน PDL)  \n   - **SL**: $3631.56 (ตัดขาดทุนหากหลุด PDL)  \n   - **BE**: $3556.12 (ปิดกำไรเมื่อราคาถอยกลับ)  \n   - **TP**: $3499.54 (เป้าหมายระยะยาว)  \n   - **R:R**: 1:2.5 (คุ้มเสี่ยงสูง)  \n\n4. **VP-Anatomy Scalp Plan (500 จุด)**:  \n   - **Entry**: $3665.97 (ดักเด้งยอดโวลุ่มล่าง)  \n   - **SL**: $3660.97 (500 จุด)  \n   - **BE**: $3668.47 (+250 จุด)  \n   - **TP**: $3673.47 (750 จุด)  \n   - **R:R**: 1:1.85 (คุ้มเสี่ยงปานกลาง)  \n\n5. **Alert Trigger**:  \n   Trend: NO (อยู่นอกเวลา Killzone — รอปลดล็อก 13:00 น.) | Scalp 500pt: NO (อยู่นอกเวลา Scalp 10:00–00:30 น.)",
+    "quant_audit": "- **Trend System**: คุ้มเสี่ยงสูง (R-PF 3.24, Net 11.61R) พร้อมใช้งานดี แต่ต้องระวัง Overfitting  \n- **Scalp 500 จุด**: คุ้มเสี่ยงปานกลาง (R-PF 1.85, Net 6.47R) ทรง B_SHAPED ช่วยเพิ่มประสิทธิภาพ แต่ WR ต่ำ  \n- **Self-Learning**: ยังไม่พร้อมใช้ (สถิติแย่ 0W/1L, Net -$5.45) ต้องปรับปรุงโมเดล",
+    "macro_audit": "ตลาด XAU/USD ณ 09:15 น. อยู่ในช่วง NO TRADE ZONE ทำให้แรงซื้อขายเบาบาง แต่โครงสร้าง Volume Profile 24H แสดง \"Double Zone\" ที่มี POC อยู่ที่ $3665.97 ซึ่งเป็นจุดที่มีแรงซื้อสูงสุด บ่งชี้ว่าราคาอาจมีการกลับตัวหรือพักตัวในบริเวณนี้ ขณะที่ VAH ที่ $3723.65 ยังคงเป็นแนวต้านสำคัญ แรงกดดันมหภาคจาก DXY ที่ 103.94 และ US10Y ที่ 5.05% ยังคงกดดันทองคำ แต่ข่าว UoM ที่จะออกใน 12.7 ชั่วโมงข้างหน้าอาจสร้างความผันผวนสูง ทำให้ต้องระวังการเคลื่อนไหวของราคาในช่วงนี้",
+    "contrarian_audit": "แผน Trend: รอเด้งชน PDL ที่ $3593.84 แต่ RSI ต่ำแค่ 17.1 บ่งชี้ตลาด oversold มากเกินไป อาจเกิดการดีดกลับแรง ทำให้ราคาไม่ถึง PDL แล้วร่วงต่อ จุดเสี่ยงคือ SL ถูกตัดเร็วหากมีแรงซื้อฉับพลัน\n\nแผน Scalp 500 จุด: ดักเด้งที่ $3665.97 ซึ่งห่างจากจุดต่ำมาก แต่ ADX 59.0 บ่งชี้แนวโน้มแรง อาจทำให้เกิดการ break แล้ววิ่งต่อ แต่หากมีแรงขายหนัก ราคาอาจหลุดลงมาที่ $3600 หรือต่ำกว่า ทำให้ SL ถูกตัดเร็ว จุดเสี่ยงคือการตั้ง SL ต่ำเกินไป หรือไม่ได้ดูโครงสร้างราคาทั้งหมด",
+    "active_recall_q": "รูปทรง Volume Profile DOUBLE ZONE บ่งบอกถึงอะไรในตลาด?",
+    "active_recall_a": "บ่งบอกถึง 2 โซนความสนใจของนักลงทุน อาจเป็นแนวรับ-แนวต้านสำคัญ หรือจุดกลับตัวของราคา",
     "kb_files_loaded": [
       "01_market_maker_liquidity.md",
       "02_factorbench_investability.md",
@@ -1211,10 +1217,10 @@
       "05_live_journal_lessons.md"
     ],
     "models_used": {
-      "quant_auditor": "quant-local-engine",
-      "macro_officer": "quant-local-engine",
-      "contrarian_critic": "quant-local-engine",
-      "chief_strategist": "quant-local-engine"
+      "quant_auditor": "pathumma-thaillm-qwen3-8b-think-3.0.0",
+      "macro_officer": "typhoon-s-thaillm-8b-instruct",
+      "contrarian_critic": "typhoon-s-thaillm-8b-instruct",
+      "chief_strategist": "thalle-0.2-thaillm-8b-fa"
     }
   }
 }
