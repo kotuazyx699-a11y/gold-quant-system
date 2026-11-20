@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 import sys
 import json
@@ -1542,8 +1542,7 @@ def calculate_quant_and_setup(df_intraday, df_daily, df_dxy, df_us10y, vp_data, 
             regime = f"OVERSOLD EXHAUSTION (ADX {curr_adx14} | RSI {curr_rsi14} < 28)"
             bias = f"ANTI-CHASE RETEST SHORT (ห้ามไล่ Short ใต้ PDL — รอเด้งชน PDL ${curr_pdl} / EMA21 ${curr_ema21})"
             direction = "SHORT"
-            retest_lvl = curr_pdl if curr_pdl > active_spot else curr_ema21
-            entry = round(retest_lvl, 2)
+            retest_lvl = curr_pdl if curr_pdl > active_spot else curr_ema21; retest_lbl = f"PDL ${curr_pdl}" if curr_pdl > active_spot else f"EMA21 ${curr_ema21}"; bias = f"ANTI-CHASE RETEST SHORT (ห้ามไล่ Short ใต้ PDL — รอเด้งชนแนวต้าน {retest_lbl})"; entry = round(retest_lvl, 2)
             sl = round(entry + risk_unit, 2)
             be_target = round(entry - be_trigger_dist, 2)
             tp = round(entry - reward_unit, 2)
@@ -2182,7 +2181,7 @@ def main():
                 print(f"[LOOP ERROR] {e}")
             next_run = (datetime.now(THAI_TZ) + timedelta(minutes=interval_mins)).strftime("%H:%M:%S")
             print(f"รออัปเดตรอบถัดไปเวลา {next_run} น. ...\n")
-            time.sleep(interval_mins * 60)
+            now_c = datetime.now(THAI_TZ); n_q = ((now_c.minute // interval_mins) + 1) * interval_mins; nxt_dt = now_c.replace(minute=0, second=5, microsecond=0) + timedelta(minutes=n_q); time.sleep(max(10, (nxt_dt - now_c).total_seconds()))
     else:
         run_single_cycle(is_startup=(not no_startup), force_flag=force_flag, silent_pulse=silent_pulse)
 
