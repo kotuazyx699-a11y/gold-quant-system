@@ -1,4 +1,4 @@
-name: Gold Quant V12 Autonomous Engine
+﻿name: Gold Quant V12 Autonomous Engine
 
 on:
   schedule:
@@ -26,9 +26,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Python packages
         run: |
-          pip install -r backend/requirements.txt
+          python -m pip install --upgrade pip
+          pip install yfinance pandas numpy requests openai
 
       - name: Run Gold Quant & Self-Learning V12
         env:
