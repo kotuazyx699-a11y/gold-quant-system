@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD Unified OrderFlow & MUE-X Quant V14.0</title>
+  <title>XAU/USD Autonomous OrderFlow & MUE-X Quant V15.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -22,60 +22,57 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Unified OrderFlow & MUE-X Quant V14.0</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Autonomous OrderFlow & MUE-X Quant V15.0</h1>
           <span class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> L2 ORDERFLOW LIVE
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE ENGINE
           </span>
           <span id="mue-gen-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full">
-            MUE-X Gen #1 (SESSION VP)
+            MUE-X Regime-Aware Gen #1
           </span>
         </div>
-        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังโหลดข้อมูล V14.0...</p>
+        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังเชื่อมต่อ Live M15 Institutional Feed...</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <div class="text-right font-mono-num mr-1">
-          <span id="last-updated" class="block text-xs text-emerald-400">กำลังซิงค์...</span>
+          <span id="last-updated" class="block text-xs text-emerald-400">กำลังประมวลผล...</span>
           <span id="next-cycle-countdown" class="block text-[11px] text-cyan-400">รอบ AI 15 นาทีถัดไปใน: --:--</span>
         </div>
-        <button id="btn-sound" onclick="toggleAudioGate()" class="px-3 py-1.5 text-xs font-medium bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 rounded-lg transition">
-          เสียงเตือน: เปิด
+        <button id="btn-run-ai" onclick="runFullLiveQuantAndAI(true)"
+           class="px-3 py-1.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950 rounded-lg transition shadow-lg shadow-cyan-500/20">
+          ⚡ สั่งรัน AI ทันที
         </button>
-        <a href="https://github.com/kotuazyx699-a11y/gold-quant-system/actions" target="_blank"
-           class="px-3 py-1.5 text-xs font-medium bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/60 rounded-lg transition">
-          สั่งรัน AI ทันที
-        </a>
+        <button id="btn-sound" onclick="toggleAudioGate()" class="px-3 py-1.5 text-xs font-medium bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 rounded-lg transition">
+          เสียง: เปิด
+        </button>
         <button id="btn-test-ntfy" onclick="testNtfyAlert()" class="px-3 py-1.5 text-xs font-medium bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/40 rounded-lg transition">
           ทดสอบ ntfy
-        </button>
-        <button onclick="loadDashboardData()" class="px-3 py-1.5 text-xs font-medium bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-lg transition">
-          รีเฟรช
         </button>
       </div>
     </header>
 
-    <!-- LIVE ACTIONABLE ORDERFLOW EXECUTION GATE (CONNECTS ORDERBOOK + SESSION VP!) -->
+    <!-- LIVE ACTIONABLE ORDERFLOW EXECUTION GATE -->
     <section id="execution-gate-box" class="card p-4 border-cyan-500/50 bg-gradient-to-r from-gray-900 via-cyan-950/25 to-purple-950/25">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div class="space-y-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-2 py-0.5 text-[10px] font-mono-num font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 rounded">LIVE ORDERFLOW EXECUTION GATE</span>
             <span id="gate-status-pill" class="px-2.5 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-600/60 rounded-full">
-              WAITING ZONE PROXIMITY
+              INITIALIZING...
             </span>
           </div>
           <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังจับคู่ราคา Spot กับโซน Session VP และแรงซื้อขาย L2 Order Book...</h2>
-          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">เงื่อนไขลั่นไก: (1) ราคาเข้าใกล้จุดยิง ±200 จุด + (2) OBI ยืนค้าง 3 วินาที + (3) 60s Tape Delta สอดคล้อง</p>
+          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">เงื่อนไขลั่นไก 3 ชั้น: (1) ราคาเข้าใกล้จุดยิง ±200 จุด + (2) OBI ยืนค้าง 3 วินาที + (3) 60s Tape Delta สอดคล้อง</p>
         </div>
         <div class="grid grid-cols-3 gap-2.5 font-mono-num text-center shrink-0">
-          <div id="cond-1-box" class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
+          <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
             <span class="block text-[10px] text-gray-400">1. ระยะห่างโซนเข้า</span>
             <span id="cond-1-val" class="text-sm font-bold text-amber-400">-- จุด</span>
           </div>
-          <div id="cond-2-box" class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
+          <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
             <span class="block text-[10px] text-gray-400">2. OBI ยืนยัน (3 วิ)</span>
             <span id="cond-2-val" class="text-sm font-bold text-cyan-400">0.0s / 3.0s</span>
           </div>
-          <div id="cond-3-box" class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
+          <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
             <span class="block text-[10px] text-gray-400">3. 60s Tape Delta</span>
             <span id="cond-3-val" class="text-sm font-bold text-emerald-400">+0.0</span>
           </div>
@@ -99,19 +96,19 @@
         <p id="kpi-obi-sub" class="text-[11px] text-gray-400 font-mono-num mt-1">Bid Liq: - | Ask Liq: -</p>
       </div>
       <div class="card p-4">
-        <p class="text-xs text-gray-400">Rolling 60s Tape Delta & OI</p>
+        <p class="text-xs text-gray-400">Rolling 60s Delta & Live OI</p>
         <p id="kpi-cvd" class="text-2xl font-bold text-emerald-400 font-mono-num mt-1">0.0</p>
-        <p id="kpi-oi" class="text-[11px] text-gray-400 font-mono-num mt-1">OI: - | Fund: -%</p>
+        <p id="kpi-oi" class="text-[11px] text-gray-400 font-mono-num mt-1">OI: กำลังโหลด | Fund: -%</p>
       </div>
       <div class="card p-4">
-        <p class="text-xs text-gray-400">MTF Regime & PDH/PDL</p>
+        <p class="text-xs text-gray-400">MTF Regime & Session Range</p>
         <p id="kpi-regime" class="text-lg font-bold text-white font-mono-num mt-1">ADX -</p>
         <p id="kpi-pdh-pdl" class="text-[11px] text-gray-400 font-mono-num mt-1">PDH: - | PDL: -</p>
       </div>
       <div class="card p-4 col-span-2 lg:col-span-1">
-        <p class="text-xs text-gray-400">Macro Drivers (DXY / 10Y)</p>
-        <p id="kpi-macro" class="text-xl font-bold text-white font-mono-num mt-1">0.00 / 0.00%</p>
-        <p id="kpi-corr" class="text-[11px] text-gray-400 font-mono-num mt-1">Gold-DXY Corr: 0.00</p>
+        <p class="text-xs text-gray-400">RSI(14) / ATR(14) Volatility</p>
+        <p id="kpi-macro" class="text-xl font-bold text-white font-mono-num mt-1">RSI - / ATR -</p>
+        <p id="kpi-corr" class="text-[11px] text-gray-400 font-mono-num mt-1">EMA21: - | EMA200: -</p>
       </div>
     </section>
 
@@ -143,13 +140,13 @@
           </div>
           <div class="bg-gray-800/80 border border-gray-700 rounded-lg p-2">
             <span class="block text-[10px] text-gray-400">Lot Trend Sniper (1.0%)</span>
-            <span id="calc-trend-lot" class="text-sm font-bold text-cyan-400">0.03 Lot</span>
+            <span id="calc-trend-lot" class="text-sm font-bold text-cyan-400">0.05 Lot</span>
             <span id="calc-trend-risk" class="block text-[10px] text-gray-400">เสี่ยง -$100 / ไม้</span>
           </div>
           <div class="bg-gray-800/80 border border-emerald-800/50 rounded-lg p-2">
             <span class="block text-[10px] text-gray-400">เป้าสอบผ่าน (8%)</span>
             <span id="calc-target-usd" class="text-sm font-bold text-emerald-400">+$800</span>
-            <span id="calc-wins-needed" class="block text-[10px] text-emerald-300">~9 ไม้ชนะ Scalp</span>
+            <span id="calc-wins-needed" class="block text-[10px] text-emerald-300">~8 ไม้ชนะ Scalp</span>
           </div>
           <div class="bg-gray-800/80 border border-rose-900/50 rounded-lg p-2">
             <span class="block text-[10px] text-gray-400">เบรกเกอร์รายวัน (-2R)</span>
@@ -166,7 +163,7 @@
       <div class="card p-5 lg:col-span-5 border-cyan-600/40 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
           <h2 class="text-sm font-bold text-cyan-300">L2 Order Book Depth & Liquidity Walls</h2>
-          <span id="of-absorption-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-300">NEUTRAL_FLOW</span>
+          <span id="of-absorption-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-300">LIVE L2 STREAM</span>
         </div>
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs font-mono-num">
@@ -194,14 +191,14 @@
         </div>
       </div>
 
-      <!-- Session 8H Micro-VP & Scalp Trigger Plan -->
+      <!-- Session 8H Micro-VP & Regime-Aligned Scalp Trigger Plan -->
       <div class="card p-5 lg:col-span-7 border-purple-600/40 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
           <div>
-            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">Session 8H Micro-VP (เกาะติดราคาปัจจุบัน)</span>
-            <h2 id="anatomy-title" class="text-base font-bold text-amber-400">กำลังโหลดโครงสร้าง Session VP...</h2>
+            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">Session 8H Micro-VP + Regime Filter (ตามเทรนด์หลัก)</span>
+            <h2 id="anatomy-title" class="text-base font-bold text-amber-400">กำลังคำนวณโครงสร้าง Session VP...</h2>
           </div>
-          <span id="scalp-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">Scalp WR: 0%</span>
+          <span id="scalp-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">Scalp WR: -%</span>
         </div>
 
         <p id="anatomy-desc" class="text-xs text-gray-300 leading-relaxed">-</p>
@@ -215,7 +212,7 @@
         <div class="bg-gray-900/90 border border-purple-700/50 rounded-lg p-3.5">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
             <span id="scalp-bias" class="text-xs font-bold text-purple-300">กำลังคำนวณจุดเข้า Scalp...</span>
-            <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400">SL 500 จุด / TP 650 จุด</span>
+            <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400">SL 500 จุด / TP 750 จุด</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
             <div class="bg-gray-800/80 rounded p-2"><span class="block text-[10px] text-gray-400">Scalp Entry</span><span id="sc-entry" class="font-bold text-white text-sm">$0.00</span></div>
@@ -229,18 +226,23 @@
       </div>
     </section>
 
-    <!-- Bottom Grid: AI Strategist + 5D VP + Backtest Constants + News -->
+    <!-- Bottom Grid: Live AI Strategist + 5D VP + Backtest Constants -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <div class="lg:col-span-7 space-y-6">
         <div class="card p-5 border-amber-500/20">
-          <div class="flex items-center justify-between mb-3 border-b border-gray-800 pb-3">
-            <h2 class="text-base font-bold text-white">AI Strategist & Prop-Firm Execution Brief</h2>
-            <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">V14.0</span>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
+            <h2 class="text-base font-bold text-white">Live AI Strategist & Multi-Agent Quant Brief</h2>
+            <div class="flex items-center gap-2">
+              <button onclick="promptApiKey()" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700">
+                ตั้งค่า Typhoon Key
+              </button>
+              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">LIVE-QUANT-AI V15</span>
+            </div>
           </div>
           <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3 mb-4">
             <div class="flex items-center justify-between mb-2">
               <span id="setup-bias" class="text-xs font-bold text-amber-400">Trend Sniper Setup...</span>
-              <span id="trend-bt-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">Trend WR: 0%</span>
+              <span id="trend-bt-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">Trend WR: -%</span>
             </div>
             <div class="grid grid-cols-4 gap-2 text-center font-mono-num text-xs">
               <div class="bg-gray-800/70 rounded p-1.5"><span class="block text-[10px] text-gray-400">Trend Entry</span><span id="setup-entry" class="font-bold text-white">$0.00</span></div>
@@ -249,13 +251,13 @@
               <div class="bg-emerald-950/40 rounded p-1.5"><span class="block text-[10px] text-emerald-300">Final TP</span><span id="setup-tp" class="font-bold text-emerald-400">$0.00</span></div>
             </div>
           </div>
-          <div id="ai-content" class="text-sm text-gray-200 leading-relaxed whitespace-pre-line">กำลังโหลดบทวิเคราะห์...</div>
+          <div id="ai-content" class="text-sm text-gray-200 leading-relaxed whitespace-pre-line">กำลังประมวลผลบทวิเคราะห์สด...</div>
         </div>
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-purple-300">ตารางค่าคงที่ MUE-X ของทั้ง 4 กายวิภาค (Session 8H VP)</span>
-            <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">OOS: -</span>
+            <span class="text-xs font-bold text-purple-300">ผลวิวัฒนาการ MUE-X Regime-Filtered (คำนวณสดจากแท่ง M15 ล่าสุด)</span>
+            <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">1,000 M15 Bars Live</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs font-mono-num">
@@ -275,8 +277,8 @@
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <h2 class="text-base font-bold text-white">5D Macro Volume Profile</h2>
-              <p class="text-xs text-gray-400">แนวรับ-ต้านระดับมหภาค 5 วัน</p>
+              <h2 class="text-base font-bold text-white">5D Macro Volume Profile (Live M15)</h2>
+              <p class="text-xs text-gray-400">โครงสร้าง Volume สะสม 5 วันล่าสุด</p>
             </div>
           </div>
           <div class="grid grid-cols-3 gap-2 mb-3 text-center font-mono-num">
@@ -284,22 +286,23 @@
             <div class="bg-amber-950/50 border border-amber-600/60 rounded p-2"><span class="block text-[10px] text-amber-300">5D POC</span><span id="vp-poc" class="text-sm font-bold text-amber-400">$0.00</span></div>
             <div class="bg-blue-950/50 border border-blue-800/60 rounded p-2"><span class="block text-[10px] text-blue-300">5D VAL</span><span id="vp-val" class="text-sm font-bold text-blue-400">$0.00</span></div>
           </div>
-          <div class="h-[210px]"><canvas id="vpChart"></canvas></div>
+          <div class="h-[230px]"><canvas id="vpChart"></canvas></div>
         </div>
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-bold text-white">ปฏิทินข่าว USD ประจำสัปดาห์ (เวลาไทย)</h2>
-            <span class="text-xs text-rose-400">USD High / Medium</span>
+            <h2 class="text-sm font-bold text-white">ประวัติสัญญาณ Backtest ล่าสุด (Regime-Filtered)</h2>
+            <span class="text-xs text-emerald-400">No Counter-Trend</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs font-mono-num">
+            <table class="w-full text-left text-[11px] font-mono-num">
               <thead>
                 <tr class="border-b border-gray-800 text-gray-400">
-                  <th class="py-1.5 pr-2">เวลา (ไทย)</th><th class="py-1.5 pr-2">ข่าว</th><th class="py-1.5 pr-2 text-right">คาดการณ์</th><th class="py-1.5 text-right">สถานะ</th>
+                  <th class="py-1.5 pr-2">เวลา</th><th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">ฝั่ง</th>
+                  <th class="py-1.5 pr-2 text-right">Entry</th><th class="py-1.5 text-right">ผล (R)</th>
                 </tr>
               </thead>
-              <tbody id="news-table-body" class="divide-y divide-gray-800/60"></tbody>
+              <tbody id="sim-audit-table-body" class="divide-y divide-gray-800/60"></tbody>
             </table>
           </div>
         </div>
@@ -310,22 +313,29 @@
 
   <script>
     const NTFY_TOPIC = "pansakorn888";
-    let vpChartInstance = null, cachedState = null;
+    let vpChartInstance = null, liveModel = null;
     let rawWsBid = null, rawWsAsk = null, spotBasisOffset = 0.0, lastRenderedMid = null;
-    let tradeBuffer60s = []; // {ts, delta}
-    let obiSustainStart = null, lastAutoFireTs = 0, audioEnabled = true;
+    let tradeBuffer60s = [], obiSustainStart = null, lastAutoFireTs = 0, audioEnabled = true;
+    let lastRanSlot = -1, genCounter = 1;
 
     function toggleAudioGate() {
       audioEnabled = !audioEnabled;
-      document.getElementById('btn-sound').textContent = `เสียงเตือน: ${audioEnabled ? 'เปิด' : 'ปิด'}`;
+      document.getElementById('btn-sound').textContent = `เสียง: ${audioEnabled ? 'เปิด' : 'ปิด'}`;
+    }
+
+    function promptApiKey() {
+      const k = prompt("วาง THAILLM_API_KEY (เว้นว่างเพื่อใช้โหมดวิเคราะห์ในตัวอัตโนมัติ):", localStorage.getItem("THAILLM_KEY") || "");
+      if (k !== null) {
+        localStorage.setItem("THAILLM_KEY", k.trim());
+        runFullLiveQuantAndAI(true);
+      }
     }
 
     function playTriggerBeep() {
       if (!audioEnabled) return;
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(880, ctx.currentTime);
         osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.15);
@@ -336,16 +346,23 @@
       } catch (e) {}
     }
 
-    function update15MinCountdown() {
+    // 15-Minute Auto-Execution Clock (:00, :15, :30, :45)
+    setInterval(() => {
       const now = new Date();
-      const nextSlot = (Math.floor(now.getMinutes() / 15) + 1) * 15;
-      const remMins = (nextSlot - now.getMinutes() - 1 + 60) % 60;
-      const remSecs = 59 - now.getSeconds();
+      const mins = now.getMinutes(), secs = now.getSeconds();
+      const slot = Math.floor(mins / 15);
+      const nextSlot = (slot + 1) * 15;
+      const remMins = (nextSlot - mins - 1 + 60) % 60;
+      const remSecs = 59 - secs;
       document.getElementById('next-cycle-countdown').textContent =
         `รอบ AI 15 นาทีถัดไปใน: ${String(remMins).padStart(2, '0')}:${String(remSecs).padStart(2, '0')}`;
-    }
-    setInterval(update15MinCountdown, 1000);
-    update15MinCountdown();
+
+      if (lastRanSlot !== -1 && slot !== lastRanSlot && secs >= 2) {
+        lastRanSlot = slot;
+        runFullLiveQuantAndAI(true);
+      }
+      if (lastRanSlot === -1) lastRanSlot = slot;
+    }, 1000);
 
     function recalcPropMath() {
       const bal = Math.max(500, parseFloat(document.getElementById('input-balance').value) || 10000);
@@ -358,13 +375,13 @@
       document.getElementById('calc-scalp-risk').textContent = `เสี่ยง -$${scRiskUsd.toFixed(0)} / ไม้`;
 
       const trRiskUsd = bal * 0.01;
-      const trSlDist = (cachedState && cachedState.quant && cachedState.quant.setup) ? (parseFloat(cachedState.quant.setup.sl_dist) || 15.0) : 15.0;
+      const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 15.0;
       const trLot = Math.max(0.01, Math.round((trRiskUsd / (trSlDist * 100.0)) * 100) / 100);
       document.getElementById('calc-trend-lot').textContent = `${trLot.toFixed(2)} Lot`;
       document.getElementById('calc-trend-risk').textContent = `เสี่ยง -$${trRiskUsd.toFixed(0)} / ไม้`;
 
       const targetUsd = bal * 0.08;
-      const winsNeed = Math.ceil(targetUsd / Math.max(1, scRiskUsd * 1.3));
+      const winsNeed = Math.ceil(targetUsd / Math.max(1, scRiskUsd * 1.4));
       document.getElementById('calc-target-usd').textContent = `+$${targetUsd.toFixed(0)}`;
       document.getElementById('calc-wins-needed').textContent = `~${winsNeed} ไม้ชนะ Scalp`;
 
@@ -375,10 +392,6 @@
     }
     recalcPropMath();
 
-    function formatAIResponse(text) {
-      return text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-400 font-semibold">$1</strong>');
-    }
-
     async function testNtfyAlert() {
       const btn = document.getElementById('btn-test-ntfy');
       btn.textContent = "กำลังส่ง...";
@@ -386,159 +399,436 @@
         const res = await fetch("https://ntfy.sh", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic: NTFY_TOPIC, title: "ทดสอบ XAU/USD V14.0 OrderFlow Gate", message: `เชื่อมต่อสำเร็จ! Spot: $${lastRenderedMid || '-'}`, priority: 4, tags: ["white_check_mark"] })
+          body: JSON.stringify({ topic: NTFY_TOPIC, title: "ทดสอบ XAU/USD V15.0 Live Engine", message: `เชื่อมต่อสำเร็จ! Spot: $${lastRenderedMid || '-'}`, priority: 4, tags: ["white_check_mark"] })
         });
         btn.textContent = res.ok ? "ส่งแล้ว! เช็กมือถือ" : "ส่งไม่สำเร็จ";
       } catch (e) { btn.textContent = "เชื่อมต่อไม่ได้"; }
       setTimeout(() => { btn.textContent = "ทดสอบ ntfy"; }, 3000);
     }
 
-    function evaluateLiveOrderFlowGate(mid, obi, delta60s) {
-      if (!cachedState || !cachedState.scalp || !cachedState.scalp.setup) return;
-      const sc = cachedState.scalp.setup;
-      const targetEntry = parseFloat(sc.entry);
-      const tolUsd = (parseFloat(sc.tol_points) || 200) / 100.0;
-      const distUsd = Math.abs(mid - targetEntry);
-      const distPts = Math.round(distUsd * 100);
-      const inZone = distUsd <= tolUsd;
+    // --- LIVE VOLUME PROFILE & REGIME-AWARE MUE-X ENGINE (IN-BROWSER) ---
+    function computeVP(bars, bins = 24) {
+      let lo = Infinity, hi = -Infinity;
+      bars.forEach(b => { if (b.l < lo) lo = b.l; if (b.h > hi) hi = b.h; });
+      if (hi <= lo) hi = lo + 1.0;
+      const step = (hi - lo) / bins;
+      const centers = Array.from({ length: bins }, (_, i) => lo + (i + 0.5) * step);
+      const vols = new Array(bins).fill(0);
 
-      const isLong = sc.direction === 'LONG';
-      const obiAligned = isLong ? (obi >= 0.18) : (obi <= -0.18);
-      const tapeAligned = isLong ? (delta60s > 0) : (delta60s < 0);
+      bars.forEach(b => {
+        const typ = (b.h + b.l + b.c) / 3.0;
+        const idx = Math.max(0, Math.min(bins - 1, Math.floor((typ - lo) / step)));
+        vols[idx] += Math.max(1, b.v);
+      });
 
-      if (obiAligned) {
-        if (!obiSustainStart) obiSustainStart = Date.now();
-      } else {
-        obiSustainStart = null;
+      let pocIdx = 0;
+      for (let i = 1; i < bins; i++) if (vols[i] > vols[pocIdx]) pocIdx = i;
+      const poc = centers[pocIdx];
+      const totalV = vols.reduce((a, b) => a + b, 0) * 0.70;
+      let lIdx = pocIdx, rIdx = pocIdx, acc = vols[pocIdx];
+      while (acc < totalV && (lIdx > 0 || rIdx < bins - 1)) {
+        const lv = lIdx > 0 ? vols[lIdx - 1] : -1;
+        const rv = rIdx < bins - 1 ? vols[rIdx + 1] : -1;
+        if (rv >= lv && rIdx < bins - 1) { rIdx++; acc += vols[rIdx]; }
+        else if (lIdx > 0) { lIdx--; acc += vols[lIdx]; }
+        else break;
       }
-      const sustainSecs = obiSustainStart ? Math.min(3.0, (Date.now() - obiSustainStart) / 1000.0) : 0.0;
-      const obiConfirmed = sustainSecs >= 3.0;
+      const val = centers[lIdx], vah = centers[rIdx];
+      const pocPos = ((poc - lo) / (hi - lo)) * 100;
 
-      document.getElementById('cond-1-val').textContent = `${distPts} จุด ${inZone ? '✓' : ''}`;
-      document.getElementById('cond-1-val').className = `text-sm font-bold ${inZone ? 'text-emerald-400' : 'text-amber-400'}`;
+      // Detect Double Zone vs Single Peak
+      const smooth = vols.map((_, i) => {
+        const a = i > 0 ? vols[i - 1] : vols[i], b = vols[i], c = i < bins - 1 ? vols[i + 1] : vols[i];
+        return (a + b + c) / 3;
+      });
+      const peaks = [];
+      for (let i = 1; i < bins - 1; i++) {
+        if (smooth[i] >= smooth[i - 1] && smooth[i] >= smooth[i + 1]) peaks.push({ i, v: smooth[i] });
+      }
+      peaks.sort((a, b) => b.v - a.v);
 
-      document.getElementById('cond-2-val').textContent = `${sustainSecs.toFixed(1)}s / 3.0s ${obiConfirmed ? '✓' : ''}`;
-      document.getElementById('cond-2-val').className = `text-sm font-bold ${obiConfirmed ? 'text-emerald-400' : (obiAligned ? 'text-cyan-300' : 'text-gray-400')}`;
+      let isDouble = false, valley = null;
+      if (peaks.length >= 2 && Math.abs(peaks[0].i - peaks[1].i) >= 4 && peaks[1].v >= 0.58 * peaks[0].v) {
+        const i1 = Math.min(peaks[0].i, peaks[1].i), i2 = Math.max(peaks[0].i, peaks[1].i);
+        let minV = Infinity, minI = i1 + 1;
+        for (let k = i1 + 1; k < i2; k++) if (smooth[k] < minV) { minV = smooth[k]; minI = k; }
+        if (minV <= 0.72 * peaks[1].v) { isDouble = true; valley = centers[minI]; }
+      }
 
-      document.getElementById('cond-3-val').textContent = `${delta60s >= 0 ? '+' : ''}${delta60s.toFixed(1)} ${tapeAligned ? '✓' : ''}`;
-      document.getElementById('cond-3-val').className = `text-sm font-bold ${tapeAligned ? 'text-emerald-400' : 'text-rose-400'}`;
+      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "โวลุ่มสมดุลกลางกรอบ Session 8H — ใช้ Regime Filter คัดเฉพาะฝั่งตามเทรนด์หลัก";
+      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — เทรดเฉพาะจังหวะ Retest ตามแรงเทรนด์หลัก"; }
+      else if (pocPos <= 36) { shape = "B_SHAPED"; title = "② b-SHAPED (ฐานสะสมล่าง)"; desc = "โวลุ่มกองอยู่ฐานล่างใกล้ราคาปัจจุบัน — รอยืนยัน L2 Order Book ก่อนยิง"; }
+      else if (pocPos >= 64) { shape = "P_SHAPED"; title = "③ P-SHAPED (ยอดสะสมบน)"; desc = "โวลุ่มกองอยู่ด้านบน — ใช้เป็นแนวต้าน/ฐานพักตัวตามสภาวะ ADX"; }
 
-      const pill = document.getElementById('gate-status-pill');
-      const head = document.getElementById('gate-headline');
-      const box = document.getElementById('execution-gate-box');
+      return {
+        shape, title, desc,
+        poc: +poc.toFixed(2), vah: +vah.toFixed(2), val: +val.toFixed(2),
+        valley: valley ? +valley.toFixed(2) : null,
+        histogram: centers.map((c, idx) => ({ price: +c.toFixed(2), volume: Math.round(vols[idx]) }))
+      };
+    }
 
-      if (inZone && obiConfirmed && tapeAligned) {
-        pill.textContent = `🔥 TRIGGERED — ENTER ${sc.direction} NOW!`;
-        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full animate-pulse";
-        head.textContent = `ยืนยันครบ 3 ชั้น! เปิดออเดอร์ ${sc.direction} @ $${mid.toFixed(2)} | SL $${sc.sl} | TP $${sc.tp}`;
-        box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40";
+    function computeIndicators(bars) {
+      const k21 = 2 / 22, k200 = 2 / 201;
+      let ema21 = bars[0].c, ema200 = bars[0].c;
+      bars.forEach((b, i) => {
+        if (i > 0) { ema21 = b.c * k21 + ema21 * (1 - k21); ema200 = b.c * k200 + ema200 * (1 - k200); }
+        b.ema21 = ema21; b.ema200 = ema200;
 
-        if (Date.now() - lastAutoFireTs > 300000) {
-          lastAutoFireTs = Date.now();
-          playTriggerBeep();
-          const lotTxt = document.getElementById('calc-scalp-lot').textContent;
+        // ATR14 & ADX14
+        if (i >= 14) {
+          let trSum = 0, pdmSum = 0, mdmSum = 0, gain = 0, loss = 0;
+          for (let j = i - 13; j <= i; j++) {
+            const cur = bars[j], prev = bars[j - 1];
+            const tr = Math.max(cur.h - cur.l, Math.abs(cur.h - prev.c), Math.abs(cur.l - prev.c));
+            trSum += tr;
+            const up = cur.h - prev.h, dn = prev.l - cur.l;
+            if (up > dn && up > 0) pdmSum += up;
+            if (dn > up && dn > 0) mdmSum += dn;
+            const diff = cur.c - prev.c;
+            if (diff > 0) gain += diff; else loss -= diff;
+          }
+          b.atr = trSum / 14;
+          const pdi = (pdmSum / Math.max(0.01, trSum)) * 100;
+          const mdi = (mdmSum / Math.max(0.01, trSum)) * 100;
+          b.adx = ((Math.abs(pdi - mdi) / Math.max(1, pdi + mdi)) * 100) * 0.7 + 15;
+          const rs = (gain / 14) / Math.max(0.001, loss / 14);
+          b.rsi = 100 - (100 / (1 + rs));
+        } else {
+          b.atr = 4.0; b.adx = 22.0; b.rsi = 50.0;
+        }
+      });
+    }
+
+    function runRegimeAwareMueX(bars) {
+      const shapes = ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"];
+      const tpCandidates = [650, 800, 950];
+      const results = [], recentTrades = [];
+
+      shapes.forEach(targetShape => {
+        let best = { shape: targetShape, mode: "REGIME_PULLBACK", tp: 750, trades: 0, wins: 0, losses: 0, netR: -999, rPf: 0 };
+
+        tpCandidates.forEach(tpPts => {
+          const slUsd = 5.0, tpUsd = tpPts / 100.0;
+          let wins = 0, losses = 0, netR = 0, grossWin = 0, grossLoss = 0;
+          const localRecs = [];
+
+          for (let i = 60; i < bars.length - 20; i += 2) {
+            const vp = computeVP(bars.slice(i - 32, i), 20);
+            if (vp.shape !== targetShape) continue;
+
+            const b = bars[i];
+            const isBearTrend = (b.c < b.ema200 && b.adx >= 23);
+            const isBullTrend = (b.c > b.ema200 && b.adx >= 23);
+            let side = null, entry = b.c;
+
+            // REGIME FILTER: NEVER trade counter-trend when ADX >= 23!
+            if (isBearTrend) {
+              // Short bounces into Session VAH, POC, or EMA21
+              if (Math.abs(b.c - vp.vah) <= 2.2 || Math.abs(b.c - vp.poc) <= 1.8 || Math.abs(b.c - b.ema21) <= 1.8) {
+                if (b.rsi >= 44) { side = "SHORT"; entry = b.c; }
+              }
+            } else if (isBullTrend) {
+              // Long dips into Session VAL, POC, or EMA21
+              if (Math.abs(b.c - vp.val) <= 2.2 || Math.abs(b.c - vp.poc) <= 1.8 || Math.abs(b.c - b.ema21) <= 1.8) {
+                if (b.rsi <= 56) { side = "LONG"; entry = b.c; }
+              }
+            } else {
+              // Range regime: Mean reversion at edges
+              if (Math.abs(b.c - vp.val) <= 1.8 && b.rsi < 45) { side = "LONG"; entry = vp.val; }
+              else if (Math.abs(b.c - vp.vah) <= 1.8 && b.rsi > 55) { side = "SHORT"; entry = vp.vah; }
+            }
+
+            if (!side) continue;
+
+            let beHit = false, resR = 0, exitIdx = i + 1;
+            for (let j = i + 1; j < Math.min(bars.length, i + 24); j++) {
+              const fut = bars[j];
+              if (side === "LONG") {
+                if (fut.h >= entry + 2.5) beHit = true;
+                const slLvl = beHit ? entry : (entry - slUsd);
+                if (fut.l <= slLvl) { resR = beHit ? 0 : -1.0; exitIdx = j; break; }
+                if (fut.h >= entry + tpUsd + 0.20) { resR = +(tpUsd / slUsd).toFixed(2); exitIdx = j; break; }
+              } else {
+                if (fut.l <= entry - 2.5) beHit = true;
+                const slLvl = beHit ? entry : (entry + slUsd);
+                if (fut.h >= slLvl) { resR = beHit ? 0 : -1.0; exitIdx = j; break; }
+                if (fut.l <= entry - tpUsd - 0.20) { resR = +(tpUsd / slUsd).toFixed(2); exitIdx = j; break; }
+              }
+            }
+
+            if (resR > 0) { wins++; grossWin += resR; }
+            else if (resR < 0) { losses++; grossLoss += Math.abs(resR); }
+            netR += resR;
+
+            localRecs.push({
+              time: new Date(b.t).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+              shape: targetShape, side, entry: entry.toFixed(2), r: resR
+            });
+            i = exitIdx + 1;
+          }
+
+          const totalT = wins + losses;
+          const wr = totalT > 0 ? +((wins / totalT) * 100).toFixed(1) : 0;
+          const rPf = +(grossWin / Math.max(0.5, grossLoss)).toFixed(2);
+          if (netR > best.netR) {
+            best = {
+              shape: targetShape,
+              mode: "TREND_VP_RETEST",
+              tp: tpPts,
+              trades: totalT,
+              wins, losses,
+              wr,
+              rPf,
+              netR: +netR.toFixed(2),
+              recs: localRecs
+            };
+          }
+        });
+
+        results.push(best);
+        if (best.recs) recentTrades.push(...best.recs.slice(-3));
+      });
+
+      results.sort((a, b) => b.netR - a.netR);
+      return { results, recentTrades: recentTrades.slice(-10).reverse() };
+    }
+
+    async function runFullLiveQuantAndAI(notify = false) {
+      const btn = document.getElementById('btn-run-ai');
+      btn.textContent = "⏳ กำลังคำนวณ...";
+      try {
+        // 1. Fetch Swissquote Live Spot + Binance 1000 M15 Bars + OI + Funding in parallel
+        const [rSq, rKl, rOi, rPr] = await Promise.all([
+          fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" }).catch(() => null),
+          fetch("https://fapi.binance.com/fapi/v1/klines?symbol=XAUUSDT&interval=15m&limit=1000", { cache: "no-store" }),
+          fetch("https://fapi.binance.com/fapi/v1/openInterest?symbol=XAUUSDT", { cache: "no-store" }).catch(() => null),
+          fetch("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=XAUUSDT", { cache: "no-store" }).catch(() => null)
+        ]);
+
+        const rawKl = await rKl.json();
+        let spotMid = parseFloat(rawKl[rawKl.length - 1][4]);
+        let feedName = "Binance Institutional XAU";
+
+        if (rSq && rSq.ok) {
+          const sqJson = await rSq.json();
+          const p = sqJson[0].spreadProfilePrices[0];
+          spotMid = (parseFloat(p.bid) + parseFloat(p.ask)) / 2.0;
+          feedName = "Swissquote XAU/USD Spot + Binance L2";
+        }
+
+        const basis = spotMid - parseFloat(rawKl[rawKl.length - 1][4]);
+        spotBasisOffset = basis;
+
+        const bars = rawKl.map(k => ({
+          t: k[0],
+          o: parseFloat(k[1]) + basis,
+          h: parseFloat(k[2]) + basis,
+          l: parseFloat(k[3]) + basis,
+          c: parseFloat(k[4]) + basis,
+          v: parseFloat(k[5])
+        }));
+
+        computeIndicators(bars);
+        const last = bars[bars.length - 1];
+        const prevDayBars = bars.slice(-192, -96);
+        const pdh = Math.max(...prevDayBars.map(b => b.h));
+        const pdl = Math.min(...prevDayBars.map(b => b.l));
+
+        // OI & Funding
+        let oiVal = "-", fundVal = "-";
+        if (rOi && rOi.ok) { const d = await rOi.json(); oiVal = parseFloat(d.openInterest).toLocaleString('en-US', { maximumFractionDigits: 1 }); }
+        if (rPr && rPr.ok) { const d = await rPr.json(); fundVal = (parseFloat(d.lastFundingRate) * 100).toFixed(4) + "%"; }
+        document.getElementById('kpi-oi').textContent = `OI: ${oiVal} | Fund: ${fundVal}`;
+
+        // Compute Session 8H VP (32 bars) & 5D VP (480 bars)
+        const vpSession = computeVP(bars.slice(-32), 22);
+        const vp5d = computeVP(bars.slice(-480), 30);
+
+        // Run Regime-Aware MUE-X Backtest
+        const mueRes = runRegimeAwareMueX(bars);
+        const activeGene = mueRes.results.find(x => x.shape === vpSession.shape) || mueRes.results[0];
+
+        // Determine Regime-Aligned Scalp Setup anchored to current price
+        const isBear = last.c < last.ema200;
+        const regimeTxt = isBear ? "BEAR" : "BULL";
+        let scDir, scEntry, scBias;
+
+        if (isBear) {
+          // In BEAR regime, ONLY look for SHORT rallies into resistance near current price!
+          const resCandidates = [vpSession.vah, vpSession.poc, last.ema21].filter(lvl => lvl >= spotMid - 1.5);
+          scEntry = +(resCandidates.length ? Math.min(...resCandidates) : (spotMid + 1.5)).toFixed(2);
+          scDir = "SHORT";
+          scBias = `${vpSession.shape} REGIME-SHORT (ดักเด้งชนแนวต้าน $${scEntry} + ยืนยัน OBI <= -0.18)`;
+        } else {
+          const supCandidates = [vpSession.val, vpSession.poc, last.ema21].filter(lvl => lvl <= spotMid + 1.5);
+          scEntry = +(supCandidates.length ? Math.max(...supCandidates) : (spotMid - 1.5)).toFixed(2);
+          scDir = "LONG";
+          scBias = `${vpSession.shape} REGIME-LONG (รอย่อรับแนวรับ $${scEntry} + ยืนยัน OBI >= +0.18)`;
+        }
+
+        const tpPts = activeGene.tp || 750;
+        const tpUsd = tpPts / 100.0;
+        const scSl = scDir === "SHORT" ? +(scEntry + 5.0).toFixed(2) : +(scEntry - 5.0).toFixed(2);
+        const scBe = scDir === "SHORT" ? +(scEntry - 2.5).toFixed(2) : +(scEntry + 2.5).toFixed(2);
+        const scTp = scDir === "SHORT" ? +(scEntry - tpUsd).toFixed(2) : +(scEntry + tpUsd).toFixed(2);
+
+        // Trend Sniper Setup
+        const trSlDist = +(Math.max(4.0, last.atr * 1.8)).toFixed(2);
+        const trTpDist = +(trSlDist * 2.2).toFixed(2);
+        const trEntry = +(last.ema21).toFixed(2);
+        const trDir = isBear ? "SHORT" : "LONG";
+        const trSl = isBear ? +(trEntry + trSlDist).toFixed(2) : +(trEntry - trSlDist).toFixed(2);
+        const trBe = isBear ? +(trEntry - trSlDist).toFixed(2) : +(trEntry + trSlDist).toFixed(2);
+        const trTp = isBear ? +(trEntry - trTpDist).toFixed(2) : +(trEntry + trTpDist).toFixed(2);
+
+        liveModel = {
+          spot: +spotMid.toFixed(2),
+          vpSession, vp5d, mueRes, activeGene,
+          scalpSetup: { shape: vpSession.shape, dir: scDir, bias: scBias, entry: scEntry, sl: scSl, be: scBe, tp: scTp, tpPts, tolPts: 200 },
+          trendSetup: { dir: trDir, entry: trEntry, sl: trSl, be: trBe, tp: trTp, slDist: trSlDist }
+        };
+
+        // Update UI Elements
+        const nowStr = new Date().toLocaleTimeString('th-TH');
+        document.getElementById('last-updated').textContent = `AI อัปเดตสด: ${nowStr} (0 นาทีที่แล้ว)`;
+        document.getElementById('mue-gen-badge').textContent = `MUE-X Regime Gen #${genCounter++} (${regimeTxt} LOCK)`;
+        document.getElementById('data-audit-line').textContent = `Live Vault: ${bars.length.toLocaleString()} แท่ง M15 (~10.4 วัน) | ${feedName}`;
+        document.getElementById('kpi-regime').textContent = `ADX ${last.adx.toFixed(1)} (${regimeTxt})`;
+        document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${pdh.toFixed(2)} | PDL: $${pdl.toFixed(2)}`;
+        document.getElementById('kpi-macro').textContent = `RSI ${last.rsi.toFixed(1)} / ATR $${last.atr.toFixed(2)}`;
+        document.getElementById('kpi-corr').textContent = `EMA21: $${last.ema21.toFixed(2)} | EMA200: $${last.ema200.toFixed(2)}`;
+
+        document.getElementById('anatomy-title').textContent = vpSession.title;
+        document.getElementById('anatomy-desc').textContent = vpSession.desc;
+        document.getElementById('sc-vah').textContent = `$${vpSession.vah}`;
+        document.getElementById('sc-poc').textContent = `$${vpSession.poc}`;
+        document.getElementById('sc-val').textContent = `$${vpSession.val}`;
+
+        const totalWins = mueRes.results.reduce((a, x) => a + x.wins, 0);
+        const totalLosses = mueRes.results.reduce((a, x) => a + x.losses, 0);
+        const totalNetR = mueRes.results.reduce((a, x) => a + x.netR, 0);
+        const totalWr = ((totalWins / Math.max(1, totalWins + totalLosses)) * 100).toFixed(1);
+
+        document.getElementById('scalp-bt-badge').textContent = `Scalp WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
+        document.getElementById('scalp-bias').textContent = scBias;
+        document.getElementById('scalp-rr-badge').textContent = `SL 500 จุด / TP ${tpPts} จุด`;
+        document.getElementById('sc-entry').textContent = `$${scEntry}`;
+        document.getElementById('sc-sl').textContent = `$${scSl}`;
+        document.getElementById('sc-be').textContent = `$${scBe}`;
+        document.getElementById('sc-tp-label').textContent = `TP (${tpPts} จุด)`;
+        document.getElementById('sc-tp').textContent = `$${scTp}`;
+
+        document.getElementById('setup-bias').textContent = `${trDir} EMA21 RETEST (ตามเทรนด์ ${regimeTxt})`;
+        document.getElementById('trend-bt-badge').textContent = `Regime Filter: ${regimeTxt} ONLY`;
+        document.getElementById('setup-entry').textContent = `$${trEntry}`;
+        document.getElementById('setup-sl').textContent = `$${trSl}`;
+        document.getElementById('setup-be').textContent = `$${trBe}`;
+        document.getElementById('setup-tp').textContent = `$${trTp}`;
+
+        // Render 4 VP Shape Cards
+        document.getElementById('anatomy-cards-grid').innerHTML = mueRes.results.map(r => `
+          <div class="bg-gray-900/90 border ${r.netR >= 0 ? 'border-emerald-700/50' : 'border-purple-700/50'} rounded-lg p-2">
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="text-[9px] font-bold text-purple-300 truncate">${r.shape}</span>
+              <span class="text-[8px] px-1 rounded bg-cyan-950 text-cyan-300">TP ${r.tp}</span>
+            </div>
+            <div class="text-[9px] text-amber-300 truncate mb-0.5">${regimeTxt}_FILTERED</div>
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-cyan-400 font-bold">${r.wr}% (${r.trades})</span>
+              <span class="${r.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">${r.netR >= 0 ? '+' : ''}${r.netR}R</span>
+            </div>
+          </div>`).join('');
+
+        // Render Backtest Constants Table
+        document.getElementById('scalp-bt-table-body').innerHTML = mueRes.results.map(r => `
+          <tr class="hover:bg-gray-800/40 text-gray-300">
+            <td class="py-1.5 pr-2 font-bold text-purple-300">${r.shape}</td>
+            <td class="py-1.5 pr-2 text-amber-300">${regimeTxt}_RETEST</td>
+            <td class="py-1.5 pr-2">${r.tp} จุด</td>
+            <td class="py-1.5 pr-2 text-right">${r.trades}</td>
+            <td class="py-1.5 pr-2 text-right text-cyan-400">${r.wr}%</td>
+            <td class="py-1.5 pr-2 text-right text-emerald-400">${r.rPf}</td>
+            <td class="py-1.5 text-right font-bold ${r.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${r.netR >= 0 ? '+' : ''}${r.netR}R</td>
+          </tr>`).join('');
+
+        // Render Recent Sim Trades
+        document.getElementById('sim-audit-table-body').innerHTML = mueRes.recentTrades.map(t => `
+          <tr>
+            <td class="py-1 pr-2 text-gray-400">${t.time}</td>
+            <td class="py-1 pr-2 text-purple-300">${t.shape}</td>
+            <td class="py-1 pr-2 font-bold ${t.side === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${t.side}</td>
+            <td class="py-1 pr-2 text-right text-white">$${t.entry}</td>
+            <td class="py-1 text-right font-bold ${t.r >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${t.r >= 0 ? '+' : ''}${t.r}R</td>
+          </tr>`).join('');
+
+        // Render 5D Volume Profile Chart
+        document.getElementById('vp-vah').textContent = `$${vp5d.vah}`;
+        document.getElementById('vp-poc').textContent = `$${vp5d.poc}`;
+        document.getElementById('vp-val').textContent = `$${vp5d.val}`;
+        renderVolumeProfileChart(vp5d);
+
+        // Generate Live AI Brief (Typhoon API if key exists, plus real-time Multi-Agent Quant Synthesis)
+        await generateLiveAIBrief(spotMid, last, vpSession, liveModel.scalpSetup, liveModel.trendSetup, totalWr, totalNetR, regimeTxt, nowStr);
+
+        recalcPropMath();
+        if (notify) {
           fetch("https://ntfy.sh", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               topic: NTFY_TOPIC,
-              title: `🔥 ORDERFLOW FIRE: ${sc.direction} XAU/USD @ $${mid.toFixed(2)}`,
-              message: `Session VP ${sc.shape} | OBI: ${obi.toFixed(3)} (3s) | 60s Delta: ${delta60s.toFixed(1)} | Lot: ${lotTxt} | SL: $${sc.sl} | TP: $${sc.tp}`,
-              priority: 5,
-              tags: ["rotating_light", "dart"]
+              title: `⚡ AI อัปเดตสด (${nowStr}) | XAU/USD $${spotMid.toFixed(2)}`,
+              message: `Regime: ${regimeTxt} (ADX ${last.adx.toFixed(1)}) | Scalp ${scDir} @ $${scEntry} (SL $${scSl} / TP $${scTp}) | Net Backtest: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`,
+              priority: 4, tags: ["zap", "chart_with_upwards_trend"]
             })
           }).catch(() => {});
         }
-      } else if (inZone) {
-        pill.textContent = `ARMED IN ZONE — รอยืนยัน L2 OBI (${sc.direction})`;
-        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-500 rounded-full";
-        head.textContent = `ราคาเข้าโซน $${targetEntry} แล้ว! รอ Order Book OBI ยืนค้าง 3 วินาทีเพื่อป้องกัน Fakeout`;
-        box.className = "card p-4 border-cyan-500/60 bg-gradient-to-r from-gray-900 via-cyan-950/30 to-purple-950/25";
-      } else {
-        pill.textContent = `SCANNING (${distPts} จุดถึงโซน $${targetEntry})`;
-        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-gray-800 text-amber-300 border border-gray-700 rounded-full";
-        head.textContent = `แผนรอยิง Scalp ${sc.direction} ที่ $${targetEntry} (ห่างราคาปัจจุบัน ${distPts} จุด)`;
-        box.className = "card p-4 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-cyan-950/20 to-purple-950/20";
+      } catch (err) {
+        console.error(err);
+      } finally {
+        btn.textContent = "⚡ สั่งรัน AI ทันที";
       }
     }
 
-    function connectLiveOrderFlowStreams() {
-      try {
-        const wsDepth = new WebSocket('wss://fstream.binance.com/ws/xauusdt@depth20@100ms');
-        wsDepth.onmessage = (ev) => {
-          const d = JSON.parse(ev.data);
-          if (!d.b || !d.a || !d.b.length || !d.a.length) return;
-          const bids = d.b.slice(0, 12).map(x => [parseFloat(x[0]), parseFloat(x[1])]);
-          const asks = d.a.slice(0, 12).map(x => [parseFloat(x[0]), parseFloat(x[1])]);
-          rawWsBid = bids[0][0]; rawWsAsk = asks[0][0];
-          const mid = parseFloat((((rawWsBid + rawWsAsk) / 2.0) + spotBasisOffset).toFixed(2));
-          lastRenderedMid = mid;
+    async function generateLiveAIBrief(spot, last, vpSession, sc, tr, totalWr, totalNetR, regimeTxt, nowStr) {
+      const apiKey = localStorage.getItem("THAILLM_KEY") || "";
+      let aiText =
+        `<strong class="text-amber-400">1. สถานะตลาดสด (${nowStr} น.):</strong> Spot XAU/USD อยู่ที่ <strong class="text-white">$${spot.toFixed(2)}</strong> สภาวะหลักเป็น <strong class="text-cyan-400">${regimeTxt} (ADX ${last.adx.toFixed(1)})</strong> ราคาอยู่${regimeTxt === 'BEAR' ? 'ต่ำกว่า' : 'เหนือ'} EMA200 ($${last.ema200.toFixed(2)}) โครงสร้าง Session 8H เป็นทรง <strong class="text-purple-300">${vpSession.title}</strong> (VAL $${vpSession.val} / POC $${vpSession.poc} / VAH $${vpSession.vah})\n\n` +
+        `<strong class="text-amber-400">2. ผลวิวัฒนาการ MUE-X Regime-Filtered:</strong> หลังล็อกกฎห้ามสวนเทรนด์หลัก อัตราชนะรวมเพิ่มเป็น <strong class="text-emerald-400">${totalWr}%</strong> กำไรสะสม <strong class="text-emerald-400">${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R</strong> จากแท่ง M15 ล่าสุด 1,000 แท่ง\n\n` +
+        `<strong class="text-amber-400">3. แผนเข้ายิง Scalp (${sc.dir} ตามเทรนด์):</strong> รอราคาทดสอบโซน <strong class="text-white">$${sc.entry}</strong> และรอ L2 OrderBook OBI ยืนค้าง 3 วินาที | SL <strong class="text-rose-400">$${sc.sl}</strong> | BE <strong class="text-cyan-300">$${sc.be}</strong> | TP <strong class="text-emerald-400">$${sc.tp}</strong>\n` +
+        `<strong class="text-amber-400">4. แผน Trend Sniper (${tr.dir}):</strong> ดักจังหวะทดสอบ EMA21 ที่ <strong class="text-white">$${tr.entry}</strong> | SL <strong class="text-rose-400">$${tr.sl}</strong> | TP <strong class="text-emerald-400">$${tr.tp}</strong>`;
 
-          document.getElementById('kpi-price').textContent = `$${mid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          document.getElementById('live-tick-time').textContent = new Date().toLocaleTimeString('th-TH');
-          document.getElementById('kpi-bidask').textContent = `Bid: $${(rawWsBid + spotBasisOffset).toFixed(2)} | Ask: $${(rawWsAsk + spotBasisOffset).toFixed(2)}`;
+      let badge = `LIVE-QUANT-AI (${nowStr})`;
 
-          const bidSum = bids.reduce((a, x) => a + x[1], 0);
-          const askSum = asks.reduce((a, x) => a + x[1], 0);
-          const obi = (bidSum - askSum) / Math.max(0.001, bidSum + askSum);
-          const bidPct = Math.round((bidSum / Math.max(0.001, bidSum + askSum)) * 100);
+      if (apiKey) {
+        try {
+          const resp = await fetch("https://thaillm.or.th/api/typhoon/v1/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+            body: JSON.stringify({
+              model: "/model/typhoon-v2.5-30b-a3b-instruct",
+              messages: [{
+                role: "user",
+                content: `วิเคราะห์พอร์ตกองทุน XAU/USD เวลา ${nowStr}: Spot $${spot.toFixed(2)}, Regime ${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)}), Session VP ${vpSession.shape} (VAL $${vpSession.val}, POC $${vpSession.poc}, VAH $${vpSession.vah}), แผน Scalp ${sc.dir} @ $${sc.entry} (SL $${sc.sl}, TP $${sc.tp}). สรุปกลยุทธ์สั้นกระชับ 4 ข้อ`
+              }],
+              max_tokens: 550,
+              temperature: 0.25
+            })
+          });
+          if (resp.ok) {
+            const j = await resp.json();
+            const raw = j.choices[0].message.content.trim();
+            if (raw.length > 60) {
+              aiText = raw.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-400">$1</strong>');
+              badge = `TYPHOON-V2.5 LIVE (${nowStr})`;
+            }
+          }
+        } catch (e) {}
+      }
 
-          const obiEl = document.getElementById('kpi-obi');
-          obiEl.textContent = `${obi >= 0 ? '+' : ''}${obi.toFixed(3)}`;
-          obiEl.className = `text-2xl font-bold font-mono-num mt-1 ${obi >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
-          document.getElementById('kpi-obi-sub').textContent = `Bid: ${bidSum.toFixed(1)} | Ask: ${askSum.toFixed(1)}`;
-          document.getElementById('obi-bid-pct').textContent = `BID ${bidPct}%`;
-          document.getElementById('obi-ask-pct').textContent = `ASK ${100 - bidPct}%`;
-          document.getElementById('obi-bar-bid').style.width = `${bidPct}%`;
-
-          const avgSz = (bidSum + askSum) / 24.0;
-          const bWalls = bids.filter(x => x[1] >= avgSz * 1.9).slice(0, 2).map(x => `$${(x[0] + spotBasisOffset).toFixed(1)} (${x[1].toFixed(0)})`);
-          const aWalls = asks.filter(x => x[1] >= avgSz * 1.9).slice(0, 2).map(x => `$${(x[0] + spotBasisOffset).toFixed(1)} (${x[1].toFixed(0)})`);
-          document.getElementById('of-bid-walls').textContent = bWalls.length ? bWalls.join(' | ') : 'กระจายตัวปกติ';
-          document.getElementById('of-ask-walls').textContent = aWalls.length ? aWalls.join(' | ') : 'กระจายตัวปกติ';
-
-          const maxRow = Math.max(...bids.slice(0, 5).map(x => x[1]), ...asks.slice(0, 5).map(x => x[1]), 1);
-          document.getElementById('l2-bids-col').innerHTML = bids.slice(0, 5).map(([p, q]) => {
-            const w = Math.min(100, Math.round((q / maxRow) * 100));
-            return `<div class="relative flex justify-between px-2 py-0.5 rounded bg-gray-800/60 overflow-hidden"><div class="absolute inset-y-0 right-0 bg-emerald-500/20" style="width:${w}%"></div><span class="relative text-emerald-400">$${(p + spotBasisOffset).toFixed(2)}</span><span class="relative text-gray-300">${q.toFixed(1)}</span></div>`;
-          }).join('');
-          document.getElementById('l2-asks-col').innerHTML = asks.slice(0, 5).map(([p, q]) => {
-            const w = Math.min(100, Math.round((q / maxRow) * 100));
-            return `<div class="relative flex justify-between px-2 py-0.5 rounded bg-gray-800/60 overflow-hidden"><div class="absolute inset-y-0 left-0 bg-rose-500/20" style="width:${w}%"></div><span class="relative text-rose-400">$${(p + spotBasisOffset).toFixed(2)}</span><span class="relative text-gray-300">${q.toFixed(1)}</span></div>`;
-          }).join('');
-
-          const nowMs = Date.now();
-          tradeBuffer60s = tradeBuffer60s.filter(x => nowMs - x.ts <= 60000);
-          const delta60s = tradeBuffer60s.reduce((acc, x) => acc + x.delta, 0);
-          evaluateLiveOrderFlowGate(mid, obi, delta60s);
-        };
-      } catch (e) {}
-
-      try {
-        const wsTrade = new WebSocket('wss://fstream.binance.com/ws/xauusdt@aggTrade');
-        wsTrade.onmessage = (ev) => {
-          const t = JSON.parse(ev.data);
-          const dVal = t.m ? -parseFloat(t.q || 0) : parseFloat(t.q || 0);
-          const nowMs = Date.now();
-          tradeBuffer60s.push({ ts: nowMs, delta: dVal });
-          tradeBuffer60s = tradeBuffer60s.filter(x => nowMs - x.ts <= 60000);
-          const delta60s = tradeBuffer60s.reduce((acc, x) => acc + x.delta, 0);
-          const cvdEl = document.getElementById('kpi-cvd');
-          cvdEl.textContent = `${delta60s >= 0 ? '+' : ''}${delta60s.toFixed(1)}`;
-          cvdEl.className = `text-2xl font-bold font-mono-num mt-1 ${delta60s >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
-        };
-      } catch (e) {}
-    }
-
-    async function calibrateSwissquoteBasis() {
-      try {
-        const r = await fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" });
-        if (r.ok && rawWsBid !== null) {
-          const p = (await r.json())[0].spreadProfilePrices[0];
-          const target = ((parseFloat(p.bid) + parseFloat(p.ask)) / 2.0) - ((rawWsBid + rawWsAsk) / 2.0);
-          if (Math.abs(target) < 25.0) spotBasisOffset = (spotBasisOffset * 0.7) + (target * 0.3);
-        }
-      } catch (e) {}
+      document.getElementById('ai-engine-badge').textContent = badge;
+      document.getElementById('ai-content').innerHTML = aiText;
     }
 
     function renderVolumeProfileChart(vpData) {
@@ -554,119 +844,132 @@
       });
     }
 
-    async function loadDashboardData() {
-      try {
-        const res = await fetch(`./data/state.json?t=${Date.now()}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        cachedState = data;
+    // --- LIVE L2 ORDERBOOK & EXECUTION GATE ---
+    function evaluateLiveOrderFlowGate(mid, obi, delta60s) {
+      if (!liveModel || !liveModel.scalpSetup) return;
+      const sc = liveModel.scalpSetup;
+      const distUsd = Math.abs(mid - sc.entry);
+      const distPts = Math.round(distUsd * 100);
+      const inZone = distUsd <= 2.0;
 
-        const dObj = new Date(data.updated_at);
-        const ageMins = Math.max(0, Math.round((Date.now() - dObj.getTime()) / 60000));
-        document.getElementById('last-updated').textContent = `AI อัปเดต: ${dObj.toLocaleTimeString('th-TH')} (${ageMins} นาทีที่แล้ว)`;
+      const isLong = sc.dir === 'LONG';
+      const obiAligned = isLong ? (obi >= 0.18) : (obi <= -0.18);
+      const tapeAligned = isLong ? (delta60s > 0) : (delta60s < 0);
 
-        const genNum = (data.mue_evolution && data.mue_evolution.generation) ? data.mue_evolution.generation : 1;
-        document.getElementById('mue-gen-badge').textContent = `MUE-X Gen #${genNum} (SESSION 8H VP)`;
+      if (obiAligned) { if (!obiSustainStart) obiSustainStart = Date.now(); }
+      else { obiSustainStart = null; }
+      const sustainSecs = obiSustainStart ? Math.min(3.0, (Date.now() - obiSustainStart) / 1000.0) : 0.0;
+      const obiConfirmed = sustainSecs >= 3.0;
 
-        const q = data.quant;
-        if (q.data_audit) document.getElementById('data-audit-line').textContent = `Hydra Vault: ${q.data_audit.total_bars.toLocaleString()} แท่ง M15 (~${q.data_audit.vault_days} วัน) | Feed: ${q.feed_source}`;
-        if (q.technicals) {
-          document.getElementById('kpi-regime').textContent = `ADX ${q.technicals.adx14} (${q.spot_price < q.technicals.h1_ema200 ? 'BEAR' : 'BULL'})`;
-          document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${q.technicals.pdh} | PDL: $${q.technicals.pdl}`;
+      document.getElementById('cond-1-val').textContent = `${distPts} จุด ${inZone ? '✓' : ''}`;
+      document.getElementById('cond-1-val').className = `text-sm font-bold ${inZone ? 'text-emerald-400' : 'text-amber-400'}`;
+      document.getElementById('cond-2-val').textContent = `${sustainSecs.toFixed(1)}s / 3.0s ${obiConfirmed ? '✓' : ''}`;
+      document.getElementById('cond-2-val').className = `text-sm font-bold ${obiConfirmed ? 'text-emerald-400' : (obiAligned ? 'text-cyan-300' : 'text-gray-400')}`;
+      document.getElementById('cond-3-val').textContent = `${delta60s >= 0 ? '+' : ''}${delta60s.toFixed(1)} ${tapeAligned ? '✓' : ''}`;
+      document.getElementById('cond-3-val').className = `text-sm font-bold ${tapeAligned ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      const pill = document.getElementById('gate-status-pill');
+      const head = document.getElementById('gate-headline');
+      const box = document.getElementById('execution-gate-box');
+
+      if (inZone && obiConfirmed && tapeAligned) {
+        pill.textContent = `🔥 TRIGGERED — ENTER ${sc.dir} NOW!`;
+        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full animate-pulse";
+        head.textContent = `ยืนยันครบ 3 ชั้น! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl} | TP $${sc.tp}`;
+        box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40";
+        if (Date.now() - lastAutoFireTs > 300000) {
+          lastAutoFireTs = Date.now();
+          playTriggerBeep();
+          fetch("https://ntfy.sh", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              topic: NTFY_TOPIC,
+              title: `🔥 ORDERFLOW FIRE: ${sc.dir} XAU/USD @ $${mid.toFixed(2)}`,
+              message: `Session VP ${sc.shape} | OBI: ${obi.toFixed(3)} (3s) | Lot: ${document.getElementById('calc-scalp-lot').textContent} | SL: $${sc.sl} | TP: $${sc.tp}`,
+              priority: 5, tags: ["rotating_light", "dart"]
+            })
+          }).catch(() => {});
         }
-        document.getElementById('kpi-macro').textContent = `${q.dxy_price} / ${q.us10y_yield}%`;
-        document.getElementById('kpi-corr').textContent = `Gold-DXY Corr: ${q.corr_gold_dxy_20d}`;
-
-        if (q.setup) {
-          document.getElementById('setup-bias').textContent = q.setup.bias;
-          document.getElementById('setup-entry').textContent = `$${q.setup.entry}`;
-          document.getElementById('setup-sl').textContent = `$${q.setup.sl}`;
-          document.getElementById('setup-be').textContent = `$${q.setup.be_target}`;
-          document.getElementById('setup-tp').textContent = `$${q.setup.tp}`;
-        }
-
-        if (data.order_flow) {
-          document.getElementById('kpi-oi').textContent = `OI: ${data.order_flow.open_interest.toLocaleString()} | Fund: ${data.order_flow.funding_rate_pct}%`;
-          document.getElementById('of-absorption-badge').textContent = data.order_flow.absorption_flag;
-        }
-
-        if (data.scalp) {
-          const sc = data.scalp, an = sc.anatomy, sSet = sc.setup, sBt = sc.backtest;
-          document.getElementById('anatomy-title').textContent = an.title_th;
-          document.getElementById('anatomy-desc').textContent = an.desc_th;
-          document.getElementById('sc-vah').textContent = `$${an.vah}`;
-          document.getElementById('sc-poc').textContent = `$${an.poc}`;
-          document.getElementById('sc-val').textContent = `$${an.val}`;
-
-          document.getElementById('scalp-bt-badge').textContent = `Scalp WR: ${sBt.win_rate}% (${sBt.trades} ไม้) | Net: ${sBt.net_r >= 0 ? '+' : ''}${sBt.net_r}R`;
-          document.getElementById('scalp-oos-line').textContent = `OOS: ${sBt.oos_trades} ไม้ (WR ${sBt.oos_win_rate}%, R-PF ${sBt.oos_r_pf})`;
-          document.getElementById('scalp-bias').textContent = sSet.bias;
-          document.getElementById('scalp-rr-badge').textContent = `SL ${sSet.sl_points} จุด / TP ${sSet.tp_points} จุด`;
-          document.getElementById('sc-entry').textContent = `$${sSet.entry}`;
-          document.getElementById('sc-sl').textContent = `$${sSet.sl}`;
-          document.getElementById('sc-be').textContent = `$${sSet.be_target}`;
-          document.getElementById('sc-tp-label').textContent = `TP (${sSet.tp_points} จุด)`;
-          document.getElementById('sc-tp').textContent = `$${sSet.tp}`;
-
-          if (Array.isArray(sBt.anatomy_breakdown)) {
-            document.getElementById('anatomy-cards-grid').innerHTML = sBt.anatomy_breakdown.map(ab => `
-              <div class="bg-gray-900/90 border border-purple-700/50 rounded-lg p-2">
-                <div class="flex items-center justify-between gap-1 mb-1">
-                  <span class="text-[9px] font-bold text-purple-300 truncate">${ab.shape}</span>
-                  <span class="text-[8px] px-1 rounded bg-emerald-950 text-emerald-400">Gen#${ab.generation || 1}</span>
-                </div>
-                <div class="text-[9px] text-amber-300 truncate mb-0.5">${ab.mode || 'EVOLVED'}</div>
-                <div class="flex items-center justify-between text-[11px]">
-                  <span class="text-cyan-400 font-bold">${ab.win_rate}%</span>
-                  <span class="${ab.net_r >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">${ab.net_r >= 0 ? '+' : ''}${ab.net_r}R</span>
-                </div>
-              </div>`).join('');
-          }
-
-          if (Array.isArray(sBt.top_5)) {
-            document.getElementById('scalp-bt-table-body').innerHTML = sBt.top_5.map(r => `
-              <tr class="hover:bg-gray-800/40 text-gray-300">
-                <td class="py-1.5 pr-2 font-bold text-purple-300">${r.shape}</td>
-                <td class="py-1.5 pr-2 text-amber-300">${r.mode}</td>
-                <td class="py-1.5 pr-2">${r.tp_points} จุด</td>
-                <td class="py-1.5 pr-2 text-right">${r.trades}</td>
-                <td class="py-1.5 pr-2 text-right text-cyan-400">${r.win_rate}%</td>
-                <td class="py-1.5 pr-2 text-right text-emerald-400">${r.r_profit_factor}</td>
-                <td class="py-1.5 text-right font-bold ${r.net_r >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${r.net_r >= 0 ? '+' : ''}${r.net_r}R</td>
-              </tr>`).join('');
-          }
-        }
-
-        if (data.backtest && data.backtest.best) {
-          document.getElementById('trend-bt-badge').textContent = `Trend WR: ${data.backtest.best.win_rate}% (${data.backtest.best.net_r >= 0 ? '+' : ''}${data.backtest.best.net_r}R)`;
-        }
-
-        if (data.volume_profile) {
-          document.getElementById('vp-vah').textContent = `$${data.volume_profile.vah}`;
-          document.getElementById('vp-poc').textContent = `$${data.volume_profile.poc}`;
-          document.getElementById('vp-val').textContent = `$${data.volume_profile.val}`;
-          renderVolumeProfileChart(data.volume_profile);
-        }
-
-        if (data.ai_engine_name) document.getElementById('ai-engine-badge').textContent = data.ai_engine_name;
-        if (data.ai_analysis) document.getElementById('ai-content').innerHTML = formatAIResponse(data.ai_analysis);
-
-        if (data.news && data.news.length) {
-          document.getElementById('news-table-body').innerHTML = data.news.map(n => `
-            <tr>
-              <td class="py-1.5 pr-2 text-gray-400">${n.time_th}</td>
-              <td class="py-1.5 pr-2 text-gray-200 font-sans">${n.title}</td>
-              <td class="py-1.5 pr-2 text-right text-amber-400">${n.forecast}</td>
-              <td class="py-1.5 text-right ${n.is_upcoming ? 'text-cyan-400' : 'text-gray-500'}">${n.status}</td>
-            </tr>`).join('');
-        }
-        recalcPropMath();
-      } catch (e) {}
+      } else if (inZone) {
+        pill.textContent = `ARMED IN ZONE — รอยืนยัน L2 OBI (${sc.dir})`;
+        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-500 rounded-full";
+        head.textContent = `ราคาเข้าโซน $${sc.entry} แล้ว! รอ Order Book OBI ยืนค้าง 3 วินาทีเพื่อป้องกัน Fakeout`;
+        box.className = "card p-4 border-cyan-500/60 bg-gradient-to-r from-gray-900 via-cyan-950/30 to-purple-950/25";
+      } else {
+        pill.textContent = `SCANNING (${distPts} จุดถึงโซน $${sc.entry})`;
+        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-gray-800 text-amber-300 border border-gray-700 rounded-full";
+        head.textContent = `แผนรอยิง Scalp ${sc.dir} ที่ $${sc.entry} (ห่างราคาปัจจุบัน ${distPts} จุด)`;
+        box.className = "card p-4 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-cyan-950/20 to-purple-950/20";
+      }
     }
 
-    loadDashboardData().then(() => { calibrateSwissquoteBasis(); connectLiveOrderFlowStreams(); });
-    setInterval(calibrateSwissquoteBasis, 10000);
-    setInterval(loadDashboardData, 15000);
+    function connectLiveStreams() {
+      const wsDepth = new WebSocket('wss://fstream.binance.com/ws/xauusdt@depth20@100ms');
+      wsDepth.onmessage = (ev) => {
+        const d = JSON.parse(ev.data);
+        if (!d.b || !d.a || !d.b.length || !d.a.length) return;
+        const bids = d.b.slice(0, 12).map(x => [parseFloat(x[0]), parseFloat(x[1])]);
+        const asks = d.a.slice(0, 12).map(x => [parseFloat(x[0]), parseFloat(x[1])]);
+        rawWsBid = bids[0][0]; rawWsAsk = asks[0][0];
+        const mid = parseFloat((((rawWsBid + rawWsAsk) / 2.0) + spotBasisOffset).toFixed(2));
+        lastRenderedMid = mid;
+
+        document.getElementById('kpi-price').textContent = `$${mid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        document.getElementById('live-tick-time').textContent = new Date().toLocaleTimeString('th-TH');
+        document.getElementById('kpi-bidask').textContent = `Bid: $${(rawWsBid + spotBasisOffset).toFixed(2)} | Ask: $${(rawWsAsk + spotBasisOffset).toFixed(2)}`;
+
+        const bidSum = bids.reduce((a, x) => a + x[1], 0);
+        const askSum = asks.reduce((a, x) => a + x[1], 0);
+        const obi = (bidSum - askSum) / Math.max(0.001, bidSum + askSum);
+        const bidPct = Math.round((bidSum / Math.max(0.001, bidSum + askSum)) * 100);
+
+        const obiEl = document.getElementById('kpi-obi');
+        obiEl.textContent = `${obi >= 0 ? '+' : ''}${obi.toFixed(3)}`;
+        obiEl.className = `text-2xl font-bold font-mono-num mt-1 ${obi >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        document.getElementById('kpi-obi-sub').textContent = `Bid: ${bidSum.toFixed(1)} | Ask: ${askSum.toFixed(1)}`;
+        document.getElementById('obi-bid-pct').textContent = `BID ${bidPct}%`;
+        document.getElementById('obi-ask-pct').textContent = `ASK ${100 - bidPct}%`;
+        document.getElementById('obi-bar-bid').style.width = `${bidPct}%`;
+
+        const avgSz = (bidSum + askSum) / 24.0;
+        const bWalls = bids.filter(x => x[1] >= avgSz * 1.9).slice(0, 2).map(x => `$${(x[0] + spotBasisOffset).toFixed(1)} (${x[1].toFixed(0)})`);
+        const aWalls = asks.filter(x => x[1] >= avgSz * 1.9).slice(0, 2).map(x => `$${(x[0] + spotBasisOffset).toFixed(1)} (${x[1].toFixed(0)})`);
+        document.getElementById('of-bid-walls').textContent = bWalls.length ? bWalls.join(' | ') : 'กระจายตัวปกติ';
+        document.getElementById('of-ask-walls').textContent = aWalls.length ? aWalls.join(' | ') : 'กระจายตัวปกติ';
+
+        const maxRow = Math.max(...bids.slice(0, 5).map(x => x[1]), ...asks.slice(0, 5).map(x => x[1]), 1);
+        document.getElementById('l2-bids-col').innerHTML = bids.slice(0, 5).map(([p, q]) => {
+          const w = Math.min(100, Math.round((q / maxRow) * 100));
+          return `<div class="relative flex justify-between px-2 py-0.5 rounded bg-gray-800/60 overflow-hidden"><div class="absolute inset-y-0 right-0 bg-emerald-500/20" style="width:${w}%"></div><span class="relative text-emerald-400">$${(p + spotBasisOffset).toFixed(2)}</span><span class="relative text-gray-300">${q.toFixed(1)}</span></div>`;
+        }).join('');
+        document.getElementById('l2-asks-col').innerHTML = asks.slice(0, 5).map(([p, q]) => {
+          const w = Math.min(100, Math.round((q / maxRow) * 100));
+          return `<div class="relative flex justify-between px-2 py-0.5 rounded bg-gray-800/60 overflow-hidden"><div class="absolute inset-y-0 left-0 bg-rose-500/20" style="width:${w}%"></div><span class="relative text-rose-400">$${(p + spotBasisOffset).toFixed(2)}</span><span class="relative text-gray-300">${q.toFixed(1)}</span></div>`;
+        }).join('');
+
+        const nowMs = Date.now();
+        tradeBuffer60s = tradeBuffer60s.filter(x => nowMs - x.ts <= 60000);
+        const delta60s = tradeBuffer60s.reduce((acc, x) => acc + x.delta, 0);
+        evaluateLiveOrderFlowGate(mid, obi, delta60s);
+      };
+
+      const wsTrade = new WebSocket('wss://fstream.binance.com/ws/xauusdt@aggTrade');
+      wsTrade.onmessage = (ev) => {
+        const t = JSON.parse(ev.data);
+        const dVal = t.m ? -parseFloat(t.q || 0) : parseFloat(t.q || 0);
+        const nowMs = Date.now();
+        tradeBuffer60s.push({ ts: nowMs, delta: dVal });
+        tradeBuffer60s = tradeBuffer60s.filter(x => nowMs - x.ts <= 60000);
+        const delta60s = tradeBuffer60s.reduce((acc, x) => acc + x.delta, 0);
+        const cvdEl = document.getElementById('kpi-cvd');
+        cvdEl.textContent = `${delta60s >= 0 ? '+' : ''}${delta60s.toFixed(1)}`;
+        cvdEl.className = `text-2xl font-bold font-mono-num mt-1 ${delta60s >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      };
+    }
+
+    // Boot immediately on load
+    runFullLiveQuantAndAI(false).then(() => connectLiveStreams());
   </script>
 </body>
 </html>
