@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD ATR-Adaptive OrderFlow & MUE-X Quant V15.1</title>
+  <title>XAU/USD 12,096-Sim MUE-X Evolution & OrderFlow Quant V16.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -22,24 +22,24 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">ATR-Adaptive OrderFlow & MUE-X Quant V15.1</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">MUE-X 12,096-Sim Evolution & OrderFlow V16.0</h1>
           <span class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE ENGINE
           </span>
           <span id="mue-gen-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full">
-            MUE-X ATR-Adaptive Gen #1
+            12,096 Combos Ready
           </span>
         </div>
-        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังเชื่อมต่อ Live M15 Institutional Feed...</p>
+        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังดึงข้อมูล Hydra Vault 4,500 แท่ง M15 (~47 วัน)...</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <div class="text-right font-mono-num mr-1">
-          <span id="last-updated" class="block text-xs text-emerald-400">กำลังประมวลผล...</span>
+          <span id="last-updated" class="block text-xs text-emerald-400">กำลังเตรียมจำลอง...</span>
           <span id="next-cycle-countdown" class="block text-[11px] text-cyan-400">รอบ AI 15 นาทีถัดไปใน: --:--</span>
         </div>
         <button id="btn-run-ai" onclick="runFullLiveQuantAndAI(true)"
            class="px-3 py-1.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950 rounded-lg transition shadow-lg shadow-cyan-500/20">
-          ⚡ สั่งรัน AI ทันที
+          🧬 จำลอง 12,096 วิธีใหม่
         </button>
         <button id="btn-sound" onclick="toggleAudioGate()" class="px-3 py-1.5 text-xs font-medium bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 rounded-lg transition">
           เสียง: เปิด
@@ -49,6 +49,17 @@
         </button>
       </div>
     </header>
+
+    <!-- Evolution Progress Bar -->
+    <div id="sim-progress-wrap" class="card p-3 border-purple-500/50 bg-purple-950/20">
+      <div class="flex items-center justify-between text-xs font-mono-num mb-1.5">
+        <span id="sim-progress-label" class="text-purple-300 font-bold">กำลังเตรียมข้อมูล 4,500 แท่ง M15 เพื่อจำลองกลยุทธ์ 12,096 รูปแบบ...</span>
+        <span id="sim-progress-pct" class="text-cyan-400 font-bold">0%</span>
+      </div>
+      <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div id="sim-progress-bar" class="bg-gradient-to-r from-purple-500 via-cyan-400 to-emerald-400 h-full transition-all duration-150" style="width: 0%"></div>
+      </div>
+    </div>
 
     <!-- LIVE ACTIONABLE ORDERFLOW EXECUTION GATE -->
     <section id="execution-gate-box" class="card p-4 border-cyan-500/50 bg-gradient-to-r from-gray-900 via-cyan-950/25 to-purple-950/25">
@@ -60,8 +71,8 @@
               INITIALIZING...
             </span>
           </div>
-          <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังจับคู่ราคา Spot กับโซน Session VP และแรงซื้อขาย L2 Order Book...</h2>
-          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">เงื่อนไขลั่นไก 3 ชั้น: (1) ราคาเข้าโซนยิง + (2) OBI ยืนค้าง 3 วินาที + (3) 60s Tape Delta สอดคล้อง</p>
+          <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังจับคู่ยีนที่ชนะการจำลอง 12,096 วิธี กับราคา Spot ปัจจุบัน...</h2>
+          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">เงื่อนไขลั่นไก 3 ชั้น: (1) ราคาเข้าโซนยีนผู้ชนะ + (2) OBI ยืนค้าง 3 วินาที + (3) 60s Tape Delta สอดคล้อง</p>
         </div>
         <div class="grid grid-cols-3 gap-2.5 font-mono-num text-center shrink-0">
           <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
@@ -112,7 +123,7 @@
       </div>
     </section>
 
-    <!-- Prop-Firm Dynamic ATR Position Sizing Bar -->
+    <!-- Prop-Firm Dynamic Position Sizing Bar -->
     <section class="card p-4 border-emerald-700/40 bg-gradient-to-r from-gray-900 via-gray-900 to-emerald-950/20">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-4 flex flex-wrap items-center gap-3">
@@ -134,8 +145,8 @@
         </div>
         <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono-num text-center">
           <div class="bg-purple-950/35 border border-purple-700/50 rounded-lg p-2">
-            <span id="calc-scalp-lot-lbl" class="block text-[10px] text-purple-300">Lot Scalp (ATR SL)</span>
-            <span id="calc-scalp-lot" class="text-sm font-bold text-purple-300">0.04 Lot</span>
+            <span id="calc-scalp-lot-lbl" class="block text-[10px] text-purple-300">Lot Scalp (Evolved SL)</span>
+            <span id="calc-scalp-lot" class="text-sm font-bold text-purple-300">0.03 Lot</span>
             <span id="calc-scalp-risk" class="block text-[10px] text-rose-300">เสี่ยง -$38 / ไม้</span>
           </div>
           <div class="bg-gray-800/80 border border-gray-700 rounded-lg p-2">
@@ -157,7 +168,7 @@
       </div>
     </section>
 
-    <!-- LIVE ORDERFLOW & MUE-X SESSION VP UNIFIED GRID -->
+    <!-- LIVE ORDERFLOW & MUE-X EVOLVED GENE GRID -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div class="card p-5 lg:col-span-5 border-cyan-600/40 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
@@ -190,14 +201,14 @@
         </div>
       </div>
 
-      <!-- Session 8H Micro-VP & ATR-Adaptive Scalp Trigger Plan -->
+      <!-- Session 8H Micro-VP & Winning Evolved Gene Plan -->
       <div class="card p-5 lg:col-span-7 border-purple-600/40 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
           <div>
-            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">Session 8H Micro-VP + ATR-Adaptive Risk (กันไส้เทียนสะบัด)</span>
+            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">MUE-X 12,096-Sim Evolved Champion (Walk-Forward Verified)</span>
             <h2 id="anatomy-title" class="text-base font-bold text-amber-400">กำลังคำนวณโครงสร้าง Session VP...</h2>
           </div>
-          <span id="scalp-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700/60">Scalp WR: -%</span>
+          <span id="scalp-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60">WR: -% | Net: -R</span>
         </div>
 
         <p id="anatomy-desc" class="text-xs text-gray-300 leading-relaxed">-</p>
@@ -210,13 +221,13 @@
 
         <div class="bg-gray-900/90 border border-purple-700/50 rounded-lg p-3.5">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-            <span id="scalp-bias" class="text-xs font-bold text-purple-300">กำลังคำนวณจุดเข้า Scalp...</span>
-            <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400">SL ATR / TP 1.5R</span>
+            <span id="scalp-bias" class="text-xs font-bold text-purple-300">กำลังคัดเลือกยีนผู้ชนะ...</span>
+            <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400">SL / TP</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
             <div class="bg-gray-800/80 rounded p-2"><span class="block text-[10px] text-gray-400">Scalp Entry</span><span id="sc-entry" class="font-bold text-white text-sm">$0.00</span></div>
             <div class="bg-rose-950/40 border border-rose-900/50 rounded p-2"><span id="sc-sl-label" class="block text-[10px] text-rose-300">Stop Loss</span><span id="sc-sl" class="font-bold text-rose-400 text-sm">$0.00</span></div>
-            <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2"><span class="block text-[10px] text-cyan-300">BE (+0.8R)</span><span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span></div>
+            <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2"><span id="sc-be-label" class="block text-[10px] text-cyan-300">BE Rule</span><span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span></div>
             <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2"><span id="sc-tp-label" class="block text-[10px] text-emerald-300">Final TP</span><span id="sc-tp" class="font-bold text-emerald-400 text-sm">$0.00</span></div>
           </div>
         </div>
@@ -230,12 +241,12 @@
       <div class="lg:col-span-7 space-y-6">
         <div class="card p-5 border-amber-500/20">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
-            <h2 class="text-base font-bold text-white">Live AI Strategist & Multi-Agent Quant Brief</h2>
+            <h2 class="text-base font-bold text-white">Live AI Strategist & 12,096-Sim Quant Brief</h2>
             <div class="flex items-center gap-2">
               <button onclick="promptApiKey()" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700">
                 ตั้งค่า Typhoon Key
               </button>
-              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">LIVE-QUANT-AI V15.1</span>
+              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">MUE-X V16.0 EVOLVED</span>
             </div>
           </div>
           <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3 mb-4">
@@ -255,15 +266,15 @@
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-purple-300">ผลวิวัฒนาการ MUE-X ATR-Adaptive (คำนวณสดจากแท่ง M15 ล่าสุด)</span>
-            <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">1,000 M15 Bars Live</span>
+            <span class="text-xs font-bold text-purple-300">ตารางยีนผู้ชนะจาก 12,096 การจำลอง (In-Sample 70% + OOS 30%)</span>
+            <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">4,500 M15 Bars (~47 วัน)</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs font-mono-num">
               <thead>
                 <tr class="border-b border-gray-800 text-gray-400">
-                  <th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">โหมดกลยุทธ์</th><th class="py-1.5 pr-2">R:R</th>
-                  <th class="py-1.5 pr-2 text-right">ไม้</th><th class="py-1.5 pr-2 text-right">WR</th><th class="py-1.5 pr-2 text-right">R-PF</th><th class="py-1.5 text-right">Net R</th>
+                  <th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">สูตรที่ชนะ</th><th class="py-1.5 pr-2">SL / TP / BE</th>
+                  <th class="py-1.5 pr-2 text-right">ไม้</th><th class="py-1.5 pr-2 text-right">WR รวม</th><th class="py-1.5 pr-2 text-right">OOS WR</th><th class="py-1.5 text-right">Net R</th>
                 </tr>
               </thead>
               <tbody id="scalp-bt-table-body" class="divide-y divide-gray-800/60"></tbody>
@@ -290,8 +301,8 @@
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-bold text-white">ประวัติสัญญาณ Backtest ล่าสุด (ATR-Adaptive)</h2>
-            <span class="text-xs text-emerald-400">BE @ +0.8R</span>
+            <h2 class="text-sm font-bold text-white">ประวัติสัญญาณของยีนผู้ชนะ (ล่าสุด)</h2>
+            <span class="text-xs text-emerald-400">Walk-Forward Verified</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px] font-mono-num">
@@ -315,7 +326,7 @@
     let vpChartInstance = null, liveModel = null;
     let rawWsBid = null, rawWsAsk = null, spotBasisOffset = 0.0, lastRenderedMid = null;
     let tradeBuffer60s = [], obiSustainStart = null, lastAutoFireTs = 0, audioEnabled = true;
-    let lastRanSlot = -1, genCounter = 1;
+    let lastRanSlot = -1, genCounter = 1, isSimRunning = false;
 
     function toggleAudioGate() {
       audioEnabled = !audioEnabled;
@@ -368,20 +379,21 @@
       const ddPct = Math.max(1.0, parseFloat(document.getElementById('input-dd-pct').value) || 3.0);
 
       const scRiskUsd = bal * (riskPct / 100.0);
-      const slPts = (liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.slPts : 800;
+      const slPts = (liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.slPts : 1200;
       const scLot = Math.max(0.01, Math.round((scRiskUsd / slPts) * 100) / 100);
       document.getElementById('calc-scalp-lot-lbl').textContent = `Lot Scalp (SL ${slPts} จุด)`;
       document.getElementById('calc-scalp-lot').textContent = `${scLot.toFixed(2)} Lot`;
       document.getElementById('calc-scalp-risk').textContent = `เสี่ยง -$${scRiskUsd.toFixed(0)} / ไม้`;
 
       const trRiskUsd = bal * 0.01;
-      const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 20.0;
+      const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 22.0;
       const trLot = Math.max(0.01, Math.round((trRiskUsd / (trSlDist * 100.0)) * 100) / 100);
       document.getElementById('calc-trend-lot').textContent = `${trLot.toFixed(2)} Lot`;
       document.getElementById('calc-trend-risk').textContent = `เสี่ยง -$${trRiskUsd.toFixed(0)} / ไม้`;
 
       const targetUsd = bal * 0.08;
-      const winsNeed = Math.ceil(targetUsd / Math.max(1, scRiskUsd * 1.5));
+      const avgWinMult = (liveModel && liveModel.activeGene) ? Math.max(0.8, liveModel.activeGene.rr) : 1.2;
+      const winsNeed = Math.ceil(targetUsd / Math.max(1, scRiskUsd * avgWinMult));
       document.getElementById('calc-target-usd').textContent = `+$${targetUsd.toFixed(0)}`;
       document.getElementById('calc-wins-needed').textContent = `~${winsNeed} ไม้ชนะ Scalp`;
 
@@ -399,33 +411,41 @@
         const res = await fetch("https://ntfy.sh", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic: NTFY_TOPIC, title: "ทดสอบ XAU/USD V15.1 ATR-Adaptive", message: `เชื่อมต่อสำเร็จ! Spot: $${lastRenderedMid || '-'}`, priority: 4, tags: ["white_check_mark"] })
+          body: JSON.stringify({ topic: NTFY_TOPIC, title: "ทดสอบ XAU/USD V16.0 12,096-Sim", message: `เชื่อมต่อสำเร็จ! Spot: $${lastRenderedMid || '-'}`, priority: 4, tags: ["white_check_mark"] })
         });
         btn.textContent = res.ok ? "ส่งแล้ว! เช็กมือถือ" : "ส่งไม่สำเร็จ";
       } catch (e) { btn.textContent = "เชื่อมต่อไม่ได้"; }
       setTimeout(() => { btn.textContent = "ทดสอบ ntfy"; }, 3000);
     }
 
-    function computeVP(bars, bins = 24) {
+    function computeVP(bars, bins = 22) {
       let lo = Infinity, hi = -Infinity;
-      bars.forEach(b => { if (b.l < lo) lo = b.l; if (b.h > hi) hi = b.h; });
+      for (let i = 0; i < bars.length; i++) {
+        if (bars[i].l < lo) lo = bars[i].l;
+        if (bars[i].h > hi) hi = bars[i].h;
+      }
       if (hi <= lo) hi = lo + 1.0;
       const step = (hi - lo) / bins;
-      const centers = Array.from({ length: bins }, (_, i) => lo + (i + 0.5) * step);
+      const centers = new Array(bins);
       const vols = new Array(bins).fill(0);
+      for (let i = 0; i < bins; i++) centers[i] = lo + (i + 0.5) * step;
 
-      bars.forEach(b => {
+      for (let i = 0; i < bars.length; i++) {
+        const b = bars[i];
         const typ = (b.h + b.l + b.c) / 3.0;
         const idx = Math.max(0, Math.min(bins - 1, Math.floor((typ - lo) / step)));
         vols[idx] += Math.max(1, b.v);
-      });
+      }
 
-      let pocIdx = 0;
-      for (let i = 1; i < bins; i++) if (vols[i] > vols[pocIdx]) pocIdx = i;
+      let pocIdx = 0, totalVol = 0;
+      for (let i = 0; i < bins; i++) {
+        totalVol += vols[i];
+        if (vols[i] > vols[pocIdx]) pocIdx = i;
+      }
       const poc = centers[pocIdx];
-      const totalV = vols.reduce((a, b) => a + b, 0) * 0.70;
+      const targetV = totalVol * 0.70;
       let lIdx = pocIdx, rIdx = pocIdx, acc = vols[pocIdx];
-      while (acc < totalV && (lIdx > 0 || rIdx < bins - 1)) {
+      while (acc < targetV && (lIdx > 0 || rIdx < bins - 1)) {
         const lv = lIdx > 0 ? vols[lIdx - 1] : -1;
         const rv = rIdx < bins - 1 ? vols[rIdx + 1] : -1;
         if (rv >= lv && rIdx < bins - 1) { rIdx++; acc += vols[rIdx]; }
@@ -438,9 +458,14 @@
       const val = centers[lIdx], vah = centers[rIdx];
       const pocPos = ((poc - lo) / (hi - lo)) * 100;
 
-      const smooth = vols.map((_, i) => ((i > 0 ? vols[i - 1] : vols[i]) + vols[i] + (i < bins - 1 ? vols[i + 1] : vols[i])) / 3);
+      const smooth = new Array(bins);
+      for (let i = 0; i < bins; i++) {
+        smooth[i] = ((i > 0 ? vols[i - 1] : vols[i]) + vols[i] + (i < bins - 1 ? vols[i + 1] : vols[i])) / 3;
+      }
       const peaks = [];
-      for (let i = 1; i < bins - 1; i++) if (smooth[i] >= smooth[i - 1] && smooth[i] >= smooth[i + 1]) peaks.push({ i, v: smooth[i] });
+      for (let i = 1; i < bins - 1; i++) {
+        if (smooth[i] >= smooth[i - 1] && smooth[i] >= smooth[i + 1]) peaks.push({ i, v: smooth[i] });
+      }
       peaks.sort((a, b) => b.v - a.v);
 
       let isDouble = false, valley = null;
@@ -451,25 +476,32 @@
         if (minV <= 0.72 * peaks[1].v) { isDouble = true; valley = centers[minI]; }
       }
 
-      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "โวลุ่มสมดุลกลางกรอบ Session 8H — ใช้ ATR-Adaptive Risk ตามเทรนด์หลัก";
-      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — รอยิงตามแรง OrderFlow ทะลุหรือเด้งโซน"; }
-      else if (pocPos <= 36) { shape = "B_SHAPED"; title = "② b-SHAPED (ฐานสะสมล่าง)"; desc = "โวลุ่มกองอยู่ฐานล่างใกล้ราคาปัจจุบัน — รอยืนยัน L2 Order Book ก่อนยิง"; }
-      else if (pocPos >= 64) { shape = "P_SHAPED"; title = "③ P-SHAPED (ยอดสะสมบน)"; desc = "โวลุ่มกองอยู่ด้านบน — ใช้เป็นแนวต้าน/ฐานพักตัวตามสภาวะ ADX"; }
+      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "โวลุ่มสมดุลกลางกรอบ Session 8H — ใช้ยีนผู้ชนะจาก 3,024 การจำลองของทรง D";
+      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — ใช้ยีนผู้ชนะจาก 3,024 การจำลองของทรง Double Zone"; }
+      else if (pocPos <= 36) { shape = "B_SHAPED"; title = "② b-SHAPED (ฐานสะสมล่าง)"; desc = "โวลุ่มกองอยู่ฐานล่าง — ใช้ยีนผู้ชนะจาก 3,024 การจำลองของทรง b-Shaped"; }
+      else if (pocPos >= 64) { shape = "P_SHAPED"; title = "③ P-SHAPED (ยอดสะสมบน)"; desc = "โวลุ่มกองอยู่ด้านบน — ใช้ยีนผู้ชนะจาก 3,024 การจำลองของทรง P-Shaped"; }
 
       return {
         shape, title, desc,
         poc: +poc.toFixed(2), vah: +vah.toFixed(2), val: +val.toFixed(2),
-        valley: valley ? +valley.toFixed(2) : null,
+        valley: valley ? +valley.toFixed(2) : +poc.toFixed(2),
         histogram: centers.map((c, idx) => ({ price: +c.toFixed(2), volume: Math.round(vols[idx]) }))
       };
     }
 
-    function computeIndicators(bars) {
-      const k21 = 2 / 22, k200 = 2 / 201;
-      let ema21 = bars[0].c, ema200 = bars[0].c;
-      bars.forEach((b, i) => {
-        if (i > 0) { ema21 = b.c * k21 + ema21 * (1 - k21); ema200 = b.c * k200 + ema200 * (1 - k200); }
-        b.ema21 = ema21; b.ema200 = ema200;
+    function computeIndicatorsAndVP(bars) {
+      const k21 = 2 / 22, k50 = 2 / 51, k200 = 2 / 201;
+      let ema21 = bars[0].c, ema50 = bars[0].c, ema200 = bars[0].c;
+
+      for (let i = 0; i < bars.length; i++) {
+        const b = bars[i];
+        if (i > 0) {
+          ema21 = b.c * k21 + ema21 * (1 - k21);
+          ema50 = b.c * k50 + ema50 * (1 - k50);
+          ema200 = b.c * k200 + ema200 * (1 - k200);
+        }
+        b.ema21 = ema21; b.ema50 = ema50; b.ema200 = ema200;
+        b.hourTh = (new Date(b.t).getUTCHours() + 7) % 24;
 
         if (i >= 14) {
           let trSum = 0, pdmSum = 0, mdmSum = 0, gain = 0, loss = 0;
@@ -492,102 +524,319 @@
         } else {
           b.atr = 6.0; b.adx = 22.0; b.rsi = 50.0;
         }
-      });
+
+        if (i >= 32) {
+          b.vp = computeVP(bars.slice(i - 32, i), 18);
+        }
+      }
     }
 
-    function runAtrAdaptiveMueX(bars) {
+    // --- MASSIVE 12,096-COMBINATION WALK-FORWARD EVOLUTION ENGINE ---
+    async function runMassive12kEvolution(bars) {
       const shapes = ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"];
-      const rrCandidates = [1.4, 1.8];
-      const results = [], recentTrades = [];
+      const entryModes = ["HYBRID_REGIME", "TREND_PULLBACK", "VALUE_AREA_FADE", "POC_BREAK_RETEST", "VALLEY_SNIPER", "KILLZONE_VP"];
+      const rsiModes = ["ALL", "MOMENTUM", "EXTREME_FILTER"];
+      const slMults = [0.50, 0.75, 1.00, 1.25, 1.50, 2.00];
+      const rrTargets = [0.8, 1.0, 1.2, 1.5, 1.8, 2.2, 2.8];
+      const beRules = ["NO_BE", "LATE_BE_85", "LOCK_HALF_1R", "TIME_EXIT_16B"];
 
-      shapes.forEach(targetShape => {
-        let best = { shape: targetShape, mode: "ATR_FLOW", rr: 1.5, trades: 0, wins: 0, losses: 0, netR: -999, rPf: 0 };
+      const totalCombos = shapes.length * entryModes.length * rsiModes.length * slMults.length * rrTargets.length * beRules.length; // 12,096
+      const splitIdx = Math.floor(bars.length * 0.70); // 70% In-Sample, 30% Out-of-Sample
+      let completed = 0;
 
-        rrCandidates.forEach(rrMult => {
-          let wins = 0, losses = 0, netR = 0, grossWin = 0, grossLoss = 0;
-          const localRecs = [];
+      const bestByShape = {};
+      shapes.forEach(s => {
+        bestByShape[s] = {
+          shape: s, entryMode: "HYBRID_REGIME", rsiMode: "ALL", slMult: 1.0, rr: 1.2, beRule: "NO_BE",
+          trades: 0, oosTrades: 0, wr: 0, oosWr: 0, rPf: 0, netR: -999, score: -999999, recs: []
+        };
+      });
 
-          for (let i = 60; i < bars.length - 24; i += 2) {
-            const vp = computeVP(bars.slice(i - 32, i), 20);
-            if (vp.shape !== targetShape) continue;
+      for (let sIdx = 0; sIdx < shapes.length; sIdx++) {
+        const targetShape = shapes[sIdx];
 
-            const b = bars[i], prev = bars[i - 1];
-            const isBear = (b.c < b.ema200 && b.adx >= 23);
-            const isBull = (b.c > b.ema200 && b.adx >= 23);
-            let side = null, entry = b.c;
+        for (let eIdx = 0; eIdx < entryModes.length; eIdx++) {
+          const eMode = entryModes[eIdx];
 
-            // ATR-scaled tolerance & confirmation candle so wicks don't trigger prematurely
-            const tol = Math.max(2.0, b.atr * 0.35);
+          for (let rIdx = 0; rIdx < rsiModes.length; rIdx++) {
+            const rMode = rsiModes[rIdx];
 
-            if (isBear && b.rsi > 28) {
-              const nearRes = (Math.abs(b.h - vp.vah) <= tol || Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol || (b.c < vp.val && b.c < prev.l));
-              if (nearRes && b.c < b.o) { side = "SHORT"; entry = b.c; }
-            } else if (isBull && b.rsi < 72) {
-              const nearSup = (Math.abs(b.l - vp.val) <= tol || Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol || (b.c > vp.vah && b.c > prev.h));
-              if (nearSup && b.c > b.o) { side = "LONG"; entry = b.c; }
-            } else if (!isBear && !isBull) {
-              if (Math.abs(b.l - vp.val) <= tol && b.c > b.o && b.rsi < 46) { side = "LONG"; entry = b.c; }
-              else if (Math.abs(b.h - vp.vah) <= tol && b.c < b.o && b.rsi > 54) { side = "SHORT"; entry = b.c; }
-            }
+            // 1. Pre-scan candidate entry points for this (Shape, EntryMode, RsiMode)
+            const signals = [];
+            for (let i = 60; i < bars.length - 30; i++) {
+              const b = bars[i], prev = bars[i - 1];
+              if (!b.vp || b.vp.shape !== targetShape) continue;
 
-            if (!side) continue;
+              // RSI Filter
+              if (rMode === "MOMENTUM" && (b.rsi < 32 || b.rsi > 68)) continue;
+              if (rMode === "EXTREME_FILTER" && (b.rsi < 25 || b.rsi > 75)) continue;
 
-            // Dynamic ATR Stop Loss (0.60x ATR, clamped $5.0 - $13.5) & BE at +0.80R
-            const slUsd = Math.max(5.0, Math.min(13.5, +(b.atr * 0.60).toFixed(2)));
-            const tpUsd = +(slUsd * rrMult).toFixed(2);
-            const beTrigger = slUsd * 0.80;
+              const vp = b.vp;
+              const tol = Math.max(1.8, b.atr * 0.32);
+              const isBear = b.c < b.ema200;
+              const isBull = b.c > b.ema200;
+              const strongTrend = b.adx >= 24;
+              let side = null;
 
-            let beHit = false, resR = 0, exitIdx = i + 1;
-            for (let j = i + 1; j < Math.min(bars.length, i + 28); j++) {
-              const fut = bars[j];
-              if (side === "LONG") {
-                if (fut.h >= entry + beTrigger) beHit = true;
-                const slLvl = beHit ? (entry + 0.25) : (entry - slUsd);
-                if (fut.l <= slLvl) { resR = beHit ? 0.05 : -1.0; exitIdx = j; break; }
-                if (fut.h >= entry + tpUsd + 0.20) { resR = rrMult; exitIdx = j; break; }
-              } else {
-                if (fut.l <= entry - beTrigger) beHit = true;
-                const slLvl = beHit ? (entry - 0.25) : (entry + slUsd);
-                if (fut.h >= slLvl) { resR = beHit ? 0.05 : -1.0; exitIdx = j; break; }
-                if (fut.l <= entry - tpUsd - 0.20) { resR = rrMult; exitIdx = j; break; }
+              if (eMode === "TREND_PULLBACK") {
+                if (isBear && strongTrend && (Math.abs(b.h - vp.vah) <= tol || Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol) && b.c < b.o) side = "SHORT";
+                else if (isBull && strongTrend && (Math.abs(b.l - vp.val) <= tol || Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol) && b.c > b.o) side = "LONG";
+              } else if (eMode === "VALUE_AREA_FADE") {
+                if (!strongTrend && Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
+                else if (!strongTrend && Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
+              } else if (eMode === "POC_BREAK_RETEST") {
+                if (b.c > vp.poc && prev.c <= vp.poc && b.ema21 > b.ema50) side = "LONG";
+                else if (b.c < vp.poc && prev.c >= vp.poc && b.ema21 < b.ema50) side = "SHORT";
+              } else if (eMode === "VALLEY_SNIPER") {
+                const lvl = vp.valley || vp.poc;
+                if (Math.abs(b.l - lvl) <= tol && b.c > b.o && b.ema21 >= b.ema50) side = "LONG";
+                else if (Math.abs(b.h - lvl) <= tol && b.c < b.o && b.ema21 <= b.ema50) side = "SHORT";
+              } else if (eMode === "KILLZONE_VP") {
+                const inKz = (b.hourTh >= 13 && b.hourTh <= 23);
+                if (inKz && isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - vp.vah) <= tol) && b.c < b.o) side = "SHORT";
+                else if (inKz && isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - vp.val) <= tol) && b.c > b.o) side = "LONG";
+              } else if (eMode === "HYBRID_REGIME") {
+                if (strongTrend) {
+                  if (isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol) && b.c < b.o) side = "SHORT";
+                  else if (isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol) && b.c > b.o) side = "LONG";
+                } else {
+                  if (Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
+                  else if (Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
+                }
+              }
+
+              if (side) {
+                signals.push({ idx: i, side, entry: b.c, atr: b.atr, time: b.t });
+                i += 2; // prevent overlapping duplicate entries
               }
             }
 
-            if (resR > 0.1) { wins++; grossWin += resR; }
-            else if (resR < 0) { losses++; grossLoss += Math.abs(resR); }
-            netR += resR;
+            // 2. Test all 168 (SL x TP x BE_Rule) combinations on these signals
+            for (let slI = 0; slI < slMults.length; slI++) {
+              const slMult = slMults[slI];
 
-            localRecs.push({
+              for (let tpI = 0; tpI < rrTargets.length; tpI++) {
+                const rr = rrTargets[tpI];
+
+                for (let beI = 0; beI < beRules.length; beI++) {
+                  const beRule = beRules[beI];
+                  completed++;
+
+                  if (signals.length < 10) continue;
+
+                  let isWins = 0, isLosses = 0, isNetR = 0;
+                  let oosWins = 0, oosLosses = 0, oosNetR = 0;
+                  let grossWin = 0, grossLoss = 0, lastExitIdx = -1;
+
+                  for (let k = 0; k < signals.length; k++) {
+                    const sig = signals[k];
+                    if (sig.idx <= lastExitIdx) continue;
+
+                    const slUsd = Math.max(3.5, Math.min(25.0, sig.atr * slMult));
+                    const tpUsd = slUsd * rr;
+                    const maxBars = (beRule === "TIME_EXIT_16B") ? 16 : 36;
+                    let beMoved = false, lockedHalf = false, resR = 0, exitJ = sig.idx + 1;
+
+                    for (let j = sig.idx + 1; j < Math.min(bars.length, sig.idx + maxBars); j++) {
+                      const fut = bars[j];
+                      if (sig.side === "LONG") {
+                        const fav = fut.h - sig.entry;
+                        if (beRule === "LATE_BE_85" && fav >= tpUsd * 0.85) beMoved = true;
+                        if (beRule === "LOCK_HALF_1R" && rr > 1.1 && fav >= slUsd * 1.0) lockedHalf = true;
+
+                        const curSl = lockedHalf ? (sig.entry + slUsd * 0.5) : (beMoved ? (sig.entry + 0.15) : (sig.entry - slUsd));
+                        if (fut.l <= curSl) {
+                          resR = lockedHalf ? 0.5 : (beMoved ? 0.02 : -1.0);
+                          exitJ = j; break;
+                        }
+                        if (fut.h >= sig.entry + tpUsd + 0.15) {
+                          resR = rr;
+                          exitJ = j; break;
+                        }
+                      } else {
+                        const fav = sig.entry - fut.l;
+                        if (beRule === "LATE_BE_85" && fav >= tpUsd * 0.85) beMoved = true;
+                        if (beRule === "LOCK_HALF_1R" && rr > 1.1 && fav >= slUsd * 1.0) lockedHalf = true;
+
+                        const curSl = lockedHalf ? (sig.entry - slUsd * 0.5) : (beMoved ? (sig.entry - 0.15) : (sig.entry + slUsd));
+                        if (fut.h >= curSl) {
+                          resR = lockedHalf ? 0.5 : (beMoved ? 0.02 : -1.0);
+                          exitJ = j; break;
+                        }
+                        if (fut.l <= sig.entry - tpUsd - 0.15) {
+                          resR = rr;
+                          exitJ = j; break;
+                        }
+                      }
+                      if (j === Math.min(bars.length, sig.idx + maxBars) - 1) {
+                        const pnl = sig.side === "LONG" ? (fut.c - sig.entry) : (sig.entry - fut.c);
+                        resR = Math.max(-1.0, Math.min(rr, pnl / slUsd));
+                        exitJ = j;
+                      }
+                    }
+
+                    lastExitIdx = exitJ;
+                    const isOos = sig.idx >= splitIdx;
+                    if (resR > 0.05) {
+                      grossWin += resR;
+                      if (isOos) oosWins++; else isWins++;
+                    } else if (resR < -0.05) {
+                      grossLoss += Math.abs(resR);
+                      if (isOos) oosLosses++; else isLosses++;
+                    }
+                    if (isOos) oosNetR += resR; else isNetR += resR;
+                  }
+
+                  const totalW = isWins + oosWins;
+                  const totalL = isLosses + oosLosses;
+                  const totalT = totalW + totalL;
+                  const oosT = oosWins + oosLosses;
+                  if (totalT < 10 || oosT < 3) continue;
+
+                  const wr = (totalW / totalT) * 100;
+                  const oosWr = (oosWins / oosT) * 100;
+                  const totalNetR = isNetR + oosNetR;
+                  const rPf = grossWin / Math.max(0.5, grossLoss);
+
+                  // Composite fitness score prioritizing BOTH high Win Rate AND positive In-Sample + OOS Net R
+                  const score = (totalNetR * 2.5) + (oosNetR * 3.5) + (wr * 0.25) + (oosWr * 0.25) + (rPf * 3.0);
+
+                  if (score > bestByShape[targetShape].score) {
+                    bestByShape[targetShape] = {
+                      shape: targetShape,
+                      entryMode: eMode,
+                      rsiMode: rMode,
+                      slMult,
+                      rr,
+                      beRule,
+                      trades: totalT,
+                      wins: totalW,
+                      losses: totalL,
+                      oosTrades: oosT,
+                      wr: +wr.toFixed(1),
+                      oosWr: +oosWr.toFixed(1),
+                      rPf: +rPf.toFixed(2),
+                      netR: +totalNetR.toFixed(2),
+                      oosNetR: +oosNetR.toFixed(2),
+                      score
+                    };
+                  }
+                }
+              }
+            }
+
+            // Yield to UI every 6 batches so progress bar animates smoothly
+            if ((eIdx * 3 + rIdx) % 6 === 0) {
+              const pct = Math.min(99, Math.round((completed / totalCombos) * 100));
+              document.getElementById('sim-progress-bar').style.width = `${pct}%`;
+              document.getElementById('sim-progress-pct').textContent = `${pct}% (${completed.toLocaleString()} / ${totalCombos.toLocaleString()})`;
+              await new Promise(r => setTimeout(r, 8));
+            }
+          }
+        }
+      }
+
+      // Generate recent trade log for the 4 winning champions
+      const recentTrades = [];
+      const results = shapes.map(s => bestByShape[s]);
+
+      results.forEach(champ => {
+        let lastExitIdx = -1;
+        for (let i = bars.length - 450; i < bars.length - 10; i++) {
+          const b = bars[i], prev = bars[i - 1];
+          if (!b.vp || b.vp.shape !== champ.shape || i <= lastExitIdx) continue;
+          if (champ.rsiMode === "MOMENTUM" && (b.rsi < 32 || b.rsi > 68)) continue;
+          if (champ.rsiMode === "EXTREME_FILTER" && (b.rsi < 25 || b.rsi > 75)) continue;
+
+          const vp = b.vp;
+          const tol = Math.max(1.8, b.atr * 0.32);
+          const isBear = b.c < b.ema200, isBull = b.c > b.ema200, strongTrend = b.adx >= 24;
+          let side = null;
+
+          if (champ.entryMode === "TREND_PULLBACK") {
+            if (isBear && strongTrend && (Math.abs(b.h - vp.vah) <= tol || Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol) && b.c < b.o) side = "SHORT";
+            else if (isBull && strongTrend && (Math.abs(b.l - vp.val) <= tol || Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol) && b.c > b.o) side = "LONG";
+          } else if (champ.entryMode === "VALUE_AREA_FADE") {
+            if (!strongTrend && Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
+            else if (!strongTrend && Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
+          } else if (champ.entryMode === "POC_BREAK_RETEST") {
+            if (b.c > vp.poc && prev.c <= vp.poc && b.ema21 > b.ema50) side = "LONG";
+            else if (b.c < vp.poc && prev.c >= vp.poc && b.ema21 < b.ema50) side = "SHORT";
+          } else if (champ.entryMode === "VALLEY_SNIPER") {
+            const lvl = vp.valley || vp.poc;
+            if (Math.abs(b.l - lvl) <= tol && b.c > b.o && b.ema21 >= b.ema50) side = "LONG";
+            else if (Math.abs(b.h - lvl) <= tol && b.c < b.o && b.ema21 <= b.ema50) side = "SHORT";
+          } else if (champ.entryMode === "KILLZONE_VP") {
+            const inKz = (b.hourTh >= 13 && b.hourTh <= 23);
+            if (inKz && isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - vp.vah) <= tol) && b.c < b.o) side = "SHORT";
+            else if (inKz && isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - vp.val) <= tol) && b.c > b.o) side = "LONG";
+          } else {
+            if (strongTrend) {
+              if (isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol) && b.c < b.o) side = "SHORT";
+              else if (isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol) && b.c > b.o) side = "LONG";
+            } else {
+              if (Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
+              else if (Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
+            }
+          }
+          if (!side) continue;
+
+          const slUsd = Math.max(3.5, Math.min(25.0, b.atr * champ.slMult));
+          const tpUsd = slUsd * champ.rr;
+          let resR = 0, exitJ = i + 1;
+          for (let j = i + 1; j < Math.min(bars.length, i + 32); j++) {
+            const fut = bars[j];
+            if (side === "LONG") {
+              if (fut.l <= b.c - slUsd) { resR = -1.0; exitJ = j; break; }
+              if (fut.h >= b.c + tpUsd + 0.15) { resR = champ.rr; exitJ = j; break; }
+            } else {
+              if (fut.h >= b.c + slUsd) { resR = -1.0; exitJ = j; break; }
+              if (fut.l <= b.c - tpUsd - 0.15) { resR = champ.rr; exitJ = j; break; }
+            }
+          }
+          lastExitIdx = exitJ;
+          if (Math.abs(resR) > 0.05) {
+            recentTrades.push({
+              ts: b.t,
               time: new Date(b.t).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-              shape: targetShape, side, entry: entry.toFixed(2), r: +resR.toFixed(2)
+              shape: champ.shape,
+              side,
+              entry: b.c.toFixed(2),
+              r: +resR.toFixed(2)
             });
-            i = exitIdx + 1;
           }
-
-          const totalT = wins + losses;
-          const wr = totalT > 0 ? +((wins / totalT) * 100).toFixed(1) : 0;
-          const rPf = +(grossWin / Math.max(0.5, grossLoss)).toFixed(2);
-          if (netR > best.netR) {
-            best = {
-              shape: targetShape,
-              mode: "ATR_ADAPTIVE",
-              rr: rrMult,
-              trades: totalT,
-              wins, losses,
-              wr,
-              rPf,
-              netR: +netR.toFixed(2),
-              recs: localRecs
-            };
-          }
-        });
-
-        results.push(best);
-        if (best.recs) recentTrades.push(...best.recs.slice(-3));
+        }
       });
 
+      recentTrades.sort((a, b) => b.ts - a.ts);
       results.sort((a, b) => b.netR - a.netR);
-      return { results, recentTrades: recentTrades.slice(-10).reverse() };
+
+      document.getElementById('sim-progress-bar').style.width = `100%`;
+      document.getElementById('sim-progress-pct').textContent = `100% (${totalCombos.toLocaleString()} / ${totalCombos.toLocaleString()} เสร็จสมบูรณ์)`;
+      document.getElementById('sim-progress-label').textContent = `✅ จำลองครบ ${totalCombos.toLocaleString()} กลยุทธ์บนข้อมูล ${bars.length.toLocaleString()} แท่ง M15 (~${(bars.length/96).toFixed(1)} วัน) เรียบร้อย!`;
+
+      return { results, recentTrades: recentTrades.slice(0, 12), totalCombos };
+    }
+
+    async function fetchDeepHydraVault() {
+      // Fetch 5 pages of 1,000 M15 bars = 4,500+ bars (~47 days)
+      let allRaw = [];
+      let endTime = null;
+      for (let page = 0; page < 5; page++) {
+        const url = `https://fapi.binance.com/fapi/v1/klines?symbol=XAUUSDT&interval=15m&limit=1000${endTime ? `&endTime=${endTime}` : ''}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) break;
+        const chunk = await res.json();
+        if (!chunk || !chunk.length) break;
+        allRaw = chunk.concat(allRaw);
+        endTime = chunk[0][0] - 1;
+        document.getElementById('sim-progress-label').textContent = `กำลังดึงข้อมูล Hydra Vault ชุดที่ ${page + 1}/5 (${allRaw.length.toLocaleString()} แท่ง M15)...`;
+      }
+      // Deduplicate & keep latest 4,500 bars
+      const map = new Map();
+      allRaw.forEach(k => map.set(k[0], k));
+      const sorted = Array.from(map.values()).sort((a, b) => a[0] - b[0]);
+      return sorted.slice(-4500);
     }
 
     async function seedInitial60sTape() {
@@ -609,17 +858,18 @@
     }
 
     async function runFullLiveQuantAndAI(notify = false) {
+      if (isSimRunning) return;
+      isSimRunning = true;
       const btn = document.getElementById('btn-run-ai');
-      btn.textContent = "⏳ กำลังคำนวณ...";
+      btn.textContent = "⏳ กำลังจำลอง 12,096 วิธี...";
       try {
-        const [rSq, rKl, rOi, rPr] = await Promise.all([
+        const [rSq, rawKl, rOi, rPr] = await Promise.all([
           fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" }).catch(() => null),
-          fetch("https://fapi.binance.com/fapi/v1/klines?symbol=XAUUSDT&interval=15m&limit=1000", { cache: "no-store" }),
+          fetchDeepHydraVault(),
           fetch("https://fapi.binance.com/fapi/v1/openInterest?symbol=XAUUSDT", { cache: "no-store" }).catch(() => null),
           fetch("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=XAUUSDT", { cache: "no-store" }).catch(() => null)
         ]);
 
-        const rawKl = await rKl.json();
         let spotMid = parseFloat(rawKl[rawKl.length - 1][4]);
         let feedName = "Binance Institutional XAU";
 
@@ -642,7 +892,7 @@
           v: parseFloat(k[5])
         }));
 
-        computeIndicators(bars);
+        computeIndicatorsAndVP(bars);
         const last = bars[bars.length - 1];
         const prevDayBars = bars.slice(-192, -96);
         const pdh = Math.max(...prevDayBars.map(b => b.h));
@@ -655,43 +905,40 @@
 
         const vpSession = computeVP(bars.slice(-32), 22);
         const vp5d = computeVP(bars.slice(-480), 30);
-        const mueRes = runAtrAdaptiveMueX(bars);
+
+        // Execute 12,096-combination evolution
+        const mueRes = await runMassive12kEvolution(bars);
         const activeGene = mueRes.results.find(x => x.shape === vpSession.shape) || mueRes.results[0];
 
-        // ATR-Adaptive Scalp SL/TP/BE
-        const scSlUsd = Math.max(5.0, Math.min(13.5, +(last.atr * 0.60).toFixed(2)));
+        // Build actionable Scalp Setup strictly anchored to valid levels relative to Spot
+        const scSlUsd = Math.max(3.5, Math.min(25.0, +(last.atr * activeGene.slMult).toFixed(2)));
         const scSlPts = Math.round(scSlUsd * 100);
-        const rrMult = activeGene.rr || 1.5;
+        const rrMult = activeGene.rr;
         const scTpUsd = +(scSlUsd * rrMult).toFixed(2);
         const scTpPts = Math.round(scTpUsd * 100);
-        const scBeDist = +(scSlUsd * 0.80).toFixed(2);
 
         const isBear = last.c < last.ema200;
         const regimeTxt = isBear ? "BEAR" : "BULL";
         let scDir, scEntry, scBias;
 
         if (isBear) {
-          // If RSI is deeply oversold (<28), allow bounce scalp up to Session VAL/POC; otherwise sell nearest Session level/wall
-          if (last.rsi < 27) {
-            scDir = "LONG";
-            scEntry = +(Math.min(spotMid, vpSession.val)).toFixed(2);
-            scBias = `${vpSession.shape} OVERSOLD BOUNCE BUY (RSI ${last.rsi.toFixed(1)} ดักเด้งรับ $${scEntry} + OBI >= +0.18)`;
-          } else {
-            scDir = "SHORT";
-            const nearLevels = [vpSession.val, vpSession.poc, vpSession.vah].filter(lvl => lvl >= spotMid - 1.5);
-            scEntry = +(nearLevels.length ? Math.min(...nearLevels) : (spotMid + 2.0)).toFixed(2);
-            scBias = `${vpSession.shape} ATR-ADAPTIVE SHORT (ดักเด้งชนโซน $${scEntry} + OBI <= -0.18)`;
-          }
+          // Valid SHORT limit/retest level must be >= spotMid - 1.0 (never selling below current market!)
+          const candidates = [vpSession.val, vpSession.poc, vpSession.vah, last.ema21].filter(lvl => lvl >= spotMid - 0.5);
+          scEntry = +(candidates.length ? Math.min(...candidates) : (spotMid + 1.5)).toFixed(2);
+          scDir = "SHORT";
+          scBias = `${vpSession.shape} [${activeGene.entryMode}] SHORT @ $${scEntry} (WR ${activeGene.wr}% | OOS ${activeGene.oosWr}%)`;
         } else {
+          // Valid LONG limit/retest level must be <= spotMid + 0.5 (never buying above current market!)
+          const candidates = [vpSession.vah, vpSession.poc, vpSession.val, last.ema21].filter(lvl => lvl <= spotMid + 0.5);
+          scEntry = +(candidates.length ? Math.max(...candidates) : (spotMid - 1.5)).toFixed(2);
           scDir = "LONG";
-          const nearLevels = [vpSession.vah, vpSession.poc, vpSession.val].filter(lvl => lvl <= spotMid + 1.5);
-          scEntry = +(nearLevels.length ? Math.max(...nearLevels) : (spotMid - 2.0)).toFixed(2);
-          scBias = `${vpSession.shape} ATR-ADAPTIVE LONG (รอย่อรับโซน $${scEntry} + OBI >= +0.18)`;
+          scBias = `${vpSession.shape} [${activeGene.entryMode}] LONG @ $${scEntry} (WR ${activeGene.wr}% | OOS ${activeGene.oosWr}%)`;
         }
 
         const scSl = scDir === "SHORT" ? +(scEntry + scSlUsd).toFixed(2) : +(scEntry - scSlUsd).toFixed(2);
-        const scBe = scDir === "SHORT" ? +(scEntry - scBeDist).toFixed(2) : +(scEntry + scBeDist).toFixed(2);
         const scTp = scDir === "SHORT" ? +(scEntry - scTpUsd).toFixed(2) : +(scEntry + scTpUsd).toFixed(2);
+        const beLabelTxt = activeGene.beRule === "NO_BE" ? "No-BE (Full RR)" : (activeGene.beRule === "LATE_BE_85" ? "BE @ 85% TP" : (activeGene.beRule === "LOCK_HALF_1R" ? "Lock +0.5R @ 1R" : "Time Exit 4H"));
+        const scBe = activeGene.beRule === "NO_BE" ? scTp : (scDir === "SHORT" ? +(scEntry - scTpUsd * 0.85).toFixed(2) : +(scEntry + scTpUsd * 0.85).toFixed(2));
         const tolPts = Math.max(200, Math.round(last.atr * 15));
 
         const trSlDist = +(Math.max(6.0, last.atr * 1.5)).toFixed(2);
@@ -711,8 +958,8 @@
 
         const nowStr = new Date().toLocaleTimeString('th-TH');
         document.getElementById('last-updated').textContent = `AI อัปเดตสด: ${nowStr} (0 นาทีที่แล้ว)`;
-        document.getElementById('mue-gen-badge').textContent = `MUE-X ATR-Adaptive Gen #${genCounter++}`;
-        document.getElementById('data-audit-line').textContent = `Live Vault: ${bars.length.toLocaleString()} แท่ง M15 (~10.4 วัน) | ${feedName}`;
+        document.getElementById('mue-gen-badge').textContent = `12,096-Sim Gen #${genCounter++}`;
+        document.getElementById('data-audit-line').textContent = `Hydra Vault: ${bars.length.toLocaleString()} แท่ง M15 (~${(bars.length/96).toFixed(1)} วัน) | ${feedName}`;
         document.getElementById('kpi-regime').textContent = `ADX ${last.adx.toFixed(1)} (${regimeTxt})`;
         document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${pdh.toFixed(2)} | PDL: $${pdl.toFixed(2)}`;
         document.getElementById('kpi-macro').textContent = `RSI ${last.rsi.toFixed(1)} / ATR $${last.atr.toFixed(2)}`;
@@ -729,13 +976,14 @@
         const totalNetR = mueRes.results.reduce((a, x) => a + x.netR, 0);
         const totalWr = ((totalWins / Math.max(1, totalWins + totalLosses)) * 100).toFixed(1);
 
-        document.getElementById('scalp-bt-badge').textContent = `Scalp WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
+        document.getElementById('scalp-bt-badge').textContent = `Evolved WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
         document.getElementById('scalp-bias').textContent = scBias;
-        document.getElementById('scalp-rr-badge').textContent = `SL ${scSlPts} จุด / TP ${scTpPts} จุด (1:${rrMult})`;
+        document.getElementById('scalp-rr-badge').textContent = `SL ${scSlPts} จุด (${activeGene.slMult}x ATR) / TP ${scTpPts} จุด (1:${rrMult})`;
         document.getElementById('sc-entry').textContent = `$${scEntry}`;
         document.getElementById('sc-sl-label').textContent = `SL (${scSlPts} จุด)`;
         document.getElementById('sc-sl').textContent = `$${scSl}`;
-        document.getElementById('sc-be').textContent = `$${scBe}`;
+        document.getElementById('sc-be-label').textContent = beLabelTxt;
+        document.getElementById('sc-be').textContent = activeGene.beRule === "NO_BE" ? "Full TP" : `$${scBe}`;
         document.getElementById('sc-tp-label').textContent = `TP (${scTpPts} จุด)`;
         document.getElementById('sc-tp').textContent = `$${scTp}`;
 
@@ -747,14 +995,14 @@
         document.getElementById('setup-tp').textContent = `$${trTp}`;
 
         document.getElementById('anatomy-cards-grid').innerHTML = mueRes.results.map(r => `
-          <div class="bg-gray-900/90 border ${r.netR >= 0 ? 'border-emerald-700/50' : 'border-purple-700/50'} rounded-lg p-2">
+          <div class="bg-gray-900/90 border ${r.netR >= 0 ? 'border-emerald-700/60' : 'border-purple-700/50'} rounded-lg p-2">
             <div class="flex items-center justify-between gap-1 mb-1">
               <span class="text-[9px] font-bold text-purple-300 truncate">${r.shape}</span>
-              <span class="text-[8px] px-1 rounded bg-cyan-950 text-cyan-300">1:${r.rr}</span>
+              <span class="text-[8px] px-1 rounded bg-cyan-950 text-cyan-300">OOS ${r.oosWr}%</span>
             </div>
-            <div class="text-[9px] text-amber-300 truncate mb-0.5">ATR_ADAPTIVE</div>
+            <div class="text-[9px] text-amber-300 truncate mb-0.5">${r.entryMode}</div>
             <div class="flex items-center justify-between text-[11px]">
-              <span class="text-cyan-400 font-bold">${r.wr}% (${r.trades})</span>
+              <span class="text-cyan-400 font-bold">WR ${r.wr}% (${r.trades})</span>
               <span class="${r.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">${r.netR >= 0 ? '+' : ''}${r.netR}R</span>
             </div>
           </div>`).join('');
@@ -762,11 +1010,11 @@
         document.getElementById('scalp-bt-table-body').innerHTML = mueRes.results.map(r => `
           <tr class="hover:bg-gray-800/40 text-gray-300">
             <td class="py-1.5 pr-2 font-bold text-purple-300">${r.shape}</td>
-            <td class="py-1.5 pr-2 text-amber-300">ATR_0.6x_FLOW</td>
-            <td class="py-1.5 pr-2">1:${r.rr}</td>
+            <td class="py-1.5 pr-2 text-amber-300">${r.entryMode}</td>
+            <td class="py-1.5 pr-2">${r.slMult}x / 1:${r.rr} / ${r.beRule}</td>
             <td class="py-1.5 pr-2 text-right">${r.trades}</td>
-            <td class="py-1.5 pr-2 text-right text-cyan-400">${r.wr}%</td>
-            <td class="py-1.5 pr-2 text-right text-emerald-400">${r.rPf}</td>
+            <td class="py-1.5 pr-2 text-right text-cyan-400 font-bold">${r.wr}%</td>
+            <td class="py-1.5 pr-2 text-right text-emerald-400 font-bold">${r.oosWr}%</td>
             <td class="py-1.5 text-right font-bold ${r.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${r.netR >= 0 ? '+' : ''}${r.netR}R</td>
           </tr>`).join('');
 
@@ -784,7 +1032,7 @@
         document.getElementById('vp-val').textContent = `$${vp5d.val}`;
         renderVolumeProfileChart(vp5d);
 
-        await generateLiveAIBrief(spotMid, last, vpSession, liveModel.scalpSetup, liveModel.trendSetup, totalWr, totalNetR, regimeTxt, nowStr);
+        await generateLiveAIBrief(spotMid, last, vpSession, liveModel.scalpSetup, liveModel.trendSetup, activeGene, totalWr, totalNetR, regimeTxt, nowStr);
         recalcPropMath();
 
         if (notify) {
@@ -793,28 +1041,29 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               topic: NTFY_TOPIC,
-              title: `⚡ AI อัปเดตสด (${nowStr}) | XAU/USD $${spotMid.toFixed(2)}`,
-              message: `ATR: $${last.atr.toFixed(2)} | Scalp ${scDir} @ $${scEntry} (SL ${scSlPts} จุด / TP ${scTpPts} จุด) | Backtest: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`,
-              priority: 4, tags: ["zap", "chart_with_upwards_trend"]
+              title: `🧬 12,096-Sim อัปเดต (${nowStr}) | XAU/USD $${spotMid.toFixed(2)}`,
+              message: `ยีนผู้ชนะ ${vpSession.shape}: ${activeGene.entryMode} (WR ${activeGene.wr}%, OOS ${activeGene.oosWr}%) | แผน ${scDir} @ $${scEntry} (SL $${scSl} / TP $${scTp})`,
+              priority: 4, tags: ["dna", "chart_with_upwards_trend"]
             })
           }).catch(() => {});
         }
       } catch (err) {
         console.error(err);
       } finally {
-        btn.textContent = "⚡ สั่งรัน AI ทันที";
+        isSimRunning = false;
+        btn.textContent = "🧬 จำลอง 12,096 วิธีใหม่";
       }
     }
 
-    async function generateLiveAIBrief(spot, last, vpSession, sc, tr, totalWr, totalNetR, regimeTxt, nowStr) {
+    async function generateLiveAIBrief(spot, last, vpSession, sc, tr, activeGene, totalWr, totalNetR, regimeTxt, nowStr) {
       const apiKey = localStorage.getItem("THAILLM_KEY") || "";
       let aiText =
         `<strong class="text-amber-400">1. สถานะตลาดสด (${nowStr} น.):</strong> Spot XAU/USD อยู่ที่ <strong class="text-white">$${spot.toFixed(2)}</strong> สภาวะหลัก <strong class="text-cyan-400">${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)})</strong> ความผันผวน <strong class="text-amber-300">ATR $${last.atr.toFixed(2)}</strong>\n\n` +
-        `<strong class="text-amber-400">2. การปรับระยะความเสี่ยงตาม ATR (V15.1):</strong> ปรับระยะ SL เป็น <strong class="text-rose-400">${sc.slPts} จุด</strong> และเลื่อน BE ที่ +0.8R เพื่อป้องกันไส้เทียนสะบัด ผลทดสอบ 1,000 แท่ง M15 ล่าสุด: WR <strong class="text-emerald-400">${totalWr}%</strong> | กำไรสะสม <strong class="text-emerald-400">${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R</strong>\n\n` +
-        `<strong class="text-amber-400">3. แผน Scalp (${sc.dir}):</strong> โซนเข้า <strong class="text-white">$${sc.entry}</strong> (รัศมี ±${sc.tolPts} จุด) | SL <strong class="text-rose-400">$${sc.sl}</strong> | BE <strong class="text-cyan-300">$${sc.be}</strong> | TP <strong class="text-emerald-400">$${sc.tp}</strong>\n` +
+        `<strong class="text-amber-400">2. ผลจำลอง 12,096 กลยุทธ์บนข้อมูล 4,500 แท่ง (~47 วัน):</strong> ยีนผู้ชนะของทรง <strong class="text-purple-300">${vpSession.shape}</strong> คือ <strong class="text-cyan-300">${activeGene.entryMode}</strong> (SL ${activeGene.slMult}x ATR / TP 1:${activeGene.rr} / ${activeGene.beRule}) ทำ Win Rate รวม <strong class="text-emerald-400">${activeGene.wr}%</strong> และ Out-of-Sample WR <strong class="text-emerald-400">${activeGene.oosWr}%</strong> | กำไรสะสมทั้ง 4 ทรง <strong class="text-emerald-400">${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R</strong>\n\n` +
+        `<strong class="text-amber-400">3. แผนเข้ายิง Scalp (${sc.dir} ตามยีนผู้ชนะ):</strong> รอราคาทดสอบโซน <strong class="text-white">$${sc.entry}</strong> (รัศมี ±${sc.tolPts} จุด) พร้อมยืนยัน L2 OBI 3 วินาที | SL <strong class="text-rose-400">$${sc.sl}</strong> | TP <strong class="text-emerald-400">$${sc.tp}</strong>\n` +
         `<strong class="text-amber-400">4. แผน Trend Sniper (${tr.dir}):</strong> ดักทดสอบ EMA21 ที่ <strong class="text-white">$${tr.entry}</strong> | SL <strong class="text-rose-400">$${tr.sl}</strong> | TP <strong class="text-emerald-400">$${tr.tp}</strong>`;
 
-      let badge = `ATR-ADAPTIVE AI (${nowStr})`;
+      let badge = `12,096-SIM EVOLVED (${nowStr})`;
 
       if (apiKey) {
         try {
@@ -825,7 +1074,7 @@
               model: "/model/typhoon-v2.5-30b-a3b-instruct",
               messages: [{
                 role: "user",
-                content: `วิเคราะห์พอร์ตกองทุน XAU/USD เวลา ${nowStr}: Spot $${spot.toFixed(2)}, Regime ${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)}, ATR $${last.atr.toFixed(2)}), แผน Scalp ${sc.dir} @ $${sc.entry} (SL ${sc.slPts} จุด, TP ${sc.tpPts} จุด). สรุปกลยุทธ์สั้นกระชับ 4 ข้อ`
+                content: `วิเคราะห์พอร์ตกองทุน XAU/USD เวลา ${nowStr}: Spot $${spot.toFixed(2)}, Regime ${regimeTxt} (ADX ${last.adx.toFixed(1)}, ATR $${last.atr.toFixed(2)}), ผลจำลอง 12,096 วิธีเลือกยีน ${activeGene.entryMode} (WR ${activeGene.wr}%, OOS WR ${activeGene.oosWr}%, Net ${activeGene.netR}R), แผน Scalp ${sc.dir} @ $${sc.entry} (SL $${sc.sl}, TP $${sc.tp}). สรุปกลยุทธ์สั้นกระชับ 4 ข้อ`
               }],
               max_tokens: 550,
               temperature: 0.25
@@ -900,7 +1149,7 @@
             body: JSON.stringify({
               topic: NTFY_TOPIC,
               title: `🔥 ORDERFLOW FIRE: ${sc.dir} XAU/USD @ $${mid.toFixed(2)}`,
-              message: `Session VP ${sc.shape} | OBI: ${obi.toFixed(3)} (3s) | Lot: ${document.getElementById('calc-scalp-lot').textContent} | SL: $${sc.sl} | TP: $${sc.tp}`,
+              message: `Evolved Gene ${sc.shape} | OBI: ${obi.toFixed(3)} (3s) | Lot: ${document.getElementById('calc-scalp-lot').textContent} | SL: $${sc.sl} | TP: $${sc.tp}`,
               priority: 5, tags: ["rotating_light", "dart"]
             })
           }).catch(() => {});
