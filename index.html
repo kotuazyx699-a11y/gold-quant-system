@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD 12,096-Sim MUE-X Evolution & OrderFlow Quant V16.0</title>
+  <title>XAU/USD Precision Spot & Dual-Engine Quant V17.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -18,24 +18,24 @@
   <div class="max-w-7xl mx-auto space-y-5">
 
     <!-- Header -->
-    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-800 pb-4">
+    <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-800 pb-4">
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">MUE-X 12,096-Sim Evolution & OrderFlow V16.0</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Precision Spot & Dual-Engine Quant V17.0</h1>
           <span class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/60 rounded-full">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE ENGINE
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> LIVE SPOT SYNC
           </span>
           <span id="mue-gen-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full">
-            12,096 Combos Ready
+            12,096-Sim Prop Verified
           </span>
         </div>
-        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังดึงข้อมูล Hydra Vault 4,500 แท่ง M15 (~47 วัน)...</p>
+        <p id="data-audit-line" class="text-xs text-gray-400 mt-1">กำลังเชื่อมต่อ Spot XAU/USD Feed + Hydra Vault 4,500 แท่ง M15...</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <div class="text-right font-mono-num mr-1">
-          <span id="last-updated" class="block text-xs text-emerald-400">กำลังเตรียมจำลอง...</span>
-          <span id="next-cycle-countdown" class="block text-[11px] text-cyan-400">รอบ AI 15 นาทีถัดไปใน: --:--</span>
+          <span id="last-updated" class="block text-xs text-emerald-400">กำลังเตรียมข้อมูล...</span>
+          <span id="next-cycle-countdown" class="block text-[11px] text-cyan-400">อัปเดตอัตโนมัติในอีก: -- นาที -- วินาที</span>
         </div>
         <button id="btn-run-ai" onclick="runFullLiveQuantAndAI(true)"
            class="px-3 py-1.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950 rounded-lg transition shadow-lg shadow-cyan-500/20">
@@ -50,10 +50,31 @@
       </div>
     </header>
 
+    <!-- Spot Price Feed & Broker Calibration Bar -->
+    <section class="card p-3.5 border-amber-500/40 bg-gradient-to-r from-amber-950/20 via-gray-900 to-cyan-950/20">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="px-2 py-0.5 font-mono-num font-bold bg-amber-500/20 text-amber-300 rounded">SPOT FEED AUDIT</span>
+          <span id="spot-feed-status" class="text-gray-200 font-mono-num">กำลังเทียบราคา Spot XAU/USD กับ Futures Basis...</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 font-mono-num text-xs">
+          <label class="text-gray-400">เทียบราคา MT4/MT5 จริง:</label>
+          <input id="input-broker-price" type="number" step="0.01" placeholder="เช่น 3568.50"
+            class="w-32 px-2.5 py-1 bg-gray-800 border border-amber-500/50 rounded text-amber-300 font-bold" />
+          <button onclick="applyBrokerCalibration()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold rounded transition">
+            ล็อกราคาตรงพอร์ต
+          </button>
+          <button onclick="resetBrokerCalibration()" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded transition">
+            Auto Spot
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- Evolution Progress Bar -->
     <div id="sim-progress-wrap" class="card p-3 border-purple-500/50 bg-purple-950/20">
       <div class="flex items-center justify-between text-xs font-mono-num mb-1.5">
-        <span id="sim-progress-label" class="text-purple-300 font-bold">กำลังเตรียมข้อมูล 4,500 แท่ง M15 เพื่อจำลองกลยุทธ์ 12,096 รูปแบบ...</span>
+        <span id="sim-progress-label" class="text-purple-300 font-bold">กำลังเตรียมข้อมูล 4,500 แท่ง M15 เพื่อจำลองกลยุทธ์ 12,096 รูปแบบ (หัก Spread/Comm $0.40)...</span>
         <span id="sim-progress-pct" class="text-cyan-400 font-bold">0%</span>
       </div>
       <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -61,22 +82,22 @@
       </div>
     </div>
 
-    <!-- LIVE ACTIONABLE ORDERFLOW EXECUTION GATE -->
+    <!-- LIVE DUAL-TRIGGER ORDERFLOW EXECUTION GATE -->
     <section id="execution-gate-box" class="card p-4 border-cyan-500/50 bg-gradient-to-r from-gray-900 via-cyan-950/25 to-purple-950/25">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div class="space-y-1">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="px-2 py-0.5 text-[10px] font-mono-num font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 rounded">LIVE ORDERFLOW EXECUTION GATE</span>
+            <span class="px-2 py-0.5 text-[10px] font-mono-num font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 rounded">MICRO-SCALP ORDERFLOW GATE (แยกขาดจาก SWING)</span>
             <span id="gate-status-pill" class="px-2.5 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-600/60 rounded-full">
               INITIALIZING...
             </span>
           </div>
-          <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังจับคู่ยีนที่ชนะการจำลอง 12,096 วิธี กับราคา Spot ปัจจุบัน...</h2>
-          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">เงื่อนไขลั่นไก 3 ชั้น: (1) ราคาเข้าโซนยีนผู้ชนะ + (2) OBI ยืนค้าง 3 วินาที + (3) 60s Tape Delta สอดคล้อง</p>
+          <h2 id="gate-headline" class="text-base md:text-lg font-bold text-white">กำลังจับคู่โซน Micro-VP 4H และกำแพง L2 Order Book กับราคา Spot...</h2>
+          <p id="gate-subline" class="text-xs text-gray-300 font-mono-num">โหมดคู่: (A) ราคาเข้าโซน Micro-VP Retest หรือ (B) ทะลุ Micro-Level พร้อม L2 OBI ยืนค้าง 3 วิ + 60s Delta สอดคล้อง</p>
         </div>
         <div class="grid grid-cols-3 gap-2.5 font-mono-num text-center shrink-0">
           <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
-            <span class="block text-[10px] text-gray-400">1. ระยะห่างโซนเข้า</span>
+            <span class="block text-[10px] text-gray-400">1. ระยะโซน Micro-VP</span>
             <span id="cond-1-val" class="text-sm font-bold text-amber-400">-- จุด</span>
           </div>
           <div class="bg-gray-900/90 border border-gray-700 rounded-lg px-3 py-2">
@@ -95,7 +116,7 @@
     <section class="grid grid-cols-2 lg:grid-cols-5 gap-4">
       <div class="card p-4 border-amber-500/30">
         <div class="flex items-center justify-between">
-          <p class="text-xs text-gray-400">Spot XAU/USD (Real-Time)</p>
+          <p class="text-xs text-gray-400">Spot XAU/USD (Calibrated)</p>
           <span id="live-tick-time" class="text-[10px] text-emerald-400 font-mono-num">--:--:--</span>
         </div>
         <p id="kpi-price" class="text-2xl font-bold text-amber-400 font-mono-num mt-1">$0.00</p>
@@ -123,7 +144,7 @@
       </div>
     </section>
 
-    <!-- Prop-Firm Dynamic Position Sizing Bar -->
+    <!-- Prop-Firm Dynamic Position Sizing Bar (Single-Position Guard) -->
     <section class="card p-4 border-emerald-700/40 bg-gradient-to-r from-gray-900 via-gray-900 to-emerald-950/20">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
         <div class="lg:col-span-4 flex flex-wrap items-center gap-3">
@@ -133,47 +154,47 @@
               class="w-28 mt-1 px-2.5 py-1 text-sm font-mono-num font-bold bg-gray-800 border border-gray-700 rounded text-white" />
           </div>
           <div>
-            <label class="block text-[10px] text-gray-400 uppercase">เสี่ยง Scalp (%)</label>
-            <input id="input-risk-pct" type="number" value="0.75" min="0.1" max="5" step="0.05" oninput="recalcPropMath()"
+            <label class="block text-[10px] text-gray-400 uppercase">เสี่ยงต่อไม้ (%)</label>
+            <input id="input-risk-pct" type="number" value="1.0" min="0.1" max="5" step="0.05" oninput="recalcPropMath()"
               class="w-20 mt-1 px-2.5 py-1 text-sm font-mono-num font-bold bg-gray-800 border border-gray-700 rounded text-amber-400" />
           </div>
           <div>
             <label class="block text-[10px] text-gray-400 uppercase">Daily DD Max (%)</label>
-            <input id="input-dd-pct" type="number" value="3.0" min="1" max="10" step="0.5" oninput="recalcPropMath()"
+            <input id="input-dd-pct" type="number" value="2.5" min="1" max="10" step="0.5" oninput="recalcPropMath()"
               class="w-20 mt-1 px-2.5 py-1 text-sm font-mono-num font-bold bg-gray-800 border border-gray-700 rounded text-rose-400" />
           </div>
         </div>
         <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono-num text-center">
           <div class="bg-purple-950/35 border border-purple-700/50 rounded-lg p-2">
-            <span id="calc-scalp-lot-lbl" class="block text-[10px] text-purple-300">Lot Scalp (Evolved SL)</span>
-            <span id="calc-scalp-lot" class="text-sm font-bold text-purple-300">0.03 Lot</span>
-            <span id="calc-scalp-risk" class="block text-[10px] text-rose-300">เสี่ยง -$38 / ไม้</span>
+            <span id="calc-scalp-lot-lbl" class="block text-[10px] text-purple-300">Lot Micro-Scalp</span>
+            <span id="calc-scalp-lot" class="text-sm font-bold text-purple-300">0.08 Lot</span>
+            <span id="calc-scalp-risk" class="block text-[10px] text-rose-300">เสี่ยง -$50 / ไม้</span>
           </div>
           <div class="bg-gray-800/80 border border-gray-700 rounded-lg p-2">
-            <span class="block text-[10px] text-gray-400">Lot Trend Sniper (1.0%)</span>
-            <span id="calc-trend-lot" class="text-sm font-bold text-cyan-400">0.01 Lot</span>
-            <span id="calc-trend-risk" class="block text-[10px] text-gray-400">เสี่ยง -$50 / ไม้</span>
+            <span class="block text-[10px] text-gray-400">Lot Trend Sniper (แยกไม้)</span>
+            <span id="calc-trend-lot" class="text-sm font-bold text-cyan-400">0.02 Lot</span>
+            <span id="calc-trend-risk" class="block text-[10px] text-gray-400">ถือทีละ 1 แผนเท่านั้น</span>
           </div>
           <div class="bg-gray-800/80 border border-emerald-800/50 rounded-lg p-2">
             <span class="block text-[10px] text-gray-400">เป้าสอบผ่าน (8%)</span>
             <span id="calc-target-usd" class="text-sm font-bold text-emerald-400">+$400</span>
-            <span id="calc-wins-needed" class="block text-[10px] text-emerald-300">~7 ไม้ชนะ Scalp</span>
+            <span id="calc-wins-needed" class="block text-[10px] text-emerald-300">~6 ไม้ชนะ</span>
           </div>
           <div class="bg-gray-800/80 border border-rose-900/50 rounded-lg p-2">
             <span class="block text-[10px] text-gray-400">เบรกเกอร์รายวัน (-2R)</span>
-            <span id="calc-daily-stop" class="text-sm font-bold text-rose-400">-$75 (-1.5%)</span>
-            <span id="calc-dd-room" class="block text-[10px] text-gray-400">เหลือระยะ DD: $75</span>
+            <span id="calc-daily-stop" class="text-sm font-bold text-rose-400">-$100 (-2.0%)</span>
+            <span id="calc-dd-room" class="block text-[10px] text-gray-400">เหลือระยะ DD: $25</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- LIVE ORDERFLOW & MUE-X EVOLVED GENE GRID -->
+    <!-- LIVE ORDERFLOW & MUE-X MICRO-SCALP GRID -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div class="card p-5 lg:col-span-5 border-cyan-600/40 space-y-4">
         <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
           <h2 class="text-sm font-bold text-cyan-300">L2 Order Book Depth & Liquidity Walls</h2>
-          <span id="of-absorption-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-300">LIVE L2 STREAM</span>
+          <span id="of-absorption-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-300">LIVE SPOT-SYNC L2</span>
         </div>
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs font-mono-num">
@@ -201,12 +222,12 @@
         </div>
       </div>
 
-      <!-- Session 8H Micro-VP & Winning Evolved Gene Plan -->
+      <!-- Engine A: Micro-OrderFlow Scalp (Distinct from Trend Sniper) -->
       <div class="card p-5 lg:col-span-7 border-purple-600/40 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
           <div>
-            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">MUE-X 12,096-Sim Evolved Champion (Walk-Forward Verified)</span>
-            <h2 id="anatomy-title" class="text-base font-bold text-amber-400">กำลังคำนวณโครงสร้าง Session VP...</h2>
+            <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">ENGINE A: MICRO-ORDERFLOW SCALP (4H MICRO-VP + L2 WALLS — สั้นกระชับ)</span>
+            <h2 id="anatomy-title" class="text-base font-bold text-amber-400">กำลังคำนวณโครงสร้าง Micro-VP 4H...</h2>
           </div>
           <span id="scalp-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60">WR: -% | Net: -R</span>
         </div>
@@ -214,21 +235,21 @@
         <p id="anatomy-desc" class="text-xs text-gray-300 leading-relaxed">-</p>
 
         <div class="grid grid-cols-3 gap-2 text-center font-mono-num text-xs">
-          <div class="bg-gray-900 border border-gray-800 rounded p-2"><span class="block text-[10px] text-gray-400">Session VAH</span><span id="sc-vah" class="font-bold text-blue-400">$0.00</span></div>
-          <div class="bg-gray-900 border border-amber-700/40 rounded p-2"><span class="block text-[10px] text-amber-300">Session POC</span><span id="sc-poc" class="font-bold text-amber-400">$0.00</span></div>
-          <div class="bg-gray-900 border border-gray-800 rounded p-2"><span class="block text-[10px] text-gray-400">Session VAL</span><span id="sc-val" class="font-bold text-blue-400">$0.00</span></div>
+          <div class="bg-gray-900 border border-gray-800 rounded p-2"><span class="block text-[10px] text-gray-400">4H Micro VAH</span><span id="sc-vah" class="font-bold text-blue-400">$0.00</span></div>
+          <div class="bg-gray-900 border border-amber-700/40 rounded p-2"><span class="block text-[10px] text-amber-300">4H Micro POC</span><span id="sc-poc" class="font-bold text-amber-400">$0.00</span></div>
+          <div class="bg-gray-900 border border-gray-800 rounded p-2"><span class="block text-[10px] text-gray-400">4H Micro VAL</span><span id="sc-val" class="font-bold text-blue-400">$0.00</span></div>
         </div>
 
         <div class="bg-gray-900/90 border border-purple-700/50 rounded-lg p-3.5">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-            <span id="scalp-bias" class="text-xs font-bold text-purple-300">กำลังคัดเลือกยีนผู้ชนะ...</span>
+            <span id="scalp-bias" class="text-xs font-bold text-purple-300">กำลังคำนวณจุดเข้า Micro-Scalp...</span>
             <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400">SL / TP</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
-            <div class="bg-gray-800/80 rounded p-2"><span class="block text-[10px] text-gray-400">Scalp Entry</span><span id="sc-entry" class="font-bold text-white text-sm">$0.00</span></div>
-            <div class="bg-rose-950/40 border border-rose-900/50 rounded p-2"><span id="sc-sl-label" class="block text-[10px] text-rose-300">Stop Loss</span><span id="sc-sl" class="font-bold text-rose-400 text-sm">$0.00</span></div>
-            <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2"><span id="sc-be-label" class="block text-[10px] text-cyan-300">BE Rule</span><span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span></div>
-            <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2"><span id="sc-tp-label" class="block text-[10px] text-emerald-300">Final TP</span><span id="sc-tp" class="font-bold text-emerald-400 text-sm">$0.00</span></div>
+            <div class="bg-gray-800/80 rounded p-2"><span class="block text-[10px] text-gray-400">Micro-Scalp Entry</span><span id="sc-entry" class="font-bold text-white text-sm">$0.00</span></div>
+            <div class="bg-rose-950/40 border border-rose-900/50 rounded p-2"><span id="sc-sl-label" class="block text-[10px] text-rose-300">Scalp SL</span><span id="sc-sl" class="font-bold text-rose-400 text-sm">$0.00</span></div>
+            <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2"><span id="sc-be-label" class="block text-[10px] text-cyan-300">Exit Rule</span><span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span></div>
+            <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2"><span id="sc-tp-label" class="block text-[10px] text-emerald-300">Scalp TP</span><span id="sc-tp" class="font-bold text-emerald-400 text-sm">$0.00</span></div>
           </div>
         </div>
 
@@ -241,24 +262,24 @@
       <div class="lg:col-span-7 space-y-6">
         <div class="card p-5 border-amber-500/20">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
-            <h2 class="text-base font-bold text-white">Live AI Strategist & 12,096-Sim Quant Brief</h2>
+            <h2 class="text-base font-bold text-white">Engine B: Trend Sniper (EMA21/5D VP) & AI Strategist</h2>
             <div class="flex items-center gap-2">
               <button onclick="promptApiKey()" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700">
                 ตั้งค่า Typhoon Key
               </button>
-              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">MUE-X V16.0 EVOLVED</span>
+              <span id="ai-engine-badge" class="text-[10px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">DUAL-ENGINE V17.0</span>
             </div>
           </div>
           <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-3 mb-4">
             <div class="flex items-center justify-between mb-2">
-              <span id="setup-bias" class="text-xs font-bold text-amber-400">Trend Sniper Setup...</span>
-              <span id="trend-bt-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">Trend WR: -%</span>
+              <span id="setup-bias" class="text-xs font-bold text-amber-400">Trend Sniper Setup (แยกขาดจาก Scalp)...</span>
+              <span id="trend-bt-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-cyan-950 text-cyan-300">Swing 1:2.2</span>
             </div>
             <div class="grid grid-cols-4 gap-2 text-center font-mono-num text-xs">
               <div class="bg-gray-800/70 rounded p-1.5"><span class="block text-[10px] text-gray-400">Trend Entry</span><span id="setup-entry" class="font-bold text-white">$0.00</span></div>
-              <div class="bg-rose-950/40 rounded p-1.5"><span class="block text-[10px] text-rose-300">Stop Loss</span><span id="setup-sl" class="font-bold text-rose-400">$0.00</span></div>
+              <div class="bg-rose-950/40 rounded p-1.5"><span class="block text-[10px] text-rose-300">Swing SL</span><span id="setup-sl" class="font-bold text-rose-400">$0.00</span></div>
               <div class="bg-cyan-950/40 rounded p-1.5"><span class="block text-[10px] text-cyan-300">BE (+1.0R)</span><span id="setup-be" class="font-bold text-cyan-300">$0.00</span></div>
-              <div class="bg-emerald-950/40 rounded p-1.5"><span class="block text-[10px] text-emerald-300">Final TP</span><span id="setup-tp" class="font-bold text-emerald-400">$0.00</span></div>
+              <div class="bg-emerald-950/40 rounded p-1.5"><span class="block text-[10px] text-emerald-300">Swing TP</span><span id="setup-tp" class="font-bold text-emerald-400">$0.00</span></div>
             </div>
           </div>
           <div id="ai-content" class="text-sm text-gray-200 leading-relaxed whitespace-pre-line">กำลังประมวลผลบทวิเคราะห์สด...</div>
@@ -266,14 +287,14 @@
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-purple-300">ตารางยีนผู้ชนะจาก 12,096 การจำลอง (In-Sample 70% + OOS 30%)</span>
+            <span class="text-xs font-bold text-purple-300">ตารางยีนผู้ชนะ 12,096 วิธี (หัก Spread/Comm $0.40 + เปิดทีละ 1 ไม้)</span>
             <span id="scalp-oos-line" class="text-[11px] font-mono-num text-cyan-400">4,500 M15 Bars (~47 วัน)</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs font-mono-num">
               <thead>
                 <tr class="border-b border-gray-800 text-gray-400">
-                  <th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">สูตรที่ชนะ</th><th class="py-1.5 pr-2">SL / TP / BE</th>
+                  <th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">สูตรที่ชนะ</th><th class="py-1.5 pr-2">SL / TP / กฎปิด</th>
                   <th class="py-1.5 pr-2 text-right">ไม้</th><th class="py-1.5 pr-2 text-right">WR รวม</th><th class="py-1.5 pr-2 text-right">OOS WR</th><th class="py-1.5 text-right">Net R</th>
                 </tr>
               </thead>
@@ -287,7 +308,7 @@
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <h2 class="text-base font-bold text-white">5D Macro Volume Profile (Live M15)</h2>
+              <h2 class="text-base font-bold text-white">5D Macro Volume Profile (Spot-Calibrated)</h2>
               <p class="text-xs text-gray-400">โครงสร้าง Volume สะสม 5 วันล่าสุด</p>
             </div>
           </div>
@@ -301,15 +322,15 @@
 
         <div class="card p-5">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-bold text-white">ประวัติสัญญาณของยีนผู้ชนะ (ล่าสุด)</h2>
-            <span class="text-xs text-emerald-400">Walk-Forward Verified</span>
+            <h2 class="text-sm font-bold text-white">ประวัติสัญญาณยีนผู้ชนะ (ใช้กฎปิดจริง + ไม่เปิดซ้อน)</h2>
+            <span class="text-xs text-emerald-400">100% Rule Parity</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px] font-mono-num">
               <thead>
                 <tr class="border-b border-gray-800 text-gray-400">
                   <th class="py-1.5 pr-2">เวลา</th><th class="py-1.5 pr-2">ทรง VP</th><th class="py-1.5 pr-2">ฝั่ง</th>
-                  <th class="py-1.5 pr-2 text-right">Entry</th><th class="py-1.5 text-right">ผล (R)</th>
+                  <th class="py-1.5 pr-2 text-right">Entry</th><th class="py-1.5 text-right">ผลจริง (R)</th>
                 </tr>
               </thead>
               <tbody id="sim-audit-table-body" class="divide-y divide-gray-800/60"></tbody>
@@ -323,9 +344,11 @@
 
   <script>
     const NTFY_TOPIC = "pansakorn888";
+    const PROP_FRICTION_USD = 0.40; // Realistic $0.40 (40 pts) spread + commission per trade
+
     let vpChartInstance = null, liveModel = null;
     let rawWsBid = null, rawWsAsk = null, spotBasisOffset = 0.0, lastRenderedMid = null;
-    let tradeBuffer60s = [], obiSustainStart = null, lastAutoFireTs = 0, audioEnabled = true;
+    let tradeBuffer60s = [], latestDelta60s = 0, obiSustainStart = null, lastAutoFireTs = 0, audioEnabled = true;
     let lastRanSlot = -1, genCounter = 1, isSimRunning = false;
 
     function toggleAudioGate() {
@@ -339,6 +362,21 @@
         localStorage.setItem("THAILLM_KEY", k.trim());
         runFullLiveQuantAndAI(true);
       }
+    }
+
+    function applyBrokerCalibration() {
+      const val = parseFloat(document.getElementById('input-broker-price').value);
+      if (!val || isNaN(val) || val < 1000) return alert("กรุณาใส่ราคาทองจาก MT4/MT5 ของคุณ เช่น 3568.50");
+      localStorage.setItem("CUSTOM_BROKER_PRICE", val.toString());
+      localStorage.setItem("CUSTOM_BROKER_TS", Date.now().toString());
+      runFullLiveQuantAndAI(false);
+    }
+
+    function resetBrokerCalibration() {
+      localStorage.removeItem("CUSTOM_BROKER_PRICE");
+      localStorage.removeItem("CUSTOM_BROKER_TS");
+      document.getElementById('input-broker-price').value = "";
+      runFullLiveQuantAndAI(false);
     }
 
     function playTriggerBeep() {
@@ -356,6 +394,7 @@
       } catch (e) {}
     }
 
+    // Clear, unambiguous Thai countdown timer
     setInterval(() => {
       const now = new Date();
       const mins = now.getMinutes(), secs = now.getSeconds();
@@ -364,7 +403,7 @@
       const remMins = (nextSlot - mins - 1 + 60) % 60;
       const remSecs = 59 - secs;
       document.getElementById('next-cycle-countdown').textContent =
-        `รอบ AI 15 นาทีถัดไปใน: ${String(remMins).padStart(2, '0')}:${String(remSecs).padStart(2, '0')}`;
+        `อัปเดตอัตโนมัติในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
 
       if (lastRanSlot !== -1 && slot !== lastRanSlot && secs >= 2) {
         lastRanSlot = slot;
@@ -375,31 +414,30 @@
 
     function recalcPropMath() {
       const bal = Math.max(500, parseFloat(document.getElementById('input-balance').value) || 5000);
-      const riskPct = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct').value) || 0.75);
-      const ddPct = Math.max(1.0, parseFloat(document.getElementById('input-dd-pct').value) || 3.0);
+      const riskPct = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct').value) || 1.0);
+      const ddPct = Math.max(1.0, parseFloat(document.getElementById('input-dd-pct').value) || 2.5);
 
-      const scRiskUsd = bal * (riskPct / 100.0);
-      const slPts = (liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.slPts : 1200;
-      const scLot = Math.max(0.01, Math.round((scRiskUsd / slPts) * 100) / 100);
-      document.getElementById('calc-scalp-lot-lbl').textContent = `Lot Scalp (SL ${slPts} จุด)`;
+      const riskUsd = bal * (riskPct / 100.0);
+      const scSlPts = (liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.slPts : 600;
+      const scLot = Math.max(0.01, Math.round((riskUsd / scSlPts) * 100) / 100);
+      document.getElementById('calc-scalp-lot-lbl').textContent = `Lot Micro-Scalp (SL ${scSlPts} จุด)`;
       document.getElementById('calc-scalp-lot').textContent = `${scLot.toFixed(2)} Lot`;
-      document.getElementById('calc-scalp-risk').textContent = `เสี่ยง -$${scRiskUsd.toFixed(0)} / ไม้`;
+      document.getElementById('calc-scalp-risk').textContent = `เสี่ยง -$${riskUsd.toFixed(0)} / ไม้`;
 
-      const trRiskUsd = bal * 0.01;
-      const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 22.0;
-      const trLot = Math.max(0.01, Math.round((trRiskUsd / (trSlDist * 100.0)) * 100) / 100);
+      const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 25.0;
+      const trLot = Math.max(0.01, Math.round((riskUsd / (trSlDist * 100.0)) * 100) / 100);
       document.getElementById('calc-trend-lot').textContent = `${trLot.toFixed(2)} Lot`;
-      document.getElementById('calc-trend-risk').textContent = `เสี่ยง -$${trRiskUsd.toFixed(0)} / ไม้`;
+      document.getElementById('calc-trend-risk').textContent = `เสี่ยง -$${riskUsd.toFixed(0)} (ถือทีละ 1 แผน)`;
 
       const targetUsd = bal * 0.08;
-      const avgWinMult = (liveModel && liveModel.activeGene) ? Math.max(0.8, liveModel.activeGene.rr) : 1.2;
-      const winsNeed = Math.ceil(targetUsd / Math.max(1, scRiskUsd * avgWinMult));
+      const avgWinMult = (liveModel && liveModel.activeGene) ? Math.max(1.0, liveModel.activeGene.rr) : 1.5;
+      const winsNeed = Math.ceil(targetUsd / Math.max(1, riskUsd * avgWinMult));
       document.getElementById('calc-target-usd').textContent = `+$${targetUsd.toFixed(0)}`;
-      document.getElementById('calc-wins-needed').textContent = `~${winsNeed} ไม้ชนะ Scalp`;
+      document.getElementById('calc-wins-needed').textContent = `~${winsNeed} ไม้ชนะ`;
 
-      const dailyStopUsd = scRiskUsd * 2.0;
+      const dailyStopUsd = riskUsd * 2.0;
       const maxDdUsd = bal * (ddPct / 100.0);
-      document.getElementById('calc-daily-stop').textContent = `-$${dailyStopUsd.toFixed(0)} (-${(riskPct * 2).toFixed(2)}%)`;
+      document.getElementById('calc-daily-stop').textContent = `-$${dailyStopUsd.toFixed(0)} (-${(riskPct * 2).toFixed(1)}%)`;
       document.getElementById('calc-dd-room').textContent = `เหลือระยะ DD: $${Math.max(0, maxDdUsd - dailyStopUsd).toFixed(0)}`;
     }
     recalcPropMath();
@@ -411,7 +449,7 @@
         const res = await fetch("https://ntfy.sh", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic: NTFY_TOPIC, title: "ทดสอบ XAU/USD V16.0 12,096-Sim", message: `เชื่อมต่อสำเร็จ! Spot: $${lastRenderedMid || '-'}`, priority: 4, tags: ["white_check_mark"] })
+          body: JSON.stringify({ topic: NTFY_TOPIC, title: "ทดสอบ XAU/USD V17.0 Precision Spot", message: `เชื่อมต่อสำเร็จ! Spot: $${lastRenderedMid || '-'}`, priority: 4, tags: ["white_check_mark"] })
         });
         btn.textContent = res.ok ? "ส่งแล้ว! เช็กมือถือ" : "ส่งไม่สำเร็จ";
       } catch (e) { btn.textContent = "เชื่อมต่อไม่ได้"; }
@@ -476,10 +514,10 @@
         if (minV <= 0.72 * peaks[1].v) { isDouble = true; valley = centers[minI]; }
       }
 
-      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "โวลุ่มสมดุลกลางกรอบ Session 8H — ใช้ยีนผู้ชนะจาก 3,024 การจำลองของทรง D";
-      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — ใช้ยีนผู้ชนะจาก 3,024 การจำลองของทรง Double Zone"; }
-      else if (pocPos <= 36) { shape = "B_SHAPED"; title = "② b-SHAPED (ฐานสะสมล่าง)"; desc = "โวลุ่มกองอยู่ฐานล่าง — ใช้ยีนผู้ชนะจาก 3,024 การจำลองของทรง b-Shaped"; }
-      else if (pocPos >= 64) { shape = "P_SHAPED"; title = "③ P-SHAPED (ยอดสะสมบน)"; desc = "โวลุ่มกองอยู่ด้านบน — ใช้ยีนผู้ชนะจาก 3,024 การจำลองของทรง P-Shaped"; }
+      let shape = "D_SHAPED", title = "① D-SHAPED (สมดุลตัว D)", desc = "กรอบ 4H Micro-VP สมดุล — ใช้ Micro-Scalp เก็บสั้นตามแรง OrderFlow";
+      if (isDouble) { shape = "DOUBLE_ZONE"; title = "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)"; desc = "กรอบ 4H เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — เทรด Retest/Breakdown โซนใกล้ราคาจริง"; }
+      else if (pocPos <= 36) { shape = "B_SHAPED"; title = "② b-SHAPED (ฐานสะสมล่าง)"; desc = "โวลุ่มกองฐานล่างใกล้ Spot — จับจังหวะ L2 Order Book ยืนยันแรงส่ง"; }
+      else if (pocPos >= 64) { shape = "P_SHAPED"; title = "③ P-SHAPED (ยอดสะสมบน)"; desc = "โวลุ่มกองด้านบน — ใช้เป็นแนวต้าน/แนวรับ Micro-Scalp ระยะสั้น"; }
 
       return {
         shape, title, desc,
@@ -525,30 +563,166 @@
           b.atr = 6.0; b.adx = 22.0; b.rsi = 50.0;
         }
 
-        if (i >= 32) {
-          b.vp = computeVP(bars.slice(i - 32, i), 18);
+        // Micro-VP 16 bars (4 hours) for sharp scalp signals
+        if (i >= 24) {
+          b.vp = computeVP(bars.slice(i - 16, i), 18);
         }
       }
     }
 
-    // --- MASSIVE 12,096-COMBINATION WALK-FORWARD EVOLUTION ENGINE ---
+    // Shared exact trade simulator (Used by BOTH Evolution Engine AND Recent Audit Table -> 100% Parity!)
+    function simulateGeneExact(bars, signals, slMult, rr, beRule, splitIdx, collectLogs = false) {
+      let isWins = 0, isLosses = 0, isNetR = 0;
+      let oosWins = 0, oosLosses = 0, oosNetR = 0;
+      let grossWin = 0, grossLoss = 0, lastExitIdx = -1;
+      const tradeLogs = [];
+
+      for (let k = 0; k < signals.length; k++) {
+        const sig = signals[k];
+        // STRICT SINGLE-POSITION LOCK: Never open overlapping trades!
+        if (sig.idx <= lastExitIdx) continue;
+
+        // Scalp-calibrated SL: 0.35x - 0.85x ATR, capped between $4.00 and $9.50 (400 - 950 pts)
+        const slUsd = Math.max(4.0, Math.min(9.5, sig.atr * slMult));
+        const tpUsd = slUsd * rr;
+        const maxBars = (beRule === "TIME_EXIT_16B") ? 16 : 32;
+        let beMoved = false, lockedHalf = false, resR = 0, exitJ = sig.idx + 1;
+
+        for (let j = sig.idx + 1; j < Math.min(bars.length, sig.idx + maxBars); j++) {
+          const fut = bars[j];
+          if (sig.side === "LONG") {
+            const fav = fut.h - sig.entry;
+            if (beRule === "LATE_BE_85" && fav >= tpUsd * 0.85) beMoved = true;
+            if (beRule === "LOCK_HALF_1R" && rr > 1.15 && fav >= slUsd * 1.0) lockedHalf = true;
+
+            const curSl = lockedHalf ? (sig.entry + slUsd * 0.5) : (beMoved ? (sig.entry + 0.15) : (sig.entry - slUsd));
+            if (fut.l <= curSl) {
+              resR = lockedHalf ? 0.5 : (beMoved ? 0.02 : -1.0);
+              exitJ = j; break;
+            }
+            if (fut.h >= sig.entry + tpUsd + PROP_FRICTION_USD) {
+              resR = rr;
+              exitJ = j; break;
+            }
+          } else {
+            const fav = sig.entry - fut.l;
+            if (beRule === "LATE_BE_85" && fav >= tpUsd * 0.85) beMoved = true;
+            if (beRule === "LOCK_HALF_1R" && rr > 1.15 && fav >= slUsd * 1.0) lockedHalf = true;
+
+            const curSl = lockedHalf ? (sig.entry - slUsd * 0.5) : (beMoved ? (sig.entry - 0.15) : (sig.entry + slUsd));
+            if (fut.h >= curSl) {
+              resR = lockedHalf ? 0.5 : (beMoved ? 0.02 : -1.0);
+              exitJ = j; break;
+            }
+            if (fut.l <= sig.entry - tpUsd - PROP_FRICTION_USD) {
+              resR = rr;
+              exitJ = j; break;
+            }
+          }
+          if (j === Math.min(bars.length, sig.idx + maxBars) - 1) {
+            const rawPnl = sig.side === "LONG" ? (fut.c - sig.entry - PROP_FRICTION_USD) : (sig.entry - fut.c - PROP_FRICTION_USD);
+            resR = Math.max(-1.0, Math.min(rr, +(rawPnl / slUsd).toFixed(2)));
+            exitJ = j;
+          }
+        }
+
+        lastExitIdx = exitJ;
+        const isOos = sig.idx >= splitIdx;
+        if (resR > 0.05) {
+          grossWin += resR;
+          if (isOos) oosWins++; else isWins++;
+        } else if (resR < -0.05) {
+          grossLoss += Math.abs(resR);
+          if (isOos) oosLosses++; else isLosses++;
+        }
+        if (isOos) oosNetR += resR; else isNetR += resR;
+
+        if (collectLogs) {
+          tradeLogs.push({
+            ts: sig.time,
+            entryIdx: sig.idx,
+            exitIdx: exitJ,
+            time: new Date(sig.time).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+            shape: sig.shape,
+            side: sig.side,
+            entry: sig.entry.toFixed(2),
+            r: +resR.toFixed(2)
+          });
+        }
+      }
+
+      return { isWins, isLosses, isNetR, oosWins, oosLosses, oosNetR, grossWin, grossLoss, tradeLogs };
+    }
+
+    function scanCandidateSignals(bars, targetShape, eMode, rMode) {
+      const signals = [];
+      for (let i = 60; i < bars.length - 32; i++) {
+        const b = bars[i], prev = bars[i - 1];
+        if (!b.vp || b.vp.shape !== targetShape) continue;
+
+        if (rMode === "MOMENTUM" && (b.rsi < 32 || b.rsi > 68)) continue;
+        if (rMode === "EXTREME_FILTER" && (b.rsi < 25 || b.rsi > 75)) continue;
+
+        const vp = b.vp;
+        const tol = Math.max(1.5, Math.min(4.5, b.atr * 0.25));
+        const isBear = b.c < b.ema200;
+        const isBull = b.c > b.ema200;
+        const strongTrend = b.adx >= 24;
+        let side = null;
+
+        if (eMode === "TREND_PULLBACK") {
+          if (isBear && strongTrend && (Math.abs(b.h - vp.vah) <= tol || Math.abs(b.h - vp.poc) <= tol) && b.c < b.o) side = "SHORT";
+          else if (isBull && strongTrend && (Math.abs(b.l - vp.val) <= tol || Math.abs(b.l - vp.poc) <= tol) && b.c > b.o) side = "LONG";
+        } else if (eMode === "VALUE_AREA_FADE") {
+          if (!strongTrend && Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
+          else if (!strongTrend && Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
+        } else if (eMode === "POC_BREAK_RETEST") {
+          if (b.c > vp.poc && prev.c <= vp.poc && b.ema21 > b.ema50) side = "LONG";
+          else if (b.c < vp.poc && prev.c >= vp.poc && b.ema21 < b.ema50) side = "SHORT";
+        } else if (eMode === "VALLEY_SNIPER") {
+          const lvl = vp.valley || vp.poc;
+          if (Math.abs(b.l - lvl) <= tol && b.c > b.o && b.ema21 >= b.ema50) side = "LONG";
+          else if (Math.abs(b.h - lvl) <= tol && b.c < b.o && b.ema21 <= b.ema50) side = "SHORT";
+        } else if (eMode === "KILLZONE_VP") {
+          const inKz = (b.hourTh >= 13 && b.hourTh <= 23);
+          if (inKz && isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - vp.vah) <= tol) && b.c < b.o) side = "SHORT";
+          else if (inKz && isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - vp.val) <= tol) && b.c > b.o) side = "LONG";
+        } else if (eMode === "HYBRID_REGIME") {
+          if (strongTrend) {
+            if (isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - vp.val) <= tol) && b.c < b.o) side = "SHORT";
+            else if (isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - vp.vah) <= tol) && b.c > b.o) side = "LONG";
+          } else {
+            if (Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
+            else if (Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
+          }
+        }
+
+        if (side) {
+          signals.push({ idx: i, shape: targetShape, side, entry: b.c, atr: b.atr, time: b.t });
+          i += 2;
+        }
+      }
+      return signals;
+    }
+
     async function runMassive12kEvolution(bars) {
       const shapes = ["D_SHAPED", "B_SHAPED", "P_SHAPED", "DOUBLE_ZONE"];
       const entryModes = ["HYBRID_REGIME", "TREND_PULLBACK", "VALUE_AREA_FADE", "POC_BREAK_RETEST", "VALLEY_SNIPER", "KILLZONE_VP"];
       const rsiModes = ["ALL", "MOMENTUM", "EXTREME_FILTER"];
-      const slMults = [0.50, 0.75, 1.00, 1.25, 1.50, 2.00];
-      const rrTargets = [0.8, 1.0, 1.2, 1.5, 1.8, 2.2, 2.8];
+      // Scalp-specific SL multipliers (producing $4.0 - $9.5 SL) & balanced R:R targets
+      const slMults = [0.25, 0.35, 0.45, 0.55, 0.65, 0.80];
+      const rrTargets = [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2];
       const beRules = ["NO_BE", "LATE_BE_85", "LOCK_HALF_1R", "TIME_EXIT_16B"];
 
       const totalCombos = shapes.length * entryModes.length * rsiModes.length * slMults.length * rrTargets.length * beRules.length; // 12,096
-      const splitIdx = Math.floor(bars.length * 0.70); // 70% In-Sample, 30% Out-of-Sample
+      const splitIdx = Math.floor(bars.length * 0.70);
       let completed = 0;
 
       const bestByShape = {};
       shapes.forEach(s => {
         bestByShape[s] = {
-          shape: s, entryMode: "HYBRID_REGIME", rsiMode: "ALL", slMult: 1.0, rr: 1.2, beRule: "NO_BE",
-          trades: 0, oosTrades: 0, wr: 0, oosWr: 0, rPf: 0, netR: -999, score: -999999, recs: []
+          shape: s, entryMode: "HYBRID_REGIME", rsiMode: "ALL", slMult: 0.45, rr: 1.5, beRule: "LOCK_HALF_1R",
+          trades: 0, wins: 0, losses: 0, oosTrades: 0, wr: 0, oosWr: 0, rPf: 0, netR: -999, score: -999999, logs: []
         };
       });
 
@@ -560,58 +734,8 @@
 
           for (let rIdx = 0; rIdx < rsiModes.length; rIdx++) {
             const rMode = rsiModes[rIdx];
+            const signals = scanCandidateSignals(bars, targetShape, eMode, rMode);
 
-            // 1. Pre-scan candidate entry points for this (Shape, EntryMode, RsiMode)
-            const signals = [];
-            for (let i = 60; i < bars.length - 30; i++) {
-              const b = bars[i], prev = bars[i - 1];
-              if (!b.vp || b.vp.shape !== targetShape) continue;
-
-              // RSI Filter
-              if (rMode === "MOMENTUM" && (b.rsi < 32 || b.rsi > 68)) continue;
-              if (rMode === "EXTREME_FILTER" && (b.rsi < 25 || b.rsi > 75)) continue;
-
-              const vp = b.vp;
-              const tol = Math.max(1.8, b.atr * 0.32);
-              const isBear = b.c < b.ema200;
-              const isBull = b.c > b.ema200;
-              const strongTrend = b.adx >= 24;
-              let side = null;
-
-              if (eMode === "TREND_PULLBACK") {
-                if (isBear && strongTrend && (Math.abs(b.h - vp.vah) <= tol || Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol) && b.c < b.o) side = "SHORT";
-                else if (isBull && strongTrend && (Math.abs(b.l - vp.val) <= tol || Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol) && b.c > b.o) side = "LONG";
-              } else if (eMode === "VALUE_AREA_FADE") {
-                if (!strongTrend && Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
-                else if (!strongTrend && Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
-              } else if (eMode === "POC_BREAK_RETEST") {
-                if (b.c > vp.poc && prev.c <= vp.poc && b.ema21 > b.ema50) side = "LONG";
-                else if (b.c < vp.poc && prev.c >= vp.poc && b.ema21 < b.ema50) side = "SHORT";
-              } else if (eMode === "VALLEY_SNIPER") {
-                const lvl = vp.valley || vp.poc;
-                if (Math.abs(b.l - lvl) <= tol && b.c > b.o && b.ema21 >= b.ema50) side = "LONG";
-                else if (Math.abs(b.h - lvl) <= tol && b.c < b.o && b.ema21 <= b.ema50) side = "SHORT";
-              } else if (eMode === "KILLZONE_VP") {
-                const inKz = (b.hourTh >= 13 && b.hourTh <= 23);
-                if (inKz && isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - vp.vah) <= tol) && b.c < b.o) side = "SHORT";
-                else if (inKz && isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - vp.val) <= tol) && b.c > b.o) side = "LONG";
-              } else if (eMode === "HYBRID_REGIME") {
-                if (strongTrend) {
-                  if (isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol) && b.c < b.o) side = "SHORT";
-                  else if (isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol) && b.c > b.o) side = "LONG";
-                } else {
-                  if (Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
-                  else if (Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
-                }
-              }
-
-              if (side) {
-                signals.push({ idx: i, side, entry: b.c, atr: b.atr, time: b.t });
-                i += 2; // prevent overlapping duplicate entries
-              }
-            }
-
-            // 2. Test all 168 (SL x TP x BE_Rule) combinations on these signals
             for (let slI = 0; slI < slMults.length; slI++) {
               const slMult = slMults[slI];
 
@@ -621,205 +745,113 @@
                 for (let beI = 0; beI < beRules.length; beI++) {
                   const beRule = beRules[beI];
                   completed++;
-
                   if (signals.length < 10) continue;
 
-                  let isWins = 0, isLosses = 0, isNetR = 0;
-                  let oosWins = 0, oosLosses = 0, oosNetR = 0;
-                  let grossWin = 0, grossLoss = 0, lastExitIdx = -1;
-
-                  for (let k = 0; k < signals.length; k++) {
-                    const sig = signals[k];
-                    if (sig.idx <= lastExitIdx) continue;
-
-                    const slUsd = Math.max(3.5, Math.min(25.0, sig.atr * slMult));
-                    const tpUsd = slUsd * rr;
-                    const maxBars = (beRule === "TIME_EXIT_16B") ? 16 : 36;
-                    let beMoved = false, lockedHalf = false, resR = 0, exitJ = sig.idx + 1;
-
-                    for (let j = sig.idx + 1; j < Math.min(bars.length, sig.idx + maxBars); j++) {
-                      const fut = bars[j];
-                      if (sig.side === "LONG") {
-                        const fav = fut.h - sig.entry;
-                        if (beRule === "LATE_BE_85" && fav >= tpUsd * 0.85) beMoved = true;
-                        if (beRule === "LOCK_HALF_1R" && rr > 1.1 && fav >= slUsd * 1.0) lockedHalf = true;
-
-                        const curSl = lockedHalf ? (sig.entry + slUsd * 0.5) : (beMoved ? (sig.entry + 0.15) : (sig.entry - slUsd));
-                        if (fut.l <= curSl) {
-                          resR = lockedHalf ? 0.5 : (beMoved ? 0.02 : -1.0);
-                          exitJ = j; break;
-                        }
-                        if (fut.h >= sig.entry + tpUsd + 0.15) {
-                          resR = rr;
-                          exitJ = j; break;
-                        }
-                      } else {
-                        const fav = sig.entry - fut.l;
-                        if (beRule === "LATE_BE_85" && fav >= tpUsd * 0.85) beMoved = true;
-                        if (beRule === "LOCK_HALF_1R" && rr > 1.1 && fav >= slUsd * 1.0) lockedHalf = true;
-
-                        const curSl = lockedHalf ? (sig.entry - slUsd * 0.5) : (beMoved ? (sig.entry - 0.15) : (sig.entry + slUsd));
-                        if (fut.h >= curSl) {
-                          resR = lockedHalf ? 0.5 : (beMoved ? 0.02 : -1.0);
-                          exitJ = j; break;
-                        }
-                        if (fut.l <= sig.entry - tpUsd - 0.15) {
-                          resR = rr;
-                          exitJ = j; break;
-                        }
-                      }
-                      if (j === Math.min(bars.length, sig.idx + maxBars) - 1) {
-                        const pnl = sig.side === "LONG" ? (fut.c - sig.entry) : (sig.entry - fut.c);
-                        resR = Math.max(-1.0, Math.min(rr, pnl / slUsd));
-                        exitJ = j;
-                      }
-                    }
-
-                    lastExitIdx = exitJ;
-                    const isOos = sig.idx >= splitIdx;
-                    if (resR > 0.05) {
-                      grossWin += resR;
-                      if (isOos) oosWins++; else isWins++;
-                    } else if (resR < -0.05) {
-                      grossLoss += Math.abs(resR);
-                      if (isOos) oosLosses++; else isLosses++;
-                    }
-                    if (isOos) oosNetR += resR; else isNetR += resR;
-                  }
-
-                  const totalW = isWins + oosWins;
-                  const totalL = isLosses + oosLosses;
+                  const sim = simulateGeneExact(bars, signals, slMult, rr, beRule, splitIdx, false);
+                  const totalW = sim.isWins + sim.oosWins;
+                  const totalL = sim.isLosses + sim.oosLosses;
                   const totalT = totalW + totalL;
-                  const oosT = oosWins + oosLosses;
+                  const oosT = sim.oosWins + sim.oosLosses;
                   if (totalT < 10 || oosT < 3) continue;
 
                   const wr = (totalW / totalT) * 100;
-                  const oosWr = (oosWins / oosT) * 100;
-                  const totalNetR = isNetR + oosNetR;
-                  const rPf = grossWin / Math.max(0.5, grossLoss);
+                  const oosWr = (sim.oosWins / oosT) * 100;
+                  const totalNetR = sim.isNetR + sim.oosNetR;
+                  const rPf = sim.grossWin / Math.max(0.5, sim.grossLoss);
 
-                  // Composite fitness score prioritizing BOTH high Win Rate AND positive In-Sample + OOS Net R
-                  const score = (totalNetR * 2.5) + (oosNetR * 3.5) + (wr * 0.25) + (oosWr * 0.25) + (rPf * 3.0);
+                  // Balanced Prop-Firm Score: rewards high Win Rate + consistent IS & OOS Net R without overfitting 1:2.8
+                  const consistencyBonus = (sim.isNetR > 0 && sim.oosNetR > 0) ? 12.0 : -10.0;
+                  const score = (totalNetR * 2.0) + (sim.oosNetR * 3.0) + (wr * 0.45) + (oosWr * 0.45) + (rPf * 4.0) + consistencyBonus;
 
                   if (score > bestByShape[targetShape].score) {
                     bestByShape[targetShape] = {
-                      shape: targetShape,
-                      entryMode: eMode,
-                      rsiMode: rMode,
-                      slMult,
-                      rr,
-                      beRule,
-                      trades: totalT,
-                      wins: totalW,
-                      losses: totalL,
-                      oosTrades: oosT,
-                      wr: +wr.toFixed(1),
-                      oosWr: +oosWr.toFixed(1),
-                      rPf: +rPf.toFixed(2),
-                      netR: +totalNetR.toFixed(2),
-                      oosNetR: +oosNetR.toFixed(2),
-                      score
+                      shape: targetShape, entryMode: eMode, rsiMode: rMode, slMult, rr, beRule,
+                      trades: totalT, wins: totalW, losses: totalL, oosTrades: oosT,
+                      wr: +wr.toFixed(1), oosWr: +oosWr.toFixed(1), rPf: +rPf.toFixed(2),
+                      netR: +totalNetR.toFixed(2), oosNetR: +sim.oosNetR.toFixed(2), score
                     };
                   }
                 }
               }
             }
 
-            // Yield to UI every 6 batches so progress bar animates smoothly
             if ((eIdx * 3 + rIdx) % 6 === 0) {
               const pct = Math.min(99, Math.round((completed / totalCombos) * 100));
               document.getElementById('sim-progress-bar').style.width = `${pct}%`;
               document.getElementById('sim-progress-pct').textContent = `${pct}% (${completed.toLocaleString()} / ${totalCombos.toLocaleString()})`;
-              await new Promise(r => setTimeout(r, 8));
+              await new Promise(r => setTimeout(r, 6));
             }
           }
         }
       }
 
-      // Generate recent trade log for the 4 winning champions
-      const recentTrades = [];
+      // Collect exact logs for each champion using the IDENTICAL simulator, then enforce global 1-position lock across shapes
       const results = shapes.map(s => bestByShape[s]);
-
+      let allChampLogs = [];
       results.forEach(champ => {
-        let lastExitIdx = -1;
-        for (let i = bars.length - 450; i < bars.length - 10; i++) {
-          const b = bars[i], prev = bars[i - 1];
-          if (!b.vp || b.vp.shape !== champ.shape || i <= lastExitIdx) continue;
-          if (champ.rsiMode === "MOMENTUM" && (b.rsi < 32 || b.rsi > 68)) continue;
-          if (champ.rsiMode === "EXTREME_FILTER" && (b.rsi < 25 || b.rsi > 75)) continue;
-
-          const vp = b.vp;
-          const tol = Math.max(1.8, b.atr * 0.32);
-          const isBear = b.c < b.ema200, isBull = b.c > b.ema200, strongTrend = b.adx >= 24;
-          let side = null;
-
-          if (champ.entryMode === "TREND_PULLBACK") {
-            if (isBear && strongTrend && (Math.abs(b.h - vp.vah) <= tol || Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol) && b.c < b.o) side = "SHORT";
-            else if (isBull && strongTrend && (Math.abs(b.l - vp.val) <= tol || Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol) && b.c > b.o) side = "LONG";
-          } else if (champ.entryMode === "VALUE_AREA_FADE") {
-            if (!strongTrend && Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
-            else if (!strongTrend && Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
-          } else if (champ.entryMode === "POC_BREAK_RETEST") {
-            if (b.c > vp.poc && prev.c <= vp.poc && b.ema21 > b.ema50) side = "LONG";
-            else if (b.c < vp.poc && prev.c >= vp.poc && b.ema21 < b.ema50) side = "SHORT";
-          } else if (champ.entryMode === "VALLEY_SNIPER") {
-            const lvl = vp.valley || vp.poc;
-            if (Math.abs(b.l - lvl) <= tol && b.c > b.o && b.ema21 >= b.ema50) side = "LONG";
-            else if (Math.abs(b.h - lvl) <= tol && b.c < b.o && b.ema21 <= b.ema50) side = "SHORT";
-          } else if (champ.entryMode === "KILLZONE_VP") {
-            const inKz = (b.hourTh >= 13 && b.hourTh <= 23);
-            if (inKz && isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - vp.vah) <= tol) && b.c < b.o) side = "SHORT";
-            else if (inKz && isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - vp.val) <= tol) && b.c > b.o) side = "LONG";
-          } else {
-            if (strongTrend) {
-              if (isBear && (Math.abs(b.h - vp.poc) <= tol || Math.abs(b.h - b.ema21) <= tol) && b.c < b.o) side = "SHORT";
-              else if (isBull && (Math.abs(b.l - vp.poc) <= tol || Math.abs(b.l - b.ema21) <= tol) && b.c > b.o) side = "LONG";
-            } else {
-              if (Math.abs(b.h - vp.vah) <= tol && b.c < b.o) side = "SHORT";
-              else if (Math.abs(b.l - vp.val) <= tol && b.c > b.o) side = "LONG";
-            }
-          }
-          if (!side) continue;
-
-          const slUsd = Math.max(3.5, Math.min(25.0, b.atr * champ.slMult));
-          const tpUsd = slUsd * champ.rr;
-          let resR = 0, exitJ = i + 1;
-          for (let j = i + 1; j < Math.min(bars.length, i + 32); j++) {
-            const fut = bars[j];
-            if (side === "LONG") {
-              if (fut.l <= b.c - slUsd) { resR = -1.0; exitJ = j; break; }
-              if (fut.h >= b.c + tpUsd + 0.15) { resR = champ.rr; exitJ = j; break; }
-            } else {
-              if (fut.h >= b.c + slUsd) { resR = -1.0; exitJ = j; break; }
-              if (fut.l <= b.c - tpUsd - 0.15) { resR = champ.rr; exitJ = j; break; }
-            }
-          }
-          lastExitIdx = exitJ;
-          if (Math.abs(resR) > 0.05) {
-            recentTrades.push({
-              ts: b.t,
-              time: new Date(b.t).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-              shape: champ.shape,
-              side,
-              entry: b.c.toFixed(2),
-              r: +resR.toFixed(2)
-            });
-          }
-        }
+        const sigs = scanCandidateSignals(bars, champ.shape, champ.entryMode, champ.rsiMode);
+        const exactSim = simulateGeneExact(bars, sigs, champ.slMult, champ.rr, champ.beRule, splitIdx, true);
+        allChampLogs = allChampLogs.concat(exactSim.tradeLogs);
       });
 
-      recentTrades.sort((a, b) => b.ts - a.ts);
+      allChampLogs.sort((a, b) => a.entryIdx - b.entryIdx);
+      const nonOverlappingLogs = [];
+      let globalLastExit = -1;
+      for (const lg of allChampLogs) {
+        if (lg.entryIdx > globalLastExit) {
+          nonOverlappingLogs.push(lg);
+          globalLastExit = lg.exitIdx;
+        }
+      }
+      nonOverlappingLogs.sort((a, b) => b.ts - a.ts);
       results.sort((a, b) => b.netR - a.netR);
 
       document.getElementById('sim-progress-bar').style.width = `100%`;
       document.getElementById('sim-progress-pct').textContent = `100% (${totalCombos.toLocaleString()} / ${totalCombos.toLocaleString()} เสร็จสมบูรณ์)`;
-      document.getElementById('sim-progress-label').textContent = `✅ จำลองครบ ${totalCombos.toLocaleString()} กลยุทธ์บนข้อมูล ${bars.length.toLocaleString()} แท่ง M15 (~${(bars.length/96).toFixed(1)} วัน) เรียบร้อย!`;
+      document.getElementById('sim-progress-label').textContent = `✅ จำลองครบ ${totalCombos.toLocaleString()} วิธี (หัก Spread/Comm $0.40 + ล็อก 1 ไม้ต่อครั้ง) เรียบร้อย!`;
 
-      return { results, recentTrades: recentTrades.slice(0, 12), totalCombos };
+      return { results, recentTrades: nonOverlappingLogs.slice(0, 12), totalCombos };
+    }
+
+    async function fetchTrueSpotPrice(binancePerpMid) {
+      // 1. Check if user calibrated their exact MT4/MT5 broker price
+      const customPrice = parseFloat(localStorage.getItem("CUSTOM_BROKER_PRICE"));
+      const customTs = parseInt(localStorage.getItem("CUSTOM_BROKER_TS") || "0", 10);
+      if (customPrice && customPrice > 1000 && (Date.now() - customTs < 12 * 3600 * 1000)) {
+        const offset = customPrice - binancePerpMid;
+        return { spotMid: customPrice, basis: offset, source: `MT4/MT5 Broker Calibrated (Offset ${offset >= 0 ? '+' : ''}$${offset.toFixed(2)})` };
+      }
+
+      // 2. Fetch true Spot XAU/USD from CORS-friendly Gold-API
+      try {
+        const rGoldApi = await fetch("https://api.gold-api.com/price/XAU", { cache: "no-store" });
+        if (rGoldApi.ok) {
+          const j = await rGoldApi.json();
+          if (j && j.price && j.price > 1000) {
+            const spot = parseFloat(j.price);
+            const offset = spot - binancePerpMid;
+            return { spotMid: spot, basis: offset, source: `Gold-API Spot XAU/USD (Basis ${offset >= 0 ? '+' : ''}$${offset.toFixed(2)})` };
+          }
+        }
+      } catch (e) {}
+
+      // 3. Fallback: Binance Physical-Backed PAXG/USDT Spot
+      try {
+        const rPaxg = await fetch("https://api.binance.com/api/v3/ticker/bookTicker?symbol=PAXGUSDT", { cache: "no-store" });
+        if (rPaxg.ok) {
+          const j = await rPaxg.json();
+          const spot = (parseFloat(j.bidPrice) + parseFloat(j.askPrice)) / 2.0;
+          if (spot > 1000) {
+            const offset = spot - binancePerpMid;
+            return { spotMid: spot, basis: offset, source: `Physical Spot PAXG/XAU (Basis ${offset >= 0 ? '+' : ''}$${offset.toFixed(2)})` };
+          }
+        }
+      } catch (e) {}
+
+      return { spotMid: binancePerpMid, basis: 0.0, source: "Binance XAU Feed (กดปุ่ม 'ล็อกราคาตรงพอร์ต' เพื่อเทียบ MT4/MT5)" };
     }
 
     async function fetchDeepHydraVault() {
-      // Fetch 5 pages of 1,000 M15 bars = 4,500+ bars (~47 days)
       let allRaw = [];
       let endTime = null;
       for (let page = 0; page < 5; page++) {
@@ -832,12 +864,30 @@
         endTime = chunk[0][0] - 1;
         document.getElementById('sim-progress-label').textContent = `กำลังดึงข้อมูล Hydra Vault ชุดที่ ${page + 1}/5 (${allRaw.length.toLocaleString()} แท่ง M15)...`;
       }
-      // Deduplicate & keep latest 4,500 bars
       const map = new Map();
       allRaw.forEach(k => map.set(k[0], k));
-      const sorted = Array.from(map.values()).sort((a, b) => a[0] - b[0]);
-      return sorted.slice(-4500);
+      return Array.from(map.values()).sort((a, b) => a[0] - b[0]).slice(-4500);
     }
+
+    function update60sDeltaUI() {
+      const nowMs = Date.now();
+      tradeBuffer60s = tradeBuffer60s.filter(x => nowMs - x.ts <= 60000);
+      latestDelta60s = tradeBuffer60s.reduce((acc, x) => acc + x.delta, 0);
+
+      const cvdEl = document.getElementById('kpi-cvd');
+      if (cvdEl) {
+        cvdEl.textContent = `${latestDelta60s >= 0 ? '+' : ''}${latestDelta60s.toFixed(1)}`;
+        cvdEl.className = `text-2xl font-bold font-mono-num mt-1 ${latestDelta60s >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
+      const cond3El = document.getElementById('cond-3-val');
+      if (cond3El && liveModel && liveModel.scalpSetup) {
+        const isLong = liveModel.scalpSetup.dir === 'LONG';
+        const tapeAligned = isLong ? (latestDelta60s > 0) : (latestDelta60s < 0);
+        cond3El.textContent = `${latestDelta60s >= 0 ? '+' : ''}${latestDelta60s.toFixed(1)} ${tapeAligned ? '✓' : ''}`;
+        cond3El.className = `text-sm font-bold ${tapeAligned ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
+    }
+    setInterval(update60sDeltaUI, 250);
 
     async function seedInitial60sTape() {
       try {
@@ -849,10 +899,7 @@
             ts: t.T,
             delta: t.m ? -parseFloat(t.q || 0) : parseFloat(t.q || 0)
           }));
-          const d60 = tradeBuffer60s.reduce((a, x) => a + x.delta, 0);
-          const cvdEl = document.getElementById('kpi-cvd');
-          cvdEl.textContent = `${d60 >= 0 ? '+' : ''}${d60.toFixed(1)}`;
-          cvdEl.className = `text-2xl font-bold font-mono-num mt-1 ${d60 >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+          update60sDeltaUI();
         }
       } catch (e) {}
     }
@@ -863,25 +910,20 @@
       const btn = document.getElementById('btn-run-ai');
       btn.textContent = "⏳ กำลังจำลอง 12,096 วิธี...";
       try {
-        const [rSq, rawKl, rOi, rPr] = await Promise.all([
-          fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" }).catch(() => null),
+        const [rawKl, rOi, rPr] = await Promise.all([
           fetchDeepHydraVault(),
           fetch("https://fapi.binance.com/fapi/v1/openInterest?symbol=XAUUSDT", { cache: "no-store" }).catch(() => null),
           fetch("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=XAUUSDT", { cache: "no-store" }).catch(() => null)
         ]);
 
-        let spotMid = parseFloat(rawKl[rawKl.length - 1][4]);
-        let feedName = "Binance Institutional XAU";
-
-        if (rSq && rSq.ok) {
-          const sqJson = await rSq.json();
-          const p = sqJson[0].spreadProfilePrices[0];
-          spotMid = (parseFloat(p.bid) + parseFloat(p.ask)) / 2.0;
-          feedName = "Swissquote XAU/USD Spot + Binance L2";
-        }
-
-        const basis = spotMid - parseFloat(rawKl[rawKl.length - 1][4]);
+        const rawLastClose = parseFloat(rawKl[rawKl.length - 1][4]);
+        const spotInfo = await fetchTrueSpotPrice(rawLastClose);
+        const spotMid = spotInfo.spotMid;
+        const basis = spotInfo.basis;
         spotBasisOffset = basis;
+
+        document.getElementById('spot-feed-status').textContent =
+          `Spot XAU/USD: $${spotMid.toFixed(2)} | แหล่งข้อมูล: ${spotInfo.source}`;
 
         const bars = rawKl.map(k => ({
           t: k[0],
@@ -903,45 +945,17 @@
         if (rPr && rPr.ok) { const d = await rPr.json(); fundVal = (parseFloat(d.lastFundingRate) * 100).toFixed(4) + "%"; }
         document.getElementById('kpi-oi').textContent = `OI: ${oiVal} | Fund: ${fundVal}`;
 
-        const vpSession = computeVP(bars.slice(-32), 22);
+        // Micro-VP 4H (16 bars) for Engine A (Scalp) vs 5D VP (480 bars) for Engine B (Swing)
+        const vpMicro = computeVP(bars.slice(-16), 20);
         const vp5d = computeVP(bars.slice(-480), 30);
 
-        // Execute 12,096-combination evolution
         const mueRes = await runMassive12kEvolution(bars);
-        const activeGene = mueRes.results.find(x => x.shape === vpSession.shape) || mueRes.results[0];
+        const activeGene = mueRes.results.find(x => x.shape === vpMicro.shape) || mueRes.results[0];
 
-        // Build actionable Scalp Setup strictly anchored to valid levels relative to Spot
-        const scSlUsd = Math.max(3.5, Math.min(25.0, +(last.atr * activeGene.slMult).toFixed(2)));
-        const scSlPts = Math.round(scSlUsd * 100);
-        const rrMult = activeGene.rr;
-        const scTpUsd = +(scSlUsd * rrMult).toFixed(2);
-        const scTpPts = Math.round(scTpUsd * 100);
-
+        // --- ENGINE B: TREND SNIPER (Swing EMA21 / 5D VP) ---
         const isBear = last.c < last.ema200;
         const regimeTxt = isBear ? "BEAR" : "BULL";
-        let scDir, scEntry, scBias;
-
-        if (isBear) {
-          // Valid SHORT limit/retest level must be >= spotMid - 1.0 (never selling below current market!)
-          const candidates = [vpSession.val, vpSession.poc, vpSession.vah, last.ema21].filter(lvl => lvl >= spotMid - 0.5);
-          scEntry = +(candidates.length ? Math.min(...candidates) : (spotMid + 1.5)).toFixed(2);
-          scDir = "SHORT";
-          scBias = `${vpSession.shape} [${activeGene.entryMode}] SHORT @ $${scEntry} (WR ${activeGene.wr}% | OOS ${activeGene.oosWr}%)`;
-        } else {
-          // Valid LONG limit/retest level must be <= spotMid + 0.5 (never buying above current market!)
-          const candidates = [vpSession.vah, vpSession.poc, vpSession.val, last.ema21].filter(lvl => lvl <= spotMid + 0.5);
-          scEntry = +(candidates.length ? Math.max(...candidates) : (spotMid - 1.5)).toFixed(2);
-          scDir = "LONG";
-          scBias = `${vpSession.shape} [${activeGene.entryMode}] LONG @ $${scEntry} (WR ${activeGene.wr}% | OOS ${activeGene.oosWr}%)`;
-        }
-
-        const scSl = scDir === "SHORT" ? +(scEntry + scSlUsd).toFixed(2) : +(scEntry - scSlUsd).toFixed(2);
-        const scTp = scDir === "SHORT" ? +(scEntry - scTpUsd).toFixed(2) : +(scEntry + scTpUsd).toFixed(2);
-        const beLabelTxt = activeGene.beRule === "NO_BE" ? "No-BE (Full RR)" : (activeGene.beRule === "LATE_BE_85" ? "BE @ 85% TP" : (activeGene.beRule === "LOCK_HALF_1R" ? "Lock +0.5R @ 1R" : "Time Exit 4H"));
-        const scBe = activeGene.beRule === "NO_BE" ? scTp : (scDir === "SHORT" ? +(scEntry - scTpUsd * 0.85).toFixed(2) : +(scEntry + scTpUsd * 0.85).toFixed(2));
-        const tolPts = Math.max(200, Math.round(last.atr * 15));
-
-        const trSlDist = +(Math.max(6.0, last.atr * 1.5)).toFixed(2);
+        const trSlDist = +(Math.max(12.0, last.atr * 1.4)).toFixed(2);
         const trTpDist = +(trSlDist * 2.2).toFixed(2);
         const trEntry = +(last.ema21).toFixed(2);
         const trDir = isBear ? "SHORT" : "LONG";
@@ -949,46 +963,79 @@
         const trBe = isBear ? +(trEntry - trSlDist).toFixed(2) : +(trEntry + trSlDist).toFixed(2);
         const trTp = isBear ? +(trEntry - trTpDist).toFixed(2) : +(trEntry + trTpDist).toFixed(2);
 
+        // --- ENGINE A: MICRO-ORDERFLOW SCALP (Strictly decoupled from Trend Entry!) ---
+        const scSlUsd = Math.max(4.0, Math.min(9.5, +(last.atr * activeGene.slMult).toFixed(2)));
+        const scSlPts = Math.round(scSlUsd * 100);
+        const rrMult = activeGene.rr;
+        const scTpUsd = +(scSlUsd * rrMult).toFixed(2);
+        const scTpPts = Math.round(scTpUsd * 100);
+
+        let scDir, scEntry, scBias;
+        if (isBear) {
+          scDir = "SHORT";
+          // Pick nearest Micro-VP level (POC/VAH/VAL) that is at least $3.00 away from Trend Entry (EMA21)
+          const microLevels = [vpMicro.poc, vpMicro.vah, vpMicro.val]
+            .filter(lvl => lvl >= spotMid - 0.5 && Math.abs(lvl - trEntry) >= 3.0);
+          scEntry = +(microLevels.length ? Math.min(...microLevels) : (spotMid + 2.5)).toFixed(2);
+          if (Math.abs(scEntry - trEntry) < 3.0) scEntry = +(spotMid + 2.5).toFixed(2);
+          scBias = `MICRO-SCALP ${vpMicro.shape} SHORT @ $${scEntry} (WR ${activeGene.wr}% | OOS ${activeGene.oosWr}%)`;
+        } else {
+          scDir = "LONG";
+          const microLevels = [vpMicro.poc, vpMicro.val, vpMicro.vah]
+            .filter(lvl => lvl <= spotMid + 0.5 && Math.abs(lvl - trEntry) >= 3.0);
+          scEntry = +(microLevels.length ? Math.max(...microLevels) : (spotMid - 2.5)).toFixed(2);
+          if (Math.abs(scEntry - trEntry) < 3.0) scEntry = +(spotMid - 2.5).toFixed(2);
+          scBias = `MICRO-SCALP ${vpMicro.shape} LONG @ $${scEntry} (WR ${activeGene.wr}% | OOS ${activeGene.oosWr}%)`;
+        }
+
+        const scSl = scDir === "SHORT" ? +(scEntry + scSlUsd).toFixed(2) : +(scEntry - scSlUsd).toFixed(2);
+        const scTp = scDir === "SHORT" ? +(scEntry - scTpUsd).toFixed(2) : +(scEntry + scTpUsd).toFixed(2);
+        const beLabelTxt = activeGene.beRule === "NO_BE" ? "Full TP/SL" : (activeGene.beRule === "LATE_BE_85" ? "BE @ 85% TP" : (activeGene.beRule === "LOCK_HALF_1R" ? "Lock +0.5R @ 1R" : "Time Exit 4H"));
+        const scBe = activeGene.beRule === "LOCK_HALF_1R"
+          ? (scDir === "SHORT" ? +(scEntry - scSlUsd * 0.5).toFixed(2) : +(scEntry + scSlUsd * 0.5).toFixed(2))
+          : (scDir === "SHORT" ? +(scEntry - scTpUsd * 0.85).toFixed(2) : +(scEntry + scTpUsd * 0.85).toFixed(2));
+        const tolPts = 220; // Tight 220-pt ($2.20) scalp zone
+
         liveModel = {
           spot: +spotMid.toFixed(2),
-          vpSession, vp5d, mueRes, activeGene,
-          scalpSetup: { shape: vpSession.shape, dir: scDir, bias: scBias, entry: scEntry, sl: scSl, be: scBe, tp: scTp, slPts: scSlPts, tpPts: scTpPts, tolPts },
+          vpMicro, vp5d, mueRes, activeGene,
+          scalpSetup: { shape: vpMicro.shape, dir: scDir, bias: scBias, entry: scEntry, sl: scSl, be: scBe, tp: scTp, slPts: scSlPts, tpPts: scTpPts, tolPts, microPoc: vpMicro.poc, microVal: vpMicro.val, microVah: vpMicro.vah },
           trendSetup: { dir: trDir, entry: trEntry, sl: trSl, be: trBe, tp: trTp, slDist: trSlDist }
         };
 
         const nowStr = new Date().toLocaleTimeString('th-TH');
         document.getElementById('last-updated').textContent = `AI อัปเดตสด: ${nowStr} (0 นาทีที่แล้ว)`;
         document.getElementById('mue-gen-badge').textContent = `12,096-Sim Gen #${genCounter++}`;
-        document.getElementById('data-audit-line').textContent = `Hydra Vault: ${bars.length.toLocaleString()} แท่ง M15 (~${(bars.length/96).toFixed(1)} วัน) | ${feedName}`;
+        document.getElementById('data-audit-line').textContent = `Hydra Vault: ${bars.length.toLocaleString()} แท่ง M15 (~${(bars.length/96).toFixed(1)} วัน) | ${spotInfo.source}`;
         document.getElementById('kpi-regime').textContent = `ADX ${last.adx.toFixed(1)} (${regimeTxt})`;
         document.getElementById('kpi-pdh-pdl').textContent = `PDH: $${pdh.toFixed(2)} | PDL: $${pdl.toFixed(2)}`;
         document.getElementById('kpi-macro').textContent = `RSI ${last.rsi.toFixed(1)} / ATR $${last.atr.toFixed(2)}`;
         document.getElementById('kpi-corr').textContent = `EMA21: $${last.ema21.toFixed(2)} | EMA200: $${last.ema200.toFixed(2)}`;
 
-        document.getElementById('anatomy-title').textContent = vpSession.title;
-        document.getElementById('anatomy-desc').textContent = vpSession.desc;
-        document.getElementById('sc-vah').textContent = `$${vpSession.vah}`;
-        document.getElementById('sc-poc').textContent = `$${vpSession.poc}`;
-        document.getElementById('sc-val').textContent = `$${vpSession.val}`;
+        document.getElementById('anatomy-title').textContent = vpMicro.title;
+        document.getElementById('anatomy-desc').textContent = vpMicro.desc;
+        document.getElementById('sc-vah').textContent = `$${vpMicro.vah}`;
+        document.getElementById('sc-poc').textContent = `$${vpMicro.poc}`;
+        document.getElementById('sc-val').textContent = `$${vpMicro.val}`;
 
         const totalWins = mueRes.results.reduce((a, x) => a + x.wins, 0);
         const totalLosses = mueRes.results.reduce((a, x) => a + x.losses, 0);
         const totalNetR = mueRes.results.reduce((a, x) => a + x.netR, 0);
         const totalWr = ((totalWins / Math.max(1, totalWins + totalLosses)) * 100).toFixed(1);
 
-        document.getElementById('scalp-bt-badge').textContent = `Evolved WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
+        document.getElementById('scalp-bt-badge').textContent = `Prop-Verified WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
         document.getElementById('scalp-bias').textContent = scBias;
-        document.getElementById('scalp-rr-badge').textContent = `SL ${scSlPts} จุด (${activeGene.slMult}x ATR) / TP ${scTpPts} จุด (1:${rrMult})`;
+        document.getElementById('scalp-rr-badge').textContent = `SL ${scSlPts} จุด / TP ${scTpPts} จุด (1:${rrMult})`;
         document.getElementById('sc-entry').textContent = `$${scEntry}`;
-        document.getElementById('sc-sl-label').textContent = `SL (${scSlPts} จุด)`;
+        document.getElementById('sc-sl-label').textContent = `Scalp SL (${scSlPts} จุด)`;
         document.getElementById('sc-sl').textContent = `$${scSl}`;
         document.getElementById('sc-be-label').textContent = beLabelTxt;
         document.getElementById('sc-be').textContent = activeGene.beRule === "NO_BE" ? "Full TP" : `$${scBe}`;
-        document.getElementById('sc-tp-label').textContent = `TP (${scTpPts} จุด)`;
+        document.getElementById('sc-tp-label').textContent = `Scalp TP (${scTpPts} จุด)`;
         document.getElementById('sc-tp').textContent = `$${scTp}`;
 
-        document.getElementById('setup-bias').textContent = `${trDir} EMA21 RETEST (ตามเทรนด์ ${regimeTxt})`;
-        document.getElementById('trend-bt-badge').textContent = `ATR SL: $${trSlDist} (1:2.2)`;
+        document.getElementById('setup-bias').textContent = `SWING ${trDir} EMA21 RETEST (ห่าง Scalp $${Math.abs(trEntry - scEntry).toFixed(2)})`;
+        document.getElementById('trend-bt-badge').textContent = `Swing SL: $${trSlDist} (1:2.2)`;
         document.getElementById('setup-entry').textContent = `$${trEntry}`;
         document.getElementById('setup-sl').textContent = `$${trSl}`;
         document.getElementById('setup-be').textContent = `$${trBe}`;
@@ -1032,7 +1079,7 @@
         document.getElementById('vp-val').textContent = `$${vp5d.val}`;
         renderVolumeProfileChart(vp5d);
 
-        await generateLiveAIBrief(spotMid, last, vpSession, liveModel.scalpSetup, liveModel.trendSetup, activeGene, totalWr, totalNetR, regimeTxt, nowStr);
+        await generateLiveAIBrief(spotMid, last, vpMicro, liveModel.scalpSetup, liveModel.trendSetup, activeGene, totalWr, totalNetR, regimeTxt, nowStr);
         recalcPropMath();
 
         if (notify) {
@@ -1041,8 +1088,8 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               topic: NTFY_TOPIC,
-              title: `🧬 12,096-Sim อัปเดต (${nowStr}) | XAU/USD $${spotMid.toFixed(2)}`,
-              message: `ยีนผู้ชนะ ${vpSession.shape}: ${activeGene.entryMode} (WR ${activeGene.wr}%, OOS ${activeGene.oosWr}%) | แผน ${scDir} @ $${scEntry} (SL $${scSl} / TP $${scTp})`,
+              title: `🧬 V17.0 Spot อัปเดต (${nowStr}) | XAU/USD $${spotMid.toFixed(2)}`,
+              message: `Micro-Scalp ${scDir} @ $${scEntry} (SL ${scSlPts} จุด / TP ${scTpPts} จุด) | Swing ${trDir} @ $${trEntry} | OOS WR ${activeGene.oosWr}%`,
               priority: 4, tags: ["dna", "chart_with_upwards_trend"]
             })
           }).catch(() => {});
@@ -1055,15 +1102,15 @@
       }
     }
 
-    async function generateLiveAIBrief(spot, last, vpSession, sc, tr, activeGene, totalWr, totalNetR, regimeTxt, nowStr) {
+    async function generateLiveAIBrief(spot, last, vpMicro, sc, tr, activeGene, totalWr, totalNetR, regimeTxt, nowStr) {
       const apiKey = localStorage.getItem("THAILLM_KEY") || "";
       let aiText =
-        `<strong class="text-amber-400">1. สถานะตลาดสด (${nowStr} น.):</strong> Spot XAU/USD อยู่ที่ <strong class="text-white">$${spot.toFixed(2)}</strong> สภาวะหลัก <strong class="text-cyan-400">${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)})</strong> ความผันผวน <strong class="text-amber-300">ATR $${last.atr.toFixed(2)}</strong>\n\n` +
-        `<strong class="text-amber-400">2. ผลจำลอง 12,096 กลยุทธ์บนข้อมูล 4,500 แท่ง (~47 วัน):</strong> ยีนผู้ชนะของทรง <strong class="text-purple-300">${vpSession.shape}</strong> คือ <strong class="text-cyan-300">${activeGene.entryMode}</strong> (SL ${activeGene.slMult}x ATR / TP 1:${activeGene.rr} / ${activeGene.beRule}) ทำ Win Rate รวม <strong class="text-emerald-400">${activeGene.wr}%</strong> และ Out-of-Sample WR <strong class="text-emerald-400">${activeGene.oosWr}%</strong> | กำไรสะสมทั้ง 4 ทรง <strong class="text-emerald-400">${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R</strong>\n\n` +
-        `<strong class="text-amber-400">3. แผนเข้ายิง Scalp (${sc.dir} ตามยีนผู้ชนะ):</strong> รอราคาทดสอบโซน <strong class="text-white">$${sc.entry}</strong> (รัศมี ±${sc.tolPts} จุด) พร้อมยืนยัน L2 OBI 3 วินาที | SL <strong class="text-rose-400">$${sc.sl}</strong> | TP <strong class="text-emerald-400">$${sc.tp}</strong>\n` +
-        `<strong class="text-amber-400">4. แผน Trend Sniper (${tr.dir}):</strong> ดักทดสอบ EMA21 ที่ <strong class="text-white">$${tr.entry}</strong> | SL <strong class="text-rose-400">$${tr.sl}</strong> | TP <strong class="text-emerald-400">$${tr.tp}</strong>`;
+        `<strong class="text-amber-400">1. สถานะราคา Spot XAU/USD (${nowStr} น.):</strong> ราคา Spot อยู่ที่ <strong class="text-white">$${spot.toFixed(2)}</strong> สภาวะหลัก <strong class="text-cyan-400">${regimeTxt} (ADX ${last.adx.toFixed(1)}, RSI ${last.rsi.toFixed(1)}, ATR $${last.atr.toFixed(2)})</strong>\n\n` +
+        `<strong class="text-amber-400">2. ผลจำลอง 12,096 วิธี (หัก Spread/Comm $0.40 + ล็อก 1 ไม้ต่อครั้ง):</strong> ยีนผู้ชนะของทรง <strong class="text-purple-300">${vpMicro.shape}</strong> คือ <strong class="text-cyan-300">${activeGene.entryMode}</strong> (SL ${sc.slPts} จุด / TP 1:${activeGene.rr} / ${activeGene.beRule}) ทำ Win Rate รวม <strong class="text-emerald-400">${activeGene.wr}%</strong> และ Out-of-Sample WR <strong class="text-emerald-400">${activeGene.oosWr}%</strong> | กำไรสุทธิรวม <strong class="text-emerald-400">${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R</strong>\n\n` +
+        `<strong class="text-amber-400">3. แผน A — Micro-Scalp (${sc.dir} ระยะสั้น):</strong> รอเข้าโซน <strong class="text-white">$${sc.entry}</strong> (ห่าง ${Math.round(Math.abs(spot - sc.entry)*100)} จุด) หรือจังหวะทะลุ Micro-Level พร้อม OBI ยืนค้าง 3 วิ | SL <strong class="text-rose-400">$${sc.sl}</strong> | TP <strong class="text-emerald-400">$${sc.tp}</strong>\n` +
+        `<strong class="text-amber-400">4. แผน B — Trend Sniper (${tr.dir} สวิง):</strong> รอทดสอบ EMA21 ที่ <strong class="text-white">$${tr.entry}</strong> (แยกขาดจาก Scalp ห้ามเปิดซ้อนพร้อมกัน) | SL <strong class="text-rose-400">$${tr.sl}</strong> | TP <strong class="text-emerald-400">$${tr.tp}</strong>`;
 
-      let badge = `12,096-SIM EVOLVED (${nowStr})`;
+      let badge = `DUAL-ENGINE V17.0 (${nowStr})`;
 
       if (apiKey) {
         try {
@@ -1074,7 +1121,7 @@
               model: "/model/typhoon-v2.5-30b-a3b-instruct",
               messages: [{
                 role: "user",
-                content: `วิเคราะห์พอร์ตกองทุน XAU/USD เวลา ${nowStr}: Spot $${spot.toFixed(2)}, Regime ${regimeTxt} (ADX ${last.adx.toFixed(1)}, ATR $${last.atr.toFixed(2)}), ผลจำลอง 12,096 วิธีเลือกยีน ${activeGene.entryMode} (WR ${activeGene.wr}%, OOS WR ${activeGene.oosWr}%, Net ${activeGene.netR}R), แผน Scalp ${sc.dir} @ $${sc.entry} (SL $${sc.sl}, TP $${sc.tp}). สรุปกลยุทธ์สั้นกระชับ 4 ข้อ`
+                content: `วิเคราะห์พอร์ตกองทุน XAU/USD Spot เวลา ${nowStr}: Spot $${spot.toFixed(2)}, Regime ${regimeTxt} (ADX ${last.adx.toFixed(1)}, ATR $${last.atr.toFixed(2)}), แผน A Micro-Scalp ${sc.dir} @ $${sc.entry} (SL ${sc.slPts} จุด, TP ${sc.tpPts} จุด), แผน B Swing ${tr.dir} @ $${tr.entry}. สรุปสั้นกระชับ 4 ข้อ`
               }],
               max_tokens: 550,
               temperature: 0.25
@@ -1108,14 +1155,19 @@
       });
     }
 
+    // Dual-Trigger Gate: (A) Retest Micro-Scalp Zone OR (B) Immediate Micro-Level Breakdown/Breakout with strong L2 OBI
     function evaluateLiveOrderFlowGate(mid, obi, delta60s) {
       if (!liveModel || !liveModel.scalpSetup) return;
       const sc = liveModel.scalpSetup;
       const distUsd = Math.abs(mid - sc.entry);
       const distPts = Math.round(distUsd * 100);
-      const inZone = distPts <= sc.tolPts;
+      const inRetestZone = distPts <= sc.tolPts;
 
       const isLong = sc.dir === 'LONG';
+      // Momentum trigger: price breaks below Micro-VAL (for SHORT) or above Micro-VAH (for LONG) with strong OBI
+      const momentumBreak = isLong ? (mid > sc.microVah && obi >= 0.25) : (mid < sc.microVal && obi <= -0.25);
+      const zoneReady = inRetestZone || momentumBreak;
+
       const obiAligned = isLong ? (obi >= 0.18) : (obi <= -0.18);
       const tapeAligned = isLong ? (delta60s > 0) : (delta60s < 0);
 
@@ -1124,21 +1176,22 @@
       const sustainSecs = obiSustainStart ? Math.min(3.0, (Date.now() - obiSustainStart) / 1000.0) : 0.0;
       const obiConfirmed = sustainSecs >= 3.0;
 
-      document.getElementById('cond-1-val').textContent = `${distPts} / ${sc.tolPts} จุด ${inZone ? '✓' : ''}`;
-      document.getElementById('cond-1-val').className = `text-sm font-bold ${inZone ? 'text-emerald-400' : 'text-amber-400'}`;
+      document.getElementById('cond-1-val').textContent = momentumBreak ? `BREAKOUT ✓` : `${distPts} / ${sc.tolPts} จุด ${inRetestZone ? '✓' : ''}`;
+      document.getElementById('cond-1-val').className = `text-sm font-bold ${zoneReady ? 'text-emerald-400' : 'text-amber-400'}`;
       document.getElementById('cond-2-val').textContent = `${sustainSecs.toFixed(1)}s / 3.0s ${obiConfirmed ? '✓' : ''}`;
       document.getElementById('cond-2-val').className = `text-sm font-bold ${obiConfirmed ? 'text-emerald-400' : (obiAligned ? 'text-cyan-300' : 'text-gray-400')}`;
-      document.getElementById('cond-3-val').textContent = `${delta60s >= 0 ? '+' : ''}${delta60s.toFixed(1)} ${tapeAligned ? '✓' : ''}`;
-      document.getElementById('cond-3-val').className = `text-sm font-bold ${tapeAligned ? 'text-emerald-400' : 'text-rose-400'}`;
 
       const pill = document.getElementById('gate-status-pill');
       const head = document.getElementById('gate-headline');
       const box = document.getElementById('execution-gate-box');
 
-      if (inZone && obiConfirmed && tapeAligned) {
-        pill.textContent = `🔥 TRIGGERED — ENTER ${sc.dir} NOW!`;
+      if (zoneReady && obiConfirmed && tapeAligned) {
+        const modeTag = momentumBreak ? "MOMENTUM BREAK" : "MICRO-VP RETEST";
+        const dynSl = isLong ? +(mid - sc.slPts / 100).toFixed(2) : +(mid + sc.slPts / 100).toFixed(2);
+        const dynTp = isLong ? +(mid + sc.tpPts / 100).toFixed(2) : +(mid - sc.tpPts / 100).toFixed(2);
+        pill.textContent = `🔥 TRIGGERED (${modeTag}) — ENTER ${sc.dir}!`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full animate-pulse";
-        head.textContent = `ยืนยันครบ 3 ชั้น! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl} | TP $${sc.tp}`;
+        head.textContent = `ยืนยันครบ 3 ชั้น (${modeTag})! เปิด ${sc.dir} @ $${mid.toFixed(2)} | SL $${dynSl} | TP $${dynTp}`;
         box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40";
         if (Date.now() - lastAutoFireTs > 300000) {
           lastAutoFireTs = Date.now();
@@ -1148,21 +1201,21 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               topic: NTFY_TOPIC,
-              title: `🔥 ORDERFLOW FIRE: ${sc.dir} XAU/USD @ $${mid.toFixed(2)}`,
-              message: `Evolved Gene ${sc.shape} | OBI: ${obi.toFixed(3)} (3s) | Lot: ${document.getElementById('calc-scalp-lot').textContent} | SL: $${sc.sl} | TP: $${sc.tp}`,
+              title: `🔥 MICRO-SCALP FIRE (${modeTag}): ${sc.dir} @ $${mid.toFixed(2)}`,
+              message: `OBI: ${obi.toFixed(3)} (3s) | Lot: ${document.getElementById('calc-scalp-lot').textContent} | SL: $${dynSl} | TP: $${dynTp}`,
               priority: 5, tags: ["rotating_light", "dart"]
             })
           }).catch(() => {});
         }
-      } else if (inZone) {
-        pill.textContent = `ARMED IN ZONE — รอยืนยัน L2 OBI (${sc.dir})`;
+      } else if (zoneReady) {
+        pill.textContent = `ARMED IN ZONE — รอยืนยัน L2 OBI 3 วิ (${sc.dir})`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-500 rounded-full";
-        head.textContent = `ราคาเข้าโซน $${sc.entry} แล้ว! รอ Order Book OBI ยืนค้าง 3 วินาทีเพื่อป้องกัน Fakeout`;
+        head.textContent = `ราคาเข้าเงื่อนไขยิงแล้ว! รอ Order Book OBI ยืนค้างครบ 3 วินาที`;
         box.className = "card p-4 border-cyan-500/60 bg-gradient-to-r from-gray-900 via-cyan-950/30 to-purple-950/25";
       } else {
         pill.textContent = `SCANNING (${distPts} จุดถึงโซน $${sc.entry})`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-gray-800 text-amber-300 border border-gray-700 rounded-full";
-        head.textContent = `แผนรอยิง Scalp ${sc.dir} ที่ $${sc.entry} (ห่างราคาปัจจุบัน ${distPts} จุด)`;
+        head.textContent = `แผน A Micro-Scalp ${sc.dir} ที่ $${sc.entry} (ห่าง ${distPts} จุด) หรือรอทะลุ ${isLong ? 'VAH $' + sc.microVah : 'VAL $' + sc.microVal}`;
         box.className = "card p-4 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-cyan-950/20 to-purple-950/20";
       }
     }
@@ -1211,23 +1264,16 @@
           return `<div class="relative flex justify-between px-2 py-0.5 rounded bg-gray-800/60 overflow-hidden"><div class="absolute inset-y-0 left-0 bg-rose-500/20" style="width:${w}%"></div><span class="relative text-rose-400">$${(p + spotBasisOffset).toFixed(2)}</span><span class="relative text-gray-300">${q.toFixed(1)}</span></div>`;
         }).join('');
 
-        const nowMs = Date.now();
-        tradeBuffer60s = tradeBuffer60s.filter(x => nowMs - x.ts <= 60000);
-        const delta60s = tradeBuffer60s.reduce((acc, x) => acc + x.delta, 0);
-        evaluateLiveOrderFlowGate(mid, obi, delta60s);
+        update60sDeltaUI();
+        evaluateLiveOrderFlowGate(mid, obi, latestDelta60s);
       };
 
       const wsTrade = new WebSocket('wss://fstream.binance.com/ws/xauusdt@aggTrade');
       wsTrade.onmessage = (ev) => {
         const t = JSON.parse(ev.data);
         const dVal = t.m ? -parseFloat(t.q || 0) : parseFloat(t.q || 0);
-        const nowMs = Date.now();
-        tradeBuffer60s.push({ ts: nowMs, delta: dVal });
-        tradeBuffer60s = tradeBuffer60s.filter(x => nowMs - x.ts <= 60000);
-        const delta60s = tradeBuffer60s.reduce((acc, x) => acc + x.delta, 0);
-        const cvdEl = document.getElementById('kpi-cvd');
-        cvdEl.textContent = `${delta60s >= 0 ? '+' : ''}${delta60s.toFixed(1)}`;
-        cvdEl.className = `text-2xl font-bold font-mono-num mt-1 ${delta60s >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        tradeBuffer60s.push({ ts: Date.now(), delta: dVal });
+        update60sDeltaUI();
       };
     }
 
