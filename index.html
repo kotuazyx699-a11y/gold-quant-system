@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD Master Sync Quant & 24H VP Engine V26.0</title>
+  <title>XAU/USD Master Sync Quant & 24H VP Engine V26.1 (ThaiLLM + 6-Layer)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -22,9 +22,12 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">UNIFIED SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Spot Quant & 24H VP Engine V26.0</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Spot Quant & 24H VP Engine V26.1</h1>
           <span id="cloud-sync-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-gray-800 text-gray-300 border border-gray-700 rounded-full">
             ☁️ SYNC: LOCAL ONLY
+          </span>
+          <span id="device-role-badge" class="flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-700/60 rounded-full">
+            🖥️ MASTER BRAIN
           </span>
           <span id="mue-gen-badge" class="px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full">
             รันสะสม: 0 รอบ (Gen #0)
@@ -170,6 +173,44 @@
               <button onclick="forcePushCloudNow()" class="px-3 py-1.5 font-bold bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg">
                 ☁️ บังคับอัปโหลดขึ้น Cloud เดี๋ยวนี้
               </button>
+            </div>
+          </div>
+
+          <!-- D. ThaiLLM Real AI + 6-Layer Memory & Device Role -->
+          <div class="bg-purple-950/25 border border-purple-600/50 rounded-lg p-3.5 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="font-bold text-purple-300">4. เชื่อมต่อ ThaiLLM API (AI จริง + 6-Layer Memory) & บทบาทเครื่อง</span>
+              <span id="admin-thaillm-status" class="font-mono-num text-[11px] text-gray-300">โหมด: Quant KB (ยังไม่ใส่ API Key)</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono-num">
+              <div>
+                <label class="block text-[10px] text-gray-400 mb-1">ThaiLLM API Key:</label>
+                <div class="flex gap-1.5">
+                  <input id="admin-thaillm-key" type="password" placeholder="วาง ThaiLLM API Key..."
+                    class="flex-1 px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded text-white" />
+                  <button type="button" onclick="testThaiLlmConnection()" class="px-2.5 py-1.5 font-bold bg-purple-600 hover:bg-purple-500 text-white rounded shrink-0">
+                    🧪 ทดสอบ AI
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-400 mb-1">Cloudflare Worker Proxy URL:</label>
+                <input id="admin-thaillm-endpoint" type="text" value="https://thaillm-proxy.kotuazyx699.workers.dev/"
+                  class="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded text-cyan-300" />
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-400 mb-1">ชื่อโมเดล ThaiLLM:</label>
+                <input id="admin-thaillm-model" type="text" value="typhoon-s-thaillm-8b-instruct"
+                  class="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded text-emerald-300" />
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-400 mb-1">บทบาทเครื่องนี้ (กัน 2 เครื่องแย่งกันออกไม้):</label>
+                <select id="admin-device-role" class="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded text-amber-300 font-bold">
+                  <option value="AUTO">อัตโนมัติ (คอม = Master / มือถือ = Mirror)</option>
+                  <option value="MASTER">บังคับ Master Brain (คำนวณ + ออกไม้ + ส่ง ntfy)</option>
+                  <option value="MIRROR">บังคับ Mirror Client (รับซิงก์แสดงผลอย่างเดียว)</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -714,8 +755,30 @@
       lockedSpotOffset: null,
       ghToken: "",
       ghGistId: "",
+      thaillmApiKey: "",
+      thaillmEndpoint: "https://thaillm-proxy.kotuazyx699.workers.dev/",
+      thaillmModel: "typhoon-s-thaillm-8b-instruct",
+      deviceRoleMode: "AUTO",
       updatedAt: 0
     };
+    let latestAiBrief = { html: "", badge: "", ts: 0 };
+
+    function isMobileBrowser() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || "") ||
+        (navigator.maxTouchPoints > 1 && window.innerWidth <= 900);
+    }
+
+    function getEffectiveDeviceRole() {
+      const mode = masterConfig.deviceRoleMode || "AUTO";
+      if (mode === "MASTER") return "MASTER";
+      if (mode === "MIRROR") return "MIRROR";
+      if (!masterConfig.ghGistId) return "MASTER";
+      return isMobileBrowser() ? "MIRROR" : "MASTER";
+    }
+
+    function isMirrorClientPassive() {
+      return getEffectiveDeviceRole() === "MIRROR";
+    }
 
     let slBreachStartMs = null;
     let vpChartInstance = null, liveModel = null;
@@ -808,6 +871,19 @@
         syncBadge.className = "flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-gray-800 text-gray-300 border border-gray-700 rounded-full";
       }
 
+      const roleBadge = document.getElementById('device-role-badge');
+      if (roleBadge) {
+        const effRole = getEffectiveDeviceRole();
+        const llmTag = masterConfig.thaillmApiKey ? " + ThaiLLM" : "";
+        if (effRole === "MIRROR") {
+          roleBadge.textContent = `📱 MIRROR CLIENT${llmTag}`;
+          roleBadge.className = "flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-indigo-950 text-indigo-300 border border-indigo-600/70 rounded-full";
+        } else {
+          roleBadge.textContent = `🖥️ MASTER BRAIN${llmTag}`;
+          roleBadge.className = "flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/70 rounded-full";
+        }
+      }
+
       updateLotModeVisibility();
       recalcPropMath();
     }
@@ -861,6 +937,19 @@
       document.getElementById('admin-sync-status-txt').textContent = masterConfig.ghGistId
         ? `✅ เชื่อมต่อห้องซิงก์ ${masterConfig.ghGistId.slice(0, 8)}... แล้ว`
         : `⚠️ ยังไม่เชื่อม Cloud (ซิงก์ผ่านลิงก์ได้)`;
+      document.getElementById('admin-thaillm-key').value = masterConfig.thaillmApiKey || "";
+      document.getElementById('admin-thaillm-endpoint').value = masterConfig.thaillmEndpoint || "https://thaillm-proxy.kotuazyx699.workers.dev/";
+      document.getElementById('admin-thaillm-model').value = masterConfig.thaillmModel || "typhoon-s-thaillm-8b-instruct";
+      document.getElementById('admin-device-role').value = masterConfig.deviceRoleMode || "AUTO";
+      const llmStatus = document.getElementById('admin-thaillm-status');
+      if (llmStatus) {
+        llmStatus.textContent = masterConfig.thaillmApiKey
+          ? `✅ พร้อมใช้งาน (${masterConfig.thaillmModel || "typhoon-s-thaillm-8b-instruct"})`
+          : `โหมด: Quant KB (ยังไม่ใส่ API Key)`;
+        llmStatus.className = masterConfig.thaillmApiKey
+          ? "font-mono-num text-[11px] text-emerald-400 font-bold"
+          : "font-mono-num text-[11px] text-gray-300";
+      }
     }
 
     function calibratePriceToMt5Now() {
@@ -890,6 +979,10 @@
       if (newPin.length >= 4) masterConfig.creatorPin = newPin;
       masterConfig.ghToken = document.getElementById('admin-gh-token').value.trim();
       masterConfig.ghGistId = document.getElementById('admin-gh-gist').value.trim();
+      masterConfig.thaillmApiKey = document.getElementById('admin-thaillm-key').value.trim();
+      masterConfig.thaillmEndpoint = (document.getElementById('admin-thaillm-endpoint').value.trim() || "https://thaillm-proxy.kotuazyx699.workers.dev/");
+      masterConfig.thaillmModel = (document.getElementById('admin-thaillm-model').value.trim() || "typhoon-s-thaillm-8b-instruct");
+      masterConfig.deviceRoleMode = document.getElementById('admin-device-role').value || "AUTO";
       masterConfig.updatedAt = Date.now();
 
       saveMasterConfigLocal();
@@ -897,6 +990,52 @@
       closeCreatorAdminModal();
       await pushCloudSyncState(true);
       runFullLiveQuantAndAI(false);
+    }
+
+    async function testThaiLlmConnection() {
+      const apiKey = document.getElementById('admin-thaillm-key').value.trim();
+      const endpoint = (document.getElementById('admin-thaillm-endpoint').value.trim() || "https://thaillm-proxy.kotuazyx699.workers.dev/");
+      const model = (document.getElementById('admin-thaillm-model').value.trim() || "typhoon-s-thaillm-8b-instruct");
+      const statusEl = document.getElementById('admin-thaillm-status');
+
+      if (!apiKey) {
+        statusEl.textContent = "❌ กรุณาวาง ThaiLLM API Key ก่อนกดทดสอบ";
+        statusEl.className = "font-mono-num text-[11px] text-rose-400 font-bold";
+        return;
+      }
+      statusEl.textContent = "⏳ กำลังทดสอบเชื่อมต่อ ThaiLLM...";
+      statusEl.className = "font-mono-num text-[11px] text-amber-300";
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: "ตอบสั้นกระชับเป็นภาษาไทยไม่เกิน 1 ประโยค" },
+              { role: "user", content: "ยืนยันการเชื่อมต่อระบบวิเคราะห์ทองคำ XAU/USD" }
+            ],
+            temperature: 0.2,
+            max_tokens: 45
+          })
+        });
+        if (!res.ok) {
+          const errTxt = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errTxt.slice(0, 80)}`);
+        }
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content?.trim() || "OK";
+        statusEl.textContent = `✅ เชื่อมต่อสำเร็จ! (${model})`;
+        statusEl.className = "font-mono-num text-[11px] text-emerald-400 font-bold";
+        alert(`เชื่อมต่อ ThaiLLM สำเร็จ!\n\nโมเดล: ${model}\nตอบกลับ: ${reply}\n\nกด "💾 บันทึก & ซิงก์ทุกเครื่องทันที" เพื่อใช้งานจริงครับ`);
+      } catch (err) {
+        statusEl.textContent = `❌ เชื่อมต่อไม่สำเร็จ (${err.message})`;
+        statusEl.className = "font-mono-num text-[11px] text-rose-400 font-bold";
+      }
     }
 
     // --- CLOUD SYNC (GITHUB GIST) + 1-TAP MOBILE SYNC URL ---
@@ -946,7 +1085,8 @@
           revision: rev,
           masterConfig,
           orderState,
-          aiBrain
+          aiBrain,
+          latestAiBrief
         };
         const res = await fetch(`https://api.github.com/gists/${encodeURIComponent(masterConfig.ghGistId)}`, {
           method: "PATCH",
@@ -1010,6 +1150,13 @@
             saveAiBrainLocal();
             renderAiBrainUI();
           }
+          if (remote.latestAiBrief && remote.latestAiBrief.html && remote.latestAiBrief.ts > (latestAiBrief.ts || 0)) {
+            latestAiBrief = remote.latestAiBrief;
+            const badgeEl = document.getElementById('ai-engine-badge');
+            const contentEl = document.getElementById('ai-content');
+            if (badgeEl && latestAiBrief.badge) badgeEl.textContent = latestAiBrief.badge;
+            if (contentEl && latestAiBrief.html) contentEl.innerHTML = latestAiBrief.html;
+          }
         }
       } catch (e) {}
     }
@@ -1028,7 +1175,11 @@
         autoBeEnabled: masterConfig.autoBeEnabled,
         lockedSpotOffset: masterConfig.lockedSpotOffset,
         ghToken: masterConfig.ghToken,
-        ghGistId: masterConfig.ghGistId
+        ghGistId: masterConfig.ghGistId,
+        thaillmApiKey: masterConfig.thaillmApiKey,
+        thaillmEndpoint: masterConfig.thaillmEndpoint,
+        thaillmModel: masterConfig.thaillmModel,
+        deviceRoleMode: masterConfig.deviceRoleMode
       };
       const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(shareObj))));
       const baseUrl = window.location.origin + window.location.pathname;
@@ -1860,6 +2011,10 @@
       const ao = orderState.activeOrder;
       if (!ao || !mid) return;
       if (Date.now() - lastTickTimestamp > 10000) return;
+      if (isMirrorClientPassive()) {
+        renderOrderAndLedgerUI(mid, bid, ask);
+        return;
+      }
 
       const isLong = ao.dir === "LONG";
       const bufferUsd = masterConfig.mt5BufferPts / 100.0;
@@ -3096,18 +3251,20 @@
         if (!liteAlertMode) renderVolumeProfileChart(vp24h);
         recalcPropMath();
 
-        if (orderState.autoArm) {
-          if (!orderState.activeOrder) {
-            placeScalpLimitOrder(false, false);
-          } else if (orderState.activeOrder.mode === "LIMIT" && orderState.autoRefresh15m) {
-            placeScalpLimitOrder(false, true);
+        if (!isMirrorClientPassive()) {
+          if (orderState.autoArm) {
+            if (!orderState.activeOrder) {
+              placeScalpLimitOrder(false, false);
+            } else if (orderState.activeOrder.mode === "LIMIT" && orderState.autoRefresh15m) {
+              placeScalpLimitOrder(false, true);
+            }
           }
         }
 
         const aiShortLine = await buildEvidenceBasedQuantBriefing(spotMid, last, pdh, pdl, vpMicro, vp24h, scalpSetup, trendSetup, activeTrendGene, bestRevGene, regimeTxt, lastAiTimeStr);
-        pushCloudSyncState(false);
+        if (!isMirrorClientPassive()) pushCloudSyncState(false);
 
-        if (notify) {
+        if (notify && !isMirrorClientPassive()) {
           const ao = orderState.activeOrder;
           const lotInfo = getActiveLotSetting();
           const lotNow = ao ? ao.lot : lotInfo.scalpLot;
@@ -3132,6 +3289,135 @@
         isSimRunning = false;
         btn.textContent = "🧬 รันวิเคราะห์สด";
       }
+    }
+
+    function buildSixLayerMemoryContext(spot, last, pdh, pdl, vpMicro, vp24h, sc, tr, activeTrend, bestRev, regimeTxt) {
+      const curSess = getBangkokSession();
+      const lotInfo = getActiveLotSetting();
+      const sessStats = (aiBrain.sessionStats && aiBrain.sessionStats[curSess.id]) || { wins: 0, losses: 0, netR: 0 };
+      const allHist = (orderState.todayClosed || []).concat(orderState.learningArchive || []);
+      const recentLessons = (aiBrain.insights || []).slice(0, 3).map(x => x.rule).join(" | ") || "ยังไม่มีบันทึกเพิ่มเติม";
+      const ao = orderState.activeOrder;
+
+      return {
+        layer1_MacroRegime: {
+          spotPrice: +spot.toFixed(2),
+          regime: regimeTxt,
+          ema21: +last.ema21.toFixed(2),
+          ema50: +last.ema50.toFixed(2),
+          ema200: +last.ema200.toFixed(2),
+          adx14: +last.adx.toFixed(1),
+          rsi14: +last.rsi.toFixed(1),
+          atr14: +last.atr.toFixed(2),
+          pdh: +pdh.toFixed(2),
+          pdl: +pdl.toFixed(2)
+        },
+        layer2_VolumeProfile: {
+          vp24h: { val: vp24h.val, poc: vp24h.poc, vah: vp24h.vah },
+          vp4hMicro: { shape: vpMicro.shape, val: vpMicro.val, poc: vpMicro.poc, vah: vpMicro.vah }
+        },
+        layer3_LiveOrderFlow: {
+          obi: +latestObi.toFixed(3),
+          bidPct: latestBidPct,
+          askPct: 100 - latestBidPct,
+          rollingDelta60s: +latestDelta60s.toFixed(2)
+        },
+        layer4_QuantBacktestOOS: {
+          activeTrendFormula: sc.formulaName,
+          trendWinRate: activeTrend.wr,
+          trendOosWinRate: activeTrend.oosWr,
+          trendNetR: activeTrend.netR,
+          bestReversalFormula: bestRev.name,
+          reversalOosWinRate: bestRev.oosWr
+        },
+        layer5_SessionMemory: {
+          session: curSess.label,
+          sessionWins: sessStats.wins,
+          sessionLosses: sessStats.losses,
+          sessionNetR: +(sessStats.netR || 0).toFixed(2),
+          totalClosedTrades: allHist.length,
+          recentVerifiedLessons: recentLessons
+        },
+        layer6_ExecutionAndRiskGuard: {
+          planDirection: sc.dir,
+          entry: sc.entry,
+          sl: sc.sl,
+          tp: sc.tp,
+          slPts: sc.slPts,
+          tpPts: sc.tpPts,
+          rr: sc.rr,
+          confidenceScore: sc.conf.totalScore,
+          confidenceGrade: sc.conf.grade,
+          closestAnchor: `${sc.conf.closestAnchor.name} ($${sc.conf.closestAnchor.px.toFixed(2)})`,
+          beVerdict: sc.beInfo.verdict,
+          lotSize: lotInfo.scalpLot,
+          riskUsd: +(lotInfo.scalpLot * sc.slPts).toFixed(2),
+          rewardUsd: +(lotInfo.scalpLot * sc.tpPts).toFixed(2),
+          activeOrder: ao ? `${ao.mode} ${ao.dir} @ $${ao.entry.toFixed(2)} (${ao.lot} Lot)` : "ไม่มีออเดอร์ค้าง"
+        }
+      };
+    }
+
+    async function callThaiLlmSixLayerReasoning(memoryCtx) {
+      if (!masterConfig.thaillmApiKey || !masterConfig.thaillmEndpoint) return null;
+      const endpoint = masterConfig.thaillmEndpoint.trim();
+      const model = (masterConfig.thaillmModel || "typhoon-s-thaillm-8b-instruct").trim();
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 16000);
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${masterConfig.thaillmApiKey.trim()}`
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: "คุณคือหัวหน้านักวิเคราะห์เชิงปริมาณทองคำ Spot XAU/USD (Institutional Quant Analyst) วิเคราะห์จากข้อมูลจริง 6-Layer Memory ที่ส่งให้เท่านั้น ห้ามแต่งตัวเลขราคาขึ้นเอง ตอบเป็นภาษาไทยกระชับ ชัดเจน 4 หัวข้อสั้นๆ: 1) โครงสร้าง 6-Layer & Regime 2) เหตุผลจุดเข้า Entry/SL/TP 3) แผนบังทุน BE & การยืนยัน L2 OrderFlow 4) จุดยกเลิกแผน (Invalidation)"
+              },
+              {
+                role: "user",
+                content: `ข้อมูลตลาดสด 6-Layer Memory:\n${JSON.stringify(memoryCtx, null, 2)}`
+              }
+            ],
+            temperature: 0.25,
+            max_tokens: 550
+          })
+        });
+        clearTimeout(timer);
+        if (!res.ok) return null;
+        const data = await res.json();
+        const text = data?.choices?.[0]?.message?.content?.trim();
+        return text && text.length > 20 ? text : null;
+      } catch (e) {
+        clearTimeout(timer);
+        return null;
+      }
+    }
+
+    function formatThaiLlmMarkdownToHtml(rawText, modelName) {
+      const escaped = rawText
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\*\*(.+?)\*\*/g, '<strong class="text-amber-300">$1</strong>');
+      const lines = escaped.split(/\n+/).map(l => l.trim()).filter(Boolean);
+      return `
+        <div class="bg-purple-950/30 border border-purple-500/50 rounded-lg p-3.5 space-y-2">
+          <div class="flex items-center justify-between text-[11px] font-mono-num">
+            <span class="font-bold text-purple-300">🧠 บทวิเคราะห์เชิงลึกจาก ThaiLLM (${modelName}) + 6-Layer Memory</span>
+            <span class="text-emerald-400">LIVE REASONING</span>
+          </div>
+          <div class="space-y-1.5 text-xs text-gray-200 leading-relaxed">
+            ${lines.map(line => `<p>${line}</p>`).join("")}
+          </div>
+        </div>
+      `;
     }
 
     async function buildEvidenceBasedQuantBriefing(spot, last, pdh, pdl, vpMicro, vp24h, sc, tr, activeTrend, bestRev, regimeTxt, nowStr) {
@@ -3180,9 +3466,27 @@
       const verifiedRule = `ช่วง ${curSess.id} | ${sc.dir} @ $${sc.entry.toFixed(2)} (${sc.conf.closestAnchor.name}) | เกรด ${sc.conf.grade} (${sc.conf.totalScore}%) | ${sc.beInfo.shouldBe ? 'บัง BE ที่ $' + sc.beInfo.triggerPrice.toFixed(2) : 'ไม่บัง BE'}`;
       recordAiInsight(verifiedRule, `GRADE-${sc.conf.grade}`);
 
-      badgeEl.textContent = `✅ SPOT QUANT ANALYST (${nowStr})`;
-      contentEl.innerHTML = reasoningBlocks.join('');
+      let finalBadge = `✅ SPOT QUANT ANALYST (${nowStr})`;
+      let finalHtml = reasoningBlocks.join('');
+      badgeEl.textContent = finalBadge;
+      contentEl.innerHTML = finalHtml;
 
+      if (masterConfig.thaillmApiKey && masterConfig.thaillmEndpoint && !isMirrorClientPassive()) {
+        badgeEl.textContent = `⏳ ThaiLLM 6-Layer Reasoning...`;
+        const memoryCtx = buildSixLayerMemoryContext(spot, last, pdh, pdl, vpMicro, vp24h, sc, tr, activeTrend, bestRev, regimeTxt);
+        const llmReply = await callThaiLlmSixLayerReasoning(memoryCtx);
+        if (llmReply) {
+          const modelName = masterConfig.thaillmModel || "typhoon-s-thaillm-8b-instruct";
+          finalBadge = `🧠 ThaiLLM + 6-Layer (${nowStr})`;
+          finalHtml = formatThaiLlmMarkdownToHtml(llmReply, modelName) + finalHtml;
+          badgeEl.textContent = finalBadge;
+          contentEl.innerHTML = finalHtml;
+        } else {
+          badgeEl.textContent = finalBadge;
+        }
+      }
+
+      latestAiBrief = { html: finalHtml, badge: finalBadge, ts: Date.now() };
       return `ความมั่นใจ ${sc.conf.totalScore}% (เกรด ${sc.conf.grade}) | ใกล้ ${sc.conf.closestAnchor.name} ($${sc.conf.closestAnchor.px.toFixed(1)})`;
     }
 
@@ -3233,7 +3537,7 @@
         head.textContent = `ยืนยันครบ 3 ชั้น (ความมั่นใจ ${sc.conf.totalScore}%)! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)}`;
         box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40 space-y-3";
 
-        if ((!orderState.activeOrder || orderState.activeOrder.mode === "LIMIT") && Date.now() - lastAutoFireTs > 300000) {
+        if (!isMirrorClientPassive() && (!orderState.activeOrder || orderState.activeOrder.mode === "LIMIT") && Date.now() - lastAutoFireTs > 300000) {
           lastAutoFireTs = Date.now();
           placeMarketOrderNow();
         }
