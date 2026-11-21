@@ -1,6 +1,6 @@
 {
-  "generation": 3,
-  "last_evolved_at": "2026-11-20 10:20:11",
+  "generation": 6,
+  "last_evolved_at": "2026-11-22 00:23:42",
   "stagnation_cycles": 0,
   "exploration_pressure": 0.4,
   "genes": {
@@ -11,7 +11,7 @@
       "tol_points": 150,
       "obi_min": 0.18,
       "generation": 3,
-      "fitness": 0.88,
+      "fitness": 0.99,
       "rule_th": "MUE-X Gen#3: POC_PULLBACK | SL 500 / TP 750 จุด (โซน ±150 จุด + OBI >= 0.18)"
     },
     "B_SHAPED": {
@@ -31,7 +31,7 @@
       "tol_points": 220,
       "obi_min": 0.18,
       "generation": 2,
-      "fitness": 0.99,
+      "fitness": 0.83,
       "rule_th": "MUE-X Gen#2: MEAN_REVERSION | SL 500 / TP 650 จุด (โซน ±220 จุด + OBI >= 0.18)"
     },
     "DOUBLE_ZONE": {
