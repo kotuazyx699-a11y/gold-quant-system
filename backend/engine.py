@@ -72,66 +72,90 @@ def save_json_safe(path, obj):
 
 
 def fetch_order_flow_snapshot(fallback_spot=3550.0):
-    snapshot = {
-        "source": "Binance XAUUSDT Perp L2",
-        "mid_price": round(fallback_spot, 2),
-        "obi_25bps": 0.0,
-        "bid_liq_total": 0.0,
-        "ask_liq_total": 0.0,
-        "bid_walls": [],
-        "ask_walls": [],
-        "tick_cvd": 0.0,
-        "absorption_flag": "NEUTRAL_FLOW",
-        "open_interest": 0.0,
-        "funding_rate_pct": 0.0,
-        "of_regime": "TWO_WAY_ROTATION"
+    from concurrent.futures import ThreadPoolExecutor
+    snap = {
+        "source": "Binance XAUUSDT Perp L2", "mid_price": round(fallback_spot, 2),
+        "obi_25bps": 0.0, "bid_liq_total": 0.0, "ask_liq_total": 0.0,
+        "bid_walls": [], "ask_walls": [], "tick_cvd": 0.0,
+        "absorption_flag": "NEUTRAL_FLOW", "open_interest": 0.0,
+        "funding_rate_pct": 0.0, "of_regime": "TWO_WAY_ROTATION",
     }
-    try:
-        r_depth = requests.get("https://fapi.binance.com/fapi/v1/depth", params={"symbol": "XAUUSDT", "limit": 20}, timeout=6)
-        if r_depth.status_code == 200:
-            d = r_depth.json()
+    urls = {
+        "depth": ("https://fapi.binance.com/fapi/v1/depth", {"symbol": "XAUUSDT", "limit": 20}, 4.5),
+        "trades": ("https://fapi.binance.com/fapi/v1/aggTrades", {"symbol": "XAUUSDT", "limit": 500}, 4.5),
+        "oi": ("https://fapi.binance.com/fapi/v1/openInterest", {"symbol": "XAUUSDT"}, 4.0),
+        "pr": ("https://fapi.binance.com/fapi/v1/premiumIndex", {"symbol": "XAUUSDT"}, 4.0),
+    }
+
+    def _req(item):
+        k, (u, p, t) = item
+        try:
+            r = requests.get(u, params=p, timeout=t)
+            return (k, r.json(), None) if r.status_code == 200 else (k, None, f"HTTP {r.status_code}")
+        except Exception as e:
+            return k, None, str(e)
+
+    res, errs = {}, []
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        for k, d, e in ex.map(_req, urls.items()):
+            errs.append(f"{k}:{e}") if e else res.update({k: d})
+
+    d = res.get("depth")
+    if isinstance(d, dict):
+        try:
             bids = [(float(p), float(q)) for p, q in d.get("bids", [])]
             asks = [(float(p), float(q)) for p, q in d.get("asks", [])]
             if bids and asks:
-                snapshot["mid_price"] = round((bids[0][0] + asks[0][0]) / 2.0, 2)
-                b_25 = sum(q for p, q in bids[:15])
-                a_25 = sum(q for p, q in asks[:15])
-                snapshot["obi_25bps"] = round((b_25 - a_25) / max(1e-6, b_25 + a_25), 3)
-                snapshot["bid_liq_total"] = round(b_25, 2)
-                snapshot["ask_liq_total"] = round(a_25, 2)
-                all_q = [q for _, q in bids[:12]] + [q for _, q in asks[:12]]
-                avg_q = float(np.mean(all_q)) if all_q else 1.0
-                snapshot["bid_walls"] = [{"price": round(p, 2), "size": round(q, 2)} for p, q in bids[:12] if q >= 2.0 * avg_q][:3]
-                snapshot["ask_walls"] = [{"price": round(p, 2), "size": round(q, 2)} for p, q in asks[:12] if q >= 2.0 * avg_q][:3]
+                snap["mid_price"] = round((bids[0][0] + asks[0][0]) / 2.0, 2)
+                b25, a25 = sum(q for _, q in bids[:15]), sum(q for _, q in asks[:15])
+                snap["obi_25bps"] = round((b25 - a25) / max(1e-6, b25 + a25), 3)
+                snap["bid_liq_total"], snap["ask_liq_total"] = round(b25, 2), round(a25, 2)
+                aq = [q for _, q in bids[:12]] + [q for _, q in asks[:12]]
+                avg_q = float(np.mean(aq)) if aq else 1.0
+                snap["bid_walls"] = [{"price": round(p, 2), "size": round(q, 2)} for p, q in bids[:12] if q >= 2.0 * avg_q][:3]
+                snap["ask_walls"] = [{"price": round(p, 2), "size": round(q, 2)} for p, q in asks[:12] if q >= 2.0 * avg_q][:3]
+        except Exception as e:
+            errs.append(f"depth:{e}")
 
-        r_trades = requests.get("https://fapi.binance.com/fapi/v1/aggTrades", params={"symbol": "XAUUSDT", "limit": 500}, timeout=6)
-        if r_trades.status_code == 200:
-            trades = r_trades.json()
-            if trades:
-                buy_v = sum(float(t["q"]) for t in trades if not t.get("m", False))
-                sell_v = sum(float(t["q"]) for t in trades if t.get("m", False))
-                tick_cvd = round(buy_v - sell_v, 2)
-                snapshot["tick_cvd"] = tick_cvd
-                p0, p1 = float(trades[0]["p"]), float(trades[-1]["p"])
-                if p1 < p0 and tick_cvd > 0 and snapshot["obi_25bps"] > 0.06:
-                    snapshot["absorption_flag"] = "BULLISH_ABSORPTION (Bid ดูดซับแรงขาย)"
-                elif p1 > p0 and tick_cvd < 0 and snapshot["obi_25bps"] < -0.06:
-                    snapshot["absorption_flag"] = "BEARISH_ABSORPTION (Ask กดหัว)"
-                elif snapshot["obi_25bps"] > 0.12:
-                    snapshot["absorption_flag"] = "BID_DOMINANCE"
-                elif snapshot["obi_25bps"] < -0.12:
-                    snapshot["absorption_flag"] = "ASK_DOMINANCE"
+    tr = res.get("trades")
+    if isinstance(tr, list) and tr:
+        try:
+            bv = sum(float(t["q"]) for t in tr if not t.get("m", False))
+            sv = sum(float(t["q"]) for t in tr if t.get("m", False))
+            cvd = round(bv - sv, 2)
+            snap["tick_cvd"] = cvd
+            p0, p1 = float(tr[0]["p"]), float(tr[-1]["p"])
+            if p1 < p0 and cvd > 0 and snap["obi_25bps"] > 0.06:
+                snap["absorption_flag"] = "BULLISH_ABSORPTION (Bid \u0e14\u0e39\u0e14\u0e0b\u0e31\u0e1a\u0e41\u0e23\u0e07\u0e02\u0e32\u0e22)"
+            elif p1 > p0 and cvd < 0 and snap["obi_25bps"] < -0.06:
+                snap["absorption_flag"] = "BEARISH_ABSORPTION (Ask \u0e01\u0e14\u0e2b\u0e31\u0e27)"
+            elif snap["obi_25bps"] > 0.12:
+                snap["absorption_flag"] = "BID_DOMINANCE"
+            elif snap["obi_25bps"] < -0.12:
+                snap["absorption_flag"] = "ASK_DOMINANCE"
+        except Exception as e:
+            errs.append(f"trades:{e}")
 
-        r_oi = requests.get("https://fapi.binance.com/fapi/v1/openInterest", params={"symbol": "XAUUSDT"}, timeout=5)
-        if r_oi.status_code == 200:
-            snapshot["open_interest"] = round(float(r_oi.json().get("openInterest", 0.0)), 2)
+    if isinstance(res.get("oi"), dict):
+        try:
+            snap["open_interest"] = round(float(res["oi"].get("openInterest", 0.0)), 2)
+        except Exception as e:
+            errs.append(f"oi:{e}")
+    if isinstance(res.get("pr"), dict):
+        try:
+            snap["funding_rate_pct"] = round(float(res["pr"].get("lastFundingRate", 0.0)) * 100.0, 4)
+        except Exception as e:
+            errs.append(f"pr:{e}")
 
-        r_pr = requests.get("https://fapi.binance.com/fapi/v1/premiumIndex", params={"symbol": "XAUUSDT"}, timeout=5)
-        if r_pr.status_code == 200:
-            snapshot["funding_rate_pct"] = round(float(r_pr.json().get("lastFundingRate", 0.0)) * 100.0, 4)
-    except Exception as e:
-        print(f"[OrderFlow Warning] {e}")
-    return snapshot
+    if "ABSORPTION" in snap["absorption_flag"]:
+        snap["of_regime"] = "ABSORPTION_REVERSAL"
+    elif snap["obi_25bps"] >= 0.18 and snap["tick_cvd"] > 0:
+        snap["of_regime"] = "STRONG_BUY_IMBALANCE"
+    elif snap["obi_25bps"] <= -0.18 and snap["tick_cvd"] < 0:
+        snap["of_regime"] = "STRONG_SELL_IMBALANCE"
+    if errs:
+        print(f"[OrderFlow Warning] {', '.join(errs)}")
+    return snap
 
 
 def update_hydra_vault():
@@ -699,23 +723,40 @@ def fetch_macro_and_news():
     return dxy_p, us10y_y, corr_20, news_list[:8]
 
 
+def _normalize_journal_schema(obj, default_dict):
+    base = dict(default_dict)
+    if isinstance(obj, list):
+        base["recent_trades"] = [x for x in obj if isinstance(x, dict)]
+    elif isinstance(obj, dict):
+        base.update(obj)
+    if not isinstance(base.get("recent_trades"), list):
+        base["recent_trades"] = []
+    for k, v in default_dict.items():
+        if k not in base:
+            base[k] = list(v) if isinstance(v, list) else v
+    return base
+
+
 def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hours):
     now_str = datetime.now(THAI_TZ).strftime("%d/%m %H:%M")
-    sj = load_json_safe(SCALP_JOURNAL_PATH, {"wins": 0, "losses": 0, "closed_trades": 0, "open_trades": 0, "net_live_pnl": 0.0, "live_win_rate": 0.0, "recent_trades": []})
+    def_j = {"wins": 0, "losses": 0, "closed_trades": 0, "open_trades": 0, "net_live_pnl": 0.0, "live_win_rate": 0.0, "recent_trades": []}
+
+    sj = _normalize_journal_schema(load_json_safe(SCALP_JOURNAL_PATH, def_j), def_j)
     for t in sj["recent_trades"]:
-        if t["status"] == "OPEN":
-            if t["direction"] == "LONG":
+        if t.get("status") == "OPEN":
+            sl_loss = -round(max(0.5, abs(float(t["entry"]) - float(t["sl"]))), 2)
+            if t.get("direction") == "LONG":
                 if spot <= t["sl"]:
-                    t["status"], t["pnl"] = "LOSS", -5.0
+                    t["status"], t["pnl"] = "LOSS", sl_loss
                 elif spot >= t["tp"]:
                     t["status"], t["pnl"] = "WIN", round(t["tp"] - t["entry"], 2)
             else:
                 if spot >= t["sl"]:
-                    t["status"], t["pnl"] = "LOSS", -5.0
+                    t["status"], t["pnl"] = "LOSS", sl_loss
                 elif spot <= t["tp"]:
                     t["status"], t["pnl"] = "WIN", round(t["entry"] - t["tp"], 2)
 
-    open_sc = [t for t in sj["recent_trades"] if t["status"] == "OPEN"]
+    open_sc = [t for t in sj["recent_trades"] if t.get("status") == "OPEN"]
     if in_scalp_hours and len(open_sc) == 0 and abs(spot - scalp_setup["entry"]) <= (scalp_setup["tol_points"] / 100.0):
         sj["recent_trades"].insert(0, {
             "opened_at_th": now_str,
@@ -724,28 +765,30 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
             "entry": scalp_setup["entry"],
             "sl": scalp_setup["sl"],
             "tp": scalp_setup["tp"],
+            "lot_size": scalp_setup.get("lot_size", 0.01),
+            "risk_usd": scalp_setup.get("risk_usd", 10.0),
             "status": "OPEN",
             "pnl": 0.0
         })
         send_ntfy(
-            f"PROP SCALP {scalp_setup['direction']} @ ${scalp_setup['entry']}",
+            f"PROP SCALP {scalp_setup['direction']} @ ${scalp_setup['entry']} ({scalp_setup.get('lot_size', 0.01)} lot)",
             f"Session VP {scalp_setup['shape']} | OBI: {scalp_setup['obi']} | SL: ${scalp_setup['sl']} | TP: ${scalp_setup['tp']}",
             priority=5, tags=["zap", "dart"]
         )
 
-    sj["wins"] = sum(1 for t in sj["recent_trades"] if t["status"] == "WIN")
-    sj["losses"] = sum(1 for t in sj["recent_trades"] if t["status"] == "LOSS")
+    sj["wins"] = sum(1 for t in sj["recent_trades"] if t.get("status") == "WIN")
+    sj["losses"] = sum(1 for t in sj["recent_trades"] if t.get("status") == "LOSS")
     sj["closed_trades"] = sj["wins"] + sj["losses"]
-    sj["open_trades"] = sum(1 for t in sj["recent_trades"] if t["status"] == "OPEN")
-    sj["net_live_pnl"] = round(sum(float(t.get("pnl", 0.0)) for t in sj["recent_trades"] if t["status"] != "OPEN"), 2)
+    sj["open_trades"] = sum(1 for t in sj["recent_trades"] if t.get("status") == "OPEN")
+    sj["net_live_pnl"] = round(sum(float(t.get("pnl", 0.0)) for t in sj["recent_trades"] if t.get("status") != "OPEN"), 2)
     sj["live_win_rate"] = round((sj["wins"] / max(1, sj["closed_trades"])) * 100.0, 1)
     sj["recent_trades"] = sj["recent_trades"][:15]
     save_json_safe(SCALP_JOURNAL_PATH, sj)
 
-    tj = load_json_safe(JOURNAL_PATH, {"wins": 0, "losses": 0, "closed_trades": 0, "open_trades": 0, "net_live_pnl": 0.0, "live_win_rate": 0.0, "recent_trades": []})
+    tj = _normalize_journal_schema(load_json_safe(JOURNAL_PATH, def_j), def_j)
     for t in tj["recent_trades"]:
-        if t["status"] == "OPEN":
-            if t["direction"] == "LONG":
+        if t.get("status") == "OPEN":
+            if t.get("direction") == "LONG":
                 if spot <= t["sl"]:
                     t["status"], t["pnl"] = "LOSS", -75.0
                 elif spot >= t["tp"]:
@@ -756,7 +799,7 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
                 elif spot <= t["tp"]:
                     t["status"], t["pnl"] = "WIN", 165.0
 
-    open_tr = [t for t in tj["recent_trades"] if t["status"] == "OPEN"]
+    open_tr = [t for t in tj["recent_trades"] if t.get("status") == "OPEN"]
     if in_trend_hours and len(open_tr) == 0 and abs(spot - trend_setup["entry"]) <= 4.5:
         tj["recent_trades"].insert(0, {
             "opened_at_th": now_str,
@@ -765,33 +808,103 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
             "entry": trend_setup["entry"],
             "sl": trend_setup["sl"],
             "tp": trend_setup["tp"],
+            "lot_size": trend_setup.get("lot_size", 0.01),
+            "risk_usd": trend_setup.get("risk_usd", 10.0),
             "status": "OPEN",
             "pnl": 0.0
         })
         send_ntfy(
-            f"PROP TREND {trend_setup['direction']} @ ${trend_setup['entry']}",
+            f"PROP TREND {trend_setup['direction']} @ ${trend_setup['entry']} ({trend_setup.get('lot_size', 0.01)} lot)",
             f"{trend_setup['bias']} | SL: ${trend_setup['sl']} | TP: ${trend_setup['tp']}",
             priority=5, tags=["rocket", "moneybag"]
         )
 
-    tj["wins"] = sum(1 for t in tj["recent_trades"] if t["status"] == "WIN")
-    tj["losses"] = sum(1 for t in tj["recent_trades"] if t["status"] == "LOSS")
+    tj["wins"] = sum(1 for t in tj["recent_trades"] if t.get("status") == "WIN")
+    tj["losses"] = sum(1 for t in tj["recent_trades"] if t.get("status") == "LOSS")
     tj["closed_trades"] = tj["wins"] + tj["losses"]
-    tj["open_trades"] = sum(1 for t in tj["recent_trades"] if t["status"] == "OPEN")
-    tj["net_live_pnl"] = round(sum(float(t.get("pnl", 0.0)) for t in tj["recent_trades"] if t["status"] != "OPEN"), 2)
+    tj["open_trades"] = sum(1 for t in tj["recent_trades"] if t.get("status") == "OPEN")
+    tj["net_live_pnl"] = round(sum(float(t.get("pnl", 0.0)) for t in tj["recent_trades"] if t.get("status") != "OPEN"), 2)
     tj["live_win_rate"] = round((tj["wins"] / max(1, tj["closed_trades"])) * 100.0, 1)
     tj["recent_trades"] = tj["recent_trades"][:15]
     save_json_safe(JOURNAL_PATH, tj)
     return sj, tj
 
 
+def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items, in_scalp_hours, in_trend_hours):
+    acct_bal = float(os.getenv("ACCOUNT_BALANCE", "1000.0"))
+    risk_pct = float(os.getenv("RISK_PER_TRADE_PCT", "1.0"))
+    max_spread = float(os.getenv("MAX_SPREAD_USD", "0.65"))
+    risk_usd = round(max(1.0, acct_bal * (risk_pct / 100.0)), 2)
+
+    # 1. Dynamic ATR-based Scalp SL / BE / TP (clamped $3.50 - $9.00)
+    sc_sl_usd = round(min(9.0, max(3.5, curr_atr * 0.90)), 2)
+    sc_be_dist = round(sc_sl_usd * 0.50, 2)
+    sc_tp_usd = round(max(tp_pts / 100.0, sc_sl_usd * 1.25), 2)
+    sc_sl_pts = int(round(sc_sl_usd * 100))
+    sc_be_pts = int(round(sc_be_dist * 100))
+    sc_tp_pts = int(round(sc_tp_usd * 100))
+
+    # 2. Automatic Position Sizing (1.00 Lot XAU/USD = $100 per $1.00 move)
+    sc_lot = round(max(0.01, min(10.0, risk_usd / max(1.0, sc_sl_usd * 100.0))), 2)
+    tr_lot = round(max(0.01, min(10.0, risk_usd / max(1.0, tr_sl_dist * 100.0))), 2)
+
+    # 3. High-Impact USD News Filter (30m before / 20m after)
+    news_pause = False
+    news_reason = "CLEAR"
+    for ev in (news_items or []):
+        if ev.get("impact") == "High":
+            hrs = float(ev.get("hours_away", 99.0))
+            upcoming = bool(ev.get("is_upcoming", False))
+            if (upcoming and hrs <= 0.5) or ((not upcoming) and hrs <= 0.3):
+                news_pause = True
+                news_reason = f"HIGH_NEWS: {ev.get('title', 'USD Event')} ({ev.get('time_th', '')})"
+                break
+
+    # 4. Live Spread Guard
+    spread_usd = round(max(0.0, float(ask) - float(bid)), 2) if (bid and ask and ask >= bid) else 0.0
+    spread_pause = spread_usd > max_spread
+
+    can_scalp = bool(in_scalp_hours and not news_pause and not spread_pause)
+    can_trend = bool(in_trend_hours and not news_pause and not spread_pause)
+
+    pause_reasons = []
+    if news_pause:
+        pause_reasons.append(news_reason)
+    if spread_pause:
+        pause_reasons.append(f"HIGH_SPREAD (${spread_usd} > ${max_spread})")
+    if not in_scalp_hours and not in_trend_hours:
+        pause_reasons.append("OUTSIDE_SESSION")
+
+    return {
+        "account_balance": acct_bal,
+        "risk_pct": risk_pct,
+        "risk_usd": risk_usd,
+        "sc_sl_usd": sc_sl_usd,
+        "sc_be_dist": sc_be_dist,
+        "sc_tp_usd": sc_tp_usd,
+        "sc_sl_pts": sc_sl_pts,
+        "sc_be_pts": sc_be_pts,
+        "sc_tp_pts": sc_tp_pts,
+        "sc_lot": sc_lot,
+        "tr_lot": tr_lot,
+        "spread_usd": spread_usd,
+        "max_spread_usd": max_spread,
+        "news_pause": news_pause,
+        "spread_pause": spread_pause,
+        "can_scalp": can_scalp,
+        "can_trend": can_trend,
+        "status": "PAUSED: " + " | ".join(pause_reasons) if pause_reasons else "ACTIVE_READY"
+    }
+
+
 def run_cycle(send_summary_alert=True):
     now_th = datetime.now(THAI_TZ)
-    print(f"[{now_th.strftime('%H:%M:%S')}] เริ่มประมวลผล XAU/USD V14.0 Unified OrderFlow + MUE-X...")
+    print(f"[{now_th.strftime('%H:%M:%S')}] \u0e40\u0e23\u0e34\u0e48\u0e21\u0e1b\u0e23\u0e30\u0e21\u0e27\u0e25\u0e1c\u0e25 XAU/USD V14.1 Unified OrderFlow + MUE-X + RiskGuard...")
 
     df_raw, spot, bid, ask, feed_src = update_hydra_vault()
     df, pdh, pdl = compute_technicals(df_raw)
     order_flow = fetch_order_flow_snapshot(fallback_spot=spot)
+    dxy_p, us10y_y, corr_20, news_items = fetch_macro_and_news()
 
     # Session Micro-VP (32 M15 bars = 8 hours) so Scalp entries ALWAYS stay anchored near live price!
     vp_session = analyze_volume_profile_anatomy(df.tail(32), bins=22)
@@ -803,8 +916,7 @@ def run_cycle(send_summary_alert=True):
 
     active_gene = mue_mem["genes"][vp_session["shape"]]
     mode = active_gene["mode"]
-    sl_pts, tp_pts, tol_pts = 500, int(active_gene["tp_points"]), int(active_gene["tol_points"])
-    sl_usd, tp_usd = 5.0, tp_pts / 100.0
+    raw_tp_pts, tol_pts = int(active_gene["tp_points"]), int(active_gene["tol_points"])
 
     last_row = df.iloc[-1]
     curr_ema21 = round(float(last_row["ema21"]), 2)
@@ -812,6 +924,16 @@ def run_cycle(send_summary_alert=True):
     curr_adx = round(float(last_row["adx14"]), 1)
     curr_rsi = round(float(last_row["rsi14"]), 1)
     curr_atr = max(2.0, round(float(last_row["atr14"]), 2))
+
+    hr_dec = now_th.hour + (now_th.minute / 60.0)
+    in_scalp_hours = (9.0 <= hr_dec <= 24.0) or (hr_dec <= 1.0)
+    in_trend_hours = (13.0 <= hr_dec <= 24.0) or (hr_dec <= 0.5)
+
+    tr_sl_dist, tr_tp_dist = round(curr_atr * 1.8, 2), round(curr_atr * 1.8 * 2.2, 2)
+    rg = evaluate_risk_guard(spot, bid, ask, curr_atr, raw_tp_pts, tr_sl_dist, news_items, in_scalp_hours, in_trend_hours)
+
+    sl_pts, be_pts, tp_pts = rg["sc_sl_pts"], rg["sc_be_pts"], rg["sc_tp_pts"]
+    sl_usd, be_dist, tp_usd = rg["sc_sl_usd"], rg["sc_be_dist"], rg["sc_tp_usd"]
 
     # Anchor Scalp Entry to the NEAREST active Session VP level around current Spot price!
     candidates_long = [lvl for lvl in [vp_session["val"], vp_session["lower_peak"], vp_session["poc"]] if lvl <= spot + 2.5]
@@ -823,71 +945,87 @@ def run_cycle(send_summary_alert=True):
         pivot = vp_session["valley"]
         if spot >= pivot:
             sc_dir, sc_entry = "LONG", round(pivot if abs(spot - pivot) <= 4.0 else nearest_sup, 2)
-            sc_bias = f"{vp_session['shape']} VALLEY BUY (รอย่อรับโซน ${sc_entry} + OBI >= +0.18)"
+            sc_bias = f"{vp_session['shape']} VALLEY BUY (\u0e23\u0e2d\u0e22\u0e48\u0e2d\u0e23\u0e31\u0e1a\u0e42\u0e0b\u0e19 ${sc_entry} + OBI >= +0.18)"
         else:
             sc_dir, sc_entry = "SHORT", round(pivot if abs(spot - pivot) <= 4.0 else nearest_res, 2)
-            sc_bias = f"{vp_session['shape']} VALLEY SELL (รอเด้งชนโซน ${sc_entry} + OBI <= -0.18)"
+            sc_bias = f"{vp_session['shape']} VALLEY SELL (\u0e23\u0e2d\u0e40\u0e14\u0e49\u0e07\u0e0a\u0e19\u0e42\u0e0b\u0e19 ${sc_entry} + OBI <= -0.18)"
     elif mode == "POC_PULLBACK":
         if spot >= vp_session["poc"]:
             sc_dir, sc_entry = "LONG", round(vp_session["poc"] if abs(spot - vp_session["poc"]) <= 5.0 else nearest_sup, 2)
-            sc_bias = f"{vp_session['shape']} POC PULLBACK BUY (รอย่อฐาน Session POC ${sc_entry} + OBI)"
+            sc_bias = f"{vp_session['shape']} POC PULLBACK BUY (\u0e23\u0e2d\u0e22\u0e48\u0e2d\u0e10\u0e32\u0e19 Session POC ${sc_entry} + OBI)"
         else:
             sc_dir, sc_entry = "SHORT", round(vp_session["poc"] if abs(spot - vp_session["poc"]) <= 5.0 else nearest_res, 2)
-            sc_bias = f"{vp_session['shape']} POC PULLBACK SELL (รอเด้งชน Session POC ${sc_entry} + OBI)"
+            sc_bias = f"{vp_session['shape']} POC PULLBACK SELL (\u0e23\u0e2d\u0e40\u0e14\u0e49\u0e07\u0e0a\u0e19 Session POC ${sc_entry} + OBI)"
     else:
         if abs(spot - nearest_sup) <= abs(nearest_res - spot):
             sc_dir, sc_entry = "LONG", nearest_sup
-            sc_bias = f"{vp_session['shape']} SESSION SUPPORT BUY (ดักรับ ${sc_entry} + ยืนยัน OBI >= +0.18)"
+            sc_bias = f"{vp_session['shape']} SESSION SUPPORT BUY (\u0e14\u0e31\u0e01\u0e23\u0e31\u0e1a ${sc_entry} + \u0e22\u0e37\u0e19\u0e22\u0e31\u0e19 OBI >= +0.18)"
         else:
             sc_dir, sc_entry = "SHORT", nearest_res
-            sc_bias = f"{vp_session['shape']} SESSION RESIST SELL (ดักต้าน ${sc_entry} + ยืนยัน OBI <= -0.18)"
+            sc_bias = f"{vp_session['shape']} SESSION RESIST SELL (\u0e14\u0e31\u0e01\u0e15\u0e49\u0e32\u0e19 ${sc_entry} + \u0e22\u0e37\u0e19\u0e22\u0e31\u0e19 OBI <= -0.18)"
+
+    if rg["news_pause"] or rg["spread_pause"]:
+        sc_bias = f"[{rg['status']}] {sc_bias}"
 
     if sc_dir == "LONG":
-        sc_sl, sc_be, sc_tp = round(sc_entry - sl_usd, 2), round(sc_entry + 2.50, 2), round(sc_entry + tp_usd, 2)
+        sc_sl, sc_be, sc_tp = round(sc_entry - sl_usd, 2), round(sc_entry + be_dist, 2), round(sc_entry + tp_usd, 2)
     else:
-        sc_sl, sc_be, sc_tp = round(sc_entry + sl_usd, 2), round(sc_entry - 2.50, 2), round(sc_entry - tp_usd, 2)
+        sc_sl, sc_be, sc_tp = round(sc_entry + sl_usd, 2), round(sc_entry - be_dist, 2), round(sc_entry - tp_usd, 2)
 
+    dist_usd = round(abs(spot - sc_entry), 2)
     scalp_setup = {
         "shape": vp_session["shape"], "mode": mode, "generation": active_gene["generation"],
-        "shape_active": True, "direction": sc_dir, "bias": sc_bias,
+        "shape_active": rg["can_scalp"], "direction": sc_dir, "bias": sc_bias,
         "entry": sc_entry, "sl": sc_sl, "be_target": sc_be, "tp": sc_tp,
-        "sl_points": sl_pts, "tp_points": tp_pts, "tol_points": tol_pts, "tp_usd": tp_usd,
+        "sl_points": sl_pts, "be_points": be_pts, "tp_points": tp_pts, "tol_points": tol_pts,
+        "sl_usd": sl_usd, "tp_usd": tp_usd, "rr": round(tp_usd / max(0.1, sl_usd), 2),
+        "dist_usd": dist_usd, "dist_points": int(round(dist_usd * 100)),
+        "lot_size": rg["sc_lot"], "risk_usd": rg["risk_usd"],
         "obi": order_flow["obi_25bps"], "obi_req": 0.18
     }
 
     is_bear = spot < curr_h1_200
-    tr_sl_dist, tr_tp_dist = round(curr_atr * 1.8, 2), round(curr_atr * 1.8 * 2.2, 2)
+    tr_session_name = "ACTIVE SESSION" if in_trend_hours else "NO TRADE ZONE (\u0e23\u0e2d 13:00 \u0e19.)"
+    if rg["news_pause"] or rg["spread_pause"]:
+        tr_session_name = rg["status"]
+
     if is_bear:
         retest_lvl = curr_ema21 if abs(curr_ema21 - spot) < abs(pdl - spot) else pdl
+        tr_bias = f"ANTI-CHASE RETEST SHORT (\u0e23\u0e2d\u0e40\u0e14\u0e49\u0e07\u0e0a\u0e19 ${retest_lvl})"
+        if rg["news_pause"] or rg["spread_pause"]:
+            tr_bias = f"[{rg['status']}] {tr_bias}"
         trend_setup = {
-            "active_factor": "EMA21_RETEST", "direction": "SHORT",
-            "bias": f"ANTI-CHASE RETEST SHORT (รอเด้งชน ${retest_lvl})",
+            "active_factor": "EMA21_RETEST", "regime": f"BEARISH TREND (ADX {curr_adx} | RSI {curr_rsi})",
+            "direction": "SHORT", "bias": tr_bias,
             "entry": round(retest_lvl, 2), "sl": round(retest_lvl + tr_sl_dist, 2),
             "be_target": round(retest_lvl - tr_sl_dist, 2), "tp": round(retest_lvl - tr_tp_dist, 2),
-            "sl_dist": tr_sl_dist, "rr": 2.2
+            "sl_dist": tr_sl_dist, "tp_dist": tr_tp_dist, "rr": 2.2,
+            "has_edge": True, "in_killzone": rg["can_trend"], "session_name": tr_session_name,
+            "lot_size": rg["tr_lot"], "risk_usd": rg["risk_usd"]
         }
     else:
         retest_lvl = curr_ema21 if abs(curr_ema21 - spot) < abs(pdh - spot) else pdh
+        tr_bias = f"PULLBACK RETEST LONG (\u0e23\u0e2d\u0e22\u0e48\u0e2d\u0e23\u0e31\u0e1a ${retest_lvl})"
+        if rg["news_pause"] or rg["spread_pause"]:
+            tr_bias = f"[{rg['status']}] {tr_bias}"
         trend_setup = {
-            "active_factor": "EMA21_RETEST", "direction": "LONG",
-            "bias": f"PULLBACK RETEST LONG (รอย่อรับ ${retest_lvl})",
+            "active_factor": "EMA21_RETEST", "regime": f"BULLISH TREND (ADX {curr_adx} | RSI {curr_rsi})",
+            "direction": "LONG", "bias": tr_bias,
             "entry": round(retest_lvl, 2), "sl": round(retest_lvl - tr_sl_dist, 2),
             "be_target": round(retest_lvl + tr_sl_dist, 2), "tp": round(retest_lvl + tr_tp_dist, 2),
-            "sl_dist": tr_sl_dist, "rr": 2.2
+            "sl_dist": tr_sl_dist, "tp_dist": tr_tp_dist, "rr": 2.2,
+            "has_edge": True, "in_killzone": rg["can_trend"], "session_name": tr_session_name,
+            "lot_size": rg["tr_lot"], "risk_usd": rg["risk_usd"]
         }
 
-    hr_dec = now_th.hour + (now_th.minute / 60.0)
-    in_scalp_hours = (9.0 <= hr_dec <= 24.0) or (hr_dec <= 1.0)
-    in_trend_hours = (13.0 <= hr_dec <= 24.0) or (hr_dec <= 0.5)
-
-    sj, tj = update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hours)
-    dxy_p, us10y_y, corr_20, news_items = fetch_macro_and_news()
+    sj, tj = update_journals(spot, scalp_setup, trend_setup, rg["can_scalp"], rg["can_trend"])
     ai_text, ai_model_name = generate_live_ai_strategist_brief(spot, vp_session, scalp_setup, trend_setup, order_flow, scalp_bt, trend_bt, mue_mem)
 
     state_payload = {
-        "version": "14.0",
+        "version": "14.1",
         "updated_at": now_th.isoformat(),
         "order_flow": order_flow,
+        "risk_guard": rg,
         "mue_evolution": {"generation": mue_mem["generation"], "last_evolved_at": mue_mem["last_evolved_at"], "genes": mue_mem["genes"]},
         "quant": {
             "spot_price": spot, "bid": bid, "ask": ask, "feed_source": feed_src,
