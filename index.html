@@ -26,6 +26,9 @@
           <span id="cloud-sync-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-gray-800 text-gray-300 border border-gray-700 rounded-full">
             ☁️ SYNC: LOCAL ONLY
           </span>
+          <span id="backend-v14-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-gray-800 text-gray-300 border border-gray-700 rounded-full">
+            🛡️ ENGINE V14.1: LOADING...
+          </span>
           <span id="device-role-badge" class="flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-700/60 rounded-full">
             🖥️ MASTER BRAIN
           </span>
@@ -789,6 +792,46 @@
     let tradeBuffer60s = [], latestDelta60s = 0, obiSustainStart = null, lastAutoFireTs = 0, audioEnabled = true;
     let lastRanSlot = -1, lastAiUpdateMs = 0, lastAiTimeStr = "--:--:--", isSimRunning = false;
 
+    let backendV14State = null;
+
+    async function syncBackendV14State() {
+      try {
+        const res = await fetch(`data/state.json?t=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data || typeof data !== "object") return;
+        backendV14State = data;
+
+        const ver = data.version || "14.1";
+        const rg = data.risk_guard || {};
+        const of = data.order_flow || {};
+        const obiStr = typeof of.obi_25bps === "number" ? `${of.obi_25bps >= 0 ? '+' : ''}${of.obi_25bps.toFixed(2)}` : "0.00";
+        const badge = document.getElementById('backend-v14-badge');
+
+        if (badge) {
+          if (rg.news_pause || rg.spread_pause) {
+            badge.textContent = `🛡️ V${ver} ${rg.status} | OBI ${obiStr}`;
+            badge.className = "flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-rose-950/90 text-rose-300 border border-rose-500/70 rounded-full";
+          } else {
+            const lotTxt = rg.sc_lot ? `${Number(rg.sc_lot).toFixed(2)} Lot` : "0.01 Lot";
+            const slTxt = rg.sc_sl_usd ? `SL $${Number(rg.sc_sl_usd).toFixed(2)}` : "";
+            badge.textContent = `🛡️ V${ver} READY (${lotTxt}${slTxt ? ' | ' + slTxt : ''}) | OBI ${obiStr}`;
+            badge.className = "flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/60 rounded-full";
+          }
+        }
+
+        const balEl = document.getElementById('input-balance');
+        const riskEl = document.getElementById('input-risk-pct');
+        if (rg.account_balance && balEl && document.activeElement !== balEl) {
+          balEl.value = rg.account_balance;
+        }
+        if (rg.risk_pct && riskEl && document.activeElement !== riskEl) {
+          riskEl.value = rg.risk_pct;
+        }
+        if (typeof recalcPropMath === "function") recalcPropMath();
+      } catch (e) {}
+    }
+
     function purgeLegacyDataOnce() {
       const legacyKeys = [
         "GOLD_QUANT_V25_LEDGER", "GOLD_QUANT_V25_BRAIN",
@@ -1516,7 +1559,9 @@
     function getActiveLotSetting() {
       const bal = Math.max(100, parseFloat(document.getElementById('input-balance')?.value) || 5000);
       const riskPct = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct')?.value) || 1.0);
-      const scSlPts = (liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.slPts : 650;
+      const scSlPts = (backendV14State && backendV14State.risk_guard && backendV14State.risk_guard.sc_sl_pts)
+        ? backendV14State.risk_guard.sc_sl_pts
+        : ((liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.slPts : 650);
       const scTpPts = (liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.tpPts : 975;
       const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 25.0;
       const trSlPts = Math.round(trSlDist * 100);
@@ -3046,6 +3091,7 @@
       btn.textContent = "⏳ กำลังซิงก์ Spot...";
       try {
         checkDailyRollover(false);
+        await syncBackendV14State();
 
         const rawKl = await fetchSpotHistoricalVault();
         const paxgLastClose = parseFloat(rawKl[rawKl.length - 1][4]);
@@ -3531,6 +3577,15 @@
       const head = document.getElementById('gate-headline');
       const box = document.getElementById('execution-gate-box');
 
+      const v14Rg = backendV14State && backendV14State.risk_guard;
+      if (v14Rg && (v14Rg.news_pause || v14Rg.spread_pause)) {
+        pill.textContent = `🛑 ${v14Rg.status}`;
+        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500 rounded-full";
+        head.textContent = `Backend Risk Guard สั่งเบรกการเข้าออเดอร์อัตโนมัติ (${v14Rg.status}) — รอสภาวะตลาดปกติ`;
+        box.className = "card p-4 border-rose-500/60 bg-gradient-to-r from-rose-950/40 via-gray-900 to-gray-900 space-y-3";
+        return;
+      }
+
       if (inZone && obiConfirmed && tapeOrWallAligned) {
         pill.textContent = `🔥 TRIGGERED (เกรด ${sc.conf.grade}) — ENTER ${sc.dir}!`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full animate-pulse";
@@ -3647,6 +3702,8 @@
       loadOrderState();
       recalcPropMath();
       await pullCloudSyncState();
+      await syncBackendV14State();
+      setInterval(syncBackendV14State, 60000);
       await seedInitial60sTape();
       connectLiveStreams();
       runFullLiveQuantAndAI(false);
