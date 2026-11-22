@@ -131,6 +131,15 @@
                 <input id="admin-buffer-val" type="number" step="5" min="0" max="200" value="35"
                   class="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded text-white font-bold" />
               </div>
+
+      <!-- LIVE ORDER BOARD (TOP PINNED) -->
+      <section id="lite-mode-banner" class="card p-4 border-indigo-500/60 bg-indigo-950/30 text-xs font-mono-num space-y-1.5">
+      <div class="flex items-center justify-between">
+        <span class="font-bold text-indigo-300 text-sm">📱 โหมดแจ้งเตือน ntfy อย่างเดียวกำลังทำงาน (ซ่อนกราฟและตารางเพื่อประหยัดพลังงาน)</span>
+        <button onclick="toggleLiteAlertMode()" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-bold">กลับมาแสดงหน้าจอเต็ม</button>
+      </div>
+      <p class="text-gray-300">ระบบกำลังจับราคา Spot XAU/USD สดและส่งสัญญาณเข้าแอป <strong>ntfy</strong> ของคุณอัตโนมัติทุกจังหวะเข้า / ชน TP / ชน SL / บังทุน BE</p>
+    </section>
               <div>
                 <label class="block text-[10px] text-gray-400 mb-1">ช่อง ntfy Topic</label>
                 <input id="admin-ntfy-val" type="text" placeholder="เช่น pansakorn888"
@@ -250,13 +259,7 @@
     </section>
 
     <!-- Lite Alert Mode Banner -->
-    <section id="lite-mode-banner" class="hidden card p-4 border-indigo-500/60 bg-indigo-950/30 text-xs font-mono-num space-y-1.5">
-      <div class="flex items-center justify-between">
-        <span class="font-bold text-indigo-300 text-sm">📱 โหมดแจ้งเตือน ntfy อย่างเดียวกำลังทำงาน (ซ่อนกราฟและตารางเพื่อประหยัดพลังงาน)</span>
-        <button onclick="toggleLiteAlertMode()" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-bold">กลับมาแสดงหน้าจอเต็ม</button>
-      </div>
-      <p class="text-gray-300">ระบบกำลังจับราคา Spot XAU/USD สดและส่งสัญญาณเข้าแอป <strong>ntfy</strong> ของคุณอัตโนมัติทุกจังหวะเข้า / ชน TP / ชน SL / บังทุน BE</p>
-    </section>
+    
 
     <!-- LIVE ORDER BOARD & DAILY EXECUTION TRACKER -->
     <section class="hidden card p-4 border-emerald-500/50 bg-gradient-to-r from-gray-900 via-emerald-950/20 to-cyan-950/20 space-y-3.5">
