@@ -13,6 +13,22 @@ import yfinance as yf
 from openai import OpenAI
 
 THAI_TZ = timezone(timedelta(hours=7))
+
+
+def is_gold_market_closed_bkk(now_th=None):
+    if os.getenv("IGNORE_WEEKEND_GUARD", "0").strip() == "1":
+        return False, ""
+    now_th = now_th or datetime.now(THAI_TZ)
+    wd = now_th.weekday()  # Mon=0 .. Sat=5, Sun=6
+    hr_dec = now_th.hour + (now_th.minute / 60.0)
+    if wd == 5 and hr_dec >= 5.0:
+        return True, "WEEKEND_MARKET_CLOSED (ปิดเสาร์ 05:00 น. – เปิดจันทร์ 06:00 น.)"
+    if wd == 6:
+        return True, "WEEKEND_MARKET_CLOSED (วันอาทิตย์ตลาดปิด – เปิดจันทร์ 06:00 น.)"
+    if wd == 0 and hr_dec < 6.0:
+        return True, "WEEKEND_MARKET_CLOSED (รอตลาดเปิดจันทร์ 06:00 น.)"
+    return False, ""
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 STATE_PATH = os.path.join(DATA_DIR, "state.json")
@@ -872,10 +888,13 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
     spread_usd = round(max(0.0, float(ask) - float(bid)), 2) if (bid and ask and ask >= bid) else 0.0
     spread_pause = spread_usd > max_spread
 
-    can_scalp = bool(in_scalp_hours and not news_pause and not spread_pause)
-    can_trend = bool(in_trend_hours and not news_pause and not spread_pause)
+    wk_closed, wk_reason = is_gold_market_closed_bkk()
+    can_scalp = bool(in_scalp_hours and not news_pause and not spread_pause and not wk_closed)
+    can_trend = bool(in_trend_hours and not news_pause and not spread_pause and not wk_closed)
 
     pause_reasons = []
+    if wk_closed:
+        pause_reasons.append(wk_reason)
     if news_pause:
         pause_reasons.append(news_reason)
     if spread_pause:
@@ -897,6 +916,7 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
         "tr_lot": tr_lot,
         "spread_usd": spread_usd,
         "max_spread_usd": max_spread,
+        "weekend_closed": wk_closed,
         "news_pause": news_pause,
         "spread_pause": spread_pause,
         "can_scalp": can_scalp,
@@ -907,6 +927,28 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
 
 def run_cycle(send_summary_alert=True):
     now_th = datetime.now(THAI_TZ)
+    wk_closed, wk_reason = is_gold_market_closed_bkk(now_th)
+    if wk_closed:
+        prev_state = load_json_safe(STATE_PATH, {})
+        prev_rg = prev_state.get("risk_guard", {}) if isinstance(prev_state, dict) else {}
+        if prev_rg.get("weekend_closed") is True:
+            print(f"[{now_th.strftime('%H:%M:%S')}] [WEEKEND] ตลาดทองคำปิดทำการ (เสาร์-อาทิตย์) — พักการทำงานทั้งหมด (ไม่ยิง API / ไม่ส่ง Ntfy)")
+            return False
+        prev_state["version"] = "14.1"
+        prev_state["updated_at"] = now_th.isoformat()
+        prev_rg["weekend_closed"] = True
+        prev_rg["can_scalp"] = False
+        prev_rg["can_trend"] = False
+        prev_rg["status"] = f"PAUSED: {wk_reason}"
+        prev_state["risk_guard"] = prev_rg
+        if isinstance(prev_state.get("scalp"), dict) and isinstance(prev_state["scalp"].get("setup"), dict):
+            prev_state["scalp"]["setup"]["shape_active"] = False
+        if isinstance(prev_state.get("quant"), dict) and isinstance(prev_state["quant"].get("setup"), dict):
+            prev_state["quant"]["setup"]["in_killzone"] = False
+        save_json_safe(STATE_PATH, prev_state)
+        print(f"[{now_th.strftime('%H:%M:%S')}] [WEEKEND] บันทึกสถานะปิดตลาดเสาร์-อาทิตย์ลง state.json เรียบร้อย (งดส่งแจ้งเตือน Ntfy)")
+        return True
+
     print(f"[{now_th.strftime('%H:%M:%S')}] \u0e40\u0e23\u0e34\u0e48\u0e21\u0e1b\u0e23\u0e30\u0e21\u0e27\u0e25\u0e1c\u0e25 XAU/USD V14.1 Unified OrderFlow + MUE-X + RiskGuard...")
 
     df_raw, spot, bid, ask, feed_src = update_hydra_vault()
@@ -1083,8 +1125,9 @@ if __name__ == "__main__":
         first = True
         while True:
             try:
-                run_cycle(send_summary_alert=(not args.no_startup_alert or not first))
-                git_auto_sync()
+                did_update = run_cycle(send_summary_alert=(not args.no_startup_alert or not first))
+                if did_update is not False:
+                    git_auto_sync()
             except Exception as exc:
                 print(f"[Cycle Error] {exc}")
             first = False

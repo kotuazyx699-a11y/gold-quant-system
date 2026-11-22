@@ -856,7 +856,10 @@
         const badge = document.getElementById('backend-v14-badge');
 
         if (badge) {
-          if (rg.news_pause || rg.spread_pause) {
+          if (isGoldMarketClosedBkk() || rg.weekend_closed) {
+            badge.textContent = `🌙 V${ver} MARKET CLOSED (เสาร์-อาทิตย์ | เปิดจันทร์ 06:00 น.)`;
+            badge.className = "flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-slate-800 text-slate-300 border border-slate-600 rounded-full";
+          } else if (rg.news_pause || rg.spread_pause) {
             badge.textContent = `🛡️ V${ver} ${rg.status} | OBI ${obiStr}`;
             badge.className = "flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-rose-950/90 text-rose-300 border border-rose-500/70 rounded-full";
           } else {
@@ -1429,6 +1432,29 @@
       renderOrderAndLedgerUI();
     }
 
+    function isGoldMarketClosedBkk() {
+      if (backendV14State && backendV14State.risk_guard && backendV14State.risk_guard.weekend_closed === true) {
+        return true;
+      }
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Bangkok',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).formatToParts(now);
+      const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+      const wd = map.weekday;
+      const hr = parseInt(map.hour || "0", 10) % 24;
+      const mn = parseInt(map.minute || "0", 10);
+      const hrDec = hr + (mn / 60.0);
+      if (wd === "Sat" && hrDec >= 5.0) return true;
+      if (wd === "Sun") return true;
+      if (wd === "Mon" && hrDec < 6.0) return true;
+      return false;
+    }
+
     function getBangkokDateStr(ts = Date.now()) {
       return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ts));
     }
@@ -1930,6 +1956,7 @@
     }
 
     function placeScalpLimitOrder(manual = false, isAutoRefresh = false) {
+      if (!manual && isGoldMarketClosedBkk()) return;
       if (!liveModel || !liveModel.scalpSetup) return;
       const sc = liveModel.scalpSetup;
 
@@ -2036,6 +2063,7 @@
     }
 
     function placeMarketOrderNow() {
+      if (isGoldMarketClosedBkk()) return;
       if (!liveModel || !liveModel.scalpSetup || !lastRenderedMid) return;
       if (Date.now() < sessionStartTimestamp) return;
       if (orderState.activeOrder && orderState.activeOrder.mode === "OPEN") {
@@ -2440,7 +2468,7 @@
 
       if (lastRanSlot !== -1 && slot !== lastRanSlot && secs >= 2) {
         lastRanSlot = slot;
-        runFullLiveQuantAndAI(true);
+        runFullLiveQuantAndAI(!isGoldMarketClosedBkk());
       }
       if (lastRanSlot === -1) lastRanSlot = slot;
     }, 1000);
@@ -3684,6 +3712,13 @@
       const box = document.getElementById('execution-gate-box');
 
       const v14Rg = backendV14State && backendV14State.risk_guard;
+      if (isGoldMarketClosedBkk()) {
+        pill.textContent = "🌙 MARKET CLOSED (เสาร์-อาทิตย์)";
+        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-slate-800 text-slate-300 border border-slate-600 rounded-full";
+        head.textContent = "ตลาดทองคำ Spot/MT5 ปิดทำการ (เสาร์ 05:00 น. – จันทร์ 06:00 น.) — ระบบพักการทำงานอัตโนมัติ";
+        box.className = "card p-4 border-slate-700/70 bg-gradient-to-r from-gray-900 via-slate-900/60 to-gray-900 space-y-3";
+        return;
+      }
       if (v14Rg && (v14Rg.news_pause || v14Rg.spread_pause)) {
         pill.textContent = `🛑 ${v14Rg.status}`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500 rounded-full";
