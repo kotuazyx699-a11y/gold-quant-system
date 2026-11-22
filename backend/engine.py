@@ -759,8 +759,42 @@ def _normalize_journal_schema(obj, default_dict):
     return base
 
 
+def compute_daily_risk_guard_metrics(now_th):
+    today_prefix = now_th.strftime("%d/%m")
+    def_j = {"recent_trades": []}
+    net_r_today = 0.0
+    latest_close_dt = None
+
+    for path in (SCALP_JOURNAL_PATH, JOURNAL_PATH):
+        jdata = load_json_safe(path, def_j)
+        for t in jdata.get("recent_trades", []):
+            if t.get("status") in ("WIN", "LOSS"):
+                opened_s = str(t.get("opened_at_th", ""))
+                if opened_s.startswith(today_prefix):
+                    sl_dist = max(0.5, abs(float(t.get("entry", 0)) - float(t.get("sl", 0))))
+                    pnl_val = float(t.get("pnl", 0.0))
+                    net_r_today += (pnl_val / sl_dist)
+                closed_s = str(t.get("closed_at_th", ""))
+                if closed_s:
+                    try:
+                        c_dt = datetime.strptime(f"{now_th.year}/{closed_s}", "%Y/%d/%m %H:%M").replace(tzinfo=THAI_TZ)
+                        if latest_close_dt is None or c_dt > latest_close_dt:
+                            latest_close_dt = c_dt
+                    except Exception:
+                        pass
+
+    cooldown_rem_min = 0
+    if latest_close_dt is not None:
+        elapsed_min = (now_th - latest_close_dt).total_seconds() / 60.0
+        if 0 <= elapsed_min < 15.0:
+            cooldown_rem_min = int(math.ceil(15.0 - elapsed_min))
+
+    return round(net_r_today, 2), cooldown_rem_min
+
+
 def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hours):
-    now_str = datetime.now(THAI_TZ).strftime("%d/%m %H:%M")
+    now_th = datetime.now(THAI_TZ)
+    now_str = now_th.strftime("%d/%m %H:%M")
     def_j = {"wins": 0, "losses": 0, "closed_trades": 0, "open_trades": 0, "net_live_pnl": 0.0, "live_win_rate": 0.0, "recent_trades": []}
 
     sj = _normalize_journal_schema(load_json_safe(SCALP_JOURNAL_PATH, def_j), def_j)
@@ -769,14 +803,14 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
             sl_loss = -round(max(0.5, abs(float(t["entry"]) - float(t["sl"]))), 2)
             if t.get("direction") == "LONG":
                 if spot <= t["sl"]:
-                    t["status"], t["pnl"] = "LOSS", sl_loss
+                    t["status"], t["pnl"], t["closed_at_th"] = "LOSS", sl_loss, now_str
                 elif spot >= t["tp"]:
-                    t["status"], t["pnl"] = "WIN", round(t["tp"] - t["entry"], 2)
+                    t["status"], t["pnl"], t["closed_at_th"] = "WIN", round(t["tp"] - t["entry"], 2), now_str
             else:
                 if spot >= t["sl"]:
-                    t["status"], t["pnl"] = "LOSS", sl_loss
+                    t["status"], t["pnl"], t["closed_at_th"] = "LOSS", sl_loss, now_str
                 elif spot <= t["tp"]:
-                    t["status"], t["pnl"] = "WIN", round(t["entry"] - t["tp"], 2)
+                    t["status"], t["pnl"], t["closed_at_th"] = "WIN", round(t["entry"] - t["tp"], 2), now_str
 
     open_sc = [t for t in sj["recent_trades"] if t.get("status") == "OPEN"]
     if in_scalp_hours and len(open_sc) == 0 and abs(spot - scalp_setup["entry"]) <= (scalp_setup["tol_points"] / 100.0):
@@ -814,14 +848,14 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
             tr_win = round(max(1.0, abs(float(t["tp"]) - float(t["entry"]))), 2)
             if t.get("direction") == "LONG":
                 if spot <= t["sl"]:
-                    t["status"], t["pnl"] = "LOSS", tr_loss
+                    t["status"], t["pnl"], t["closed_at_th"] = "LOSS", tr_loss, now_str
                 elif spot >= t["tp"]:
-                    t["status"], t["pnl"] = "WIN", tr_win
+                    t["status"], t["pnl"], t["closed_at_th"] = "WIN", tr_win, now_str
             else:
                 if spot >= t["sl"]:
-                    t["status"], t["pnl"] = "LOSS", tr_loss
+                    t["status"], t["pnl"], t["closed_at_th"] = "LOSS", tr_loss, now_str
                 elif spot <= t["tp"]:
-                    t["status"], t["pnl"] = "WIN", tr_win
+                    t["status"], t["pnl"], t["closed_at_th"] = "WIN", tr_win, now_str
 
     open_tr = [t for t in tj["recent_trades"] if t.get("status") == "OPEN"]
     if in_trend_hours and len(open_tr) == 0 and abs(spot - trend_setup["entry"]) <= 4.5:
@@ -888,13 +922,20 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
     spread_usd = round(max(0.0, float(ask) - float(bid)), 2) if (bid and ask and ask >= bid) else 0.0
     spread_pause = spread_usd > max_spread
 
-    wk_closed, wk_reason = is_gold_market_closed_bkk()
-    can_scalp = bool(in_scalp_hours and not news_pause and not spread_pause and not wk_closed)
-    can_trend = bool(in_trend_hours and not news_pause and not spread_pause and not wk_closed)
+    now_th = datetime.now(THAI_TZ)
+    wk_closed, wk_reason = is_gold_market_closed_bkk(now_th)
+    daily_net_r, cooldown_rem_min = compute_daily_risk_guard_metrics(now_th)
+    cooldown_pause = cooldown_rem_min > 0
+
+    blocked = wk_closed or news_pause or spread_pause or cooldown_pause
+    can_scalp = bool(in_scalp_hours and not blocked)
+    can_trend = bool(in_trend_hours and not blocked)
 
     pause_reasons = []
     if wk_closed:
         pause_reasons.append(wk_reason)
+    if cooldown_pause:
+        pause_reasons.append(f"COOLDOWN ({cooldown_rem_min}m)")
     if news_pause:
         pause_reasons.append(news_reason)
     if spread_pause:
@@ -917,6 +958,10 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
         "spread_usd": spread_usd,
         "max_spread_usd": max_spread,
         "weekend_closed": wk_closed,
+        "daily_net_r": daily_net_r,
+        "daily_loss_pause": False,
+        "cooldown_rem_min": cooldown_rem_min,
+        "cooldown_pause": cooldown_pause,
         "news_pause": news_pause,
         "spread_pause": spread_pause,
         "can_scalp": can_scalp,
