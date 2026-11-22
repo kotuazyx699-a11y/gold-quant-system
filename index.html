@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>XAU/USD Master Sync Quant & 24H VP Engine V26.1 (ThaiLLM + 6-Layer)</title>
+  <title>XAU/USD Unified Gold Quant & 24H VP Engine V14.1 (RiskGuard + 6-Layer)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -22,7 +22,7 @@
       <div>
         <div class="flex flex-wrap items-center gap-2.5">
           <span class="px-2.5 py-1 text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded">UNIFIED SPOT XAU/USD</span>
-          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Spot Quant & 24H VP Engine V26.1</h1>
+          <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">Unified Gold Quant & 24H VP Engine V14.1</h1>
           <span id="cloud-sync-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-gray-800 text-gray-300 border border-gray-700 rounded-full">
             ☁️ SYNC: LOCAL ONLY
           </span>
@@ -438,6 +438,15 @@
         </div>
       </section>
 
+      <!-- Over-Risk Warning Banner (Auto-triggered when Fixed Lot exceeds Risk Budget) -->
+      <div id="over-risk-banner" class="hidden card p-3 border-rose-500/80 bg-rose-950/60 text-rose-200 text-xs font-mono-num flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <span id="over-risk-text">⚠️ OVER-RISK WARNING: ขนาด Lot เกินงบความเสี่ยงที่กำหนด</span>
+        <button onclick="document.getElementById('select-lot-mode').value='AUTO'; onLotSettingsChanged();"
+          class="px-2.5 py-1 rounded bg-rose-500 hover:bg-rose-400 text-gray-950 font-bold whitespace-nowrap">
+          สลับเป็น Auto Prop ทันที
+        </button>
+      </div>
+
       <!-- Prop-Firm & Exact MT5 Lot Sizing Bar -->
       <section class="card p-4 border-emerald-700/40 bg-gradient-to-r from-gray-900 via-gray-900 to-emerald-950/20">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
@@ -488,6 +497,44 @@
               <span id="calc-dd-room" class="block text-[10px] text-gray-400">ตรงกับ MT5 100%</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- V14.1 MACRO CORRELATION, PERP ORDERFLOW & HIGH-IMPACT USD NEWS -->
+      <section class="card p-4 border-amber-600/40 bg-gradient-to-r from-gray-900 via-gray-900 to-amber-950/15 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-[11px] font-mono-num font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded">MACRO & NEWS GUARD</span>
+            <span class="text-xs font-bold text-white">สหสัมพันธ์มหภาค, Futures OrderFlow & ปฏิทินข่าวแรง USD</span>
+          </div>
+          <span id="v14-state-updated" class="text-[11px] font-mono-num text-gray-400">Backend Sync: รอข้อมูล...</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 font-mono-num text-center">
+          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-2">
+            <span class="block text-[10px] text-gray-400">DXY Index</span>
+            <span id="macro-dxy" class="text-sm font-bold text-amber-300">-</span>
+          </div>
+          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-2">
+            <span class="block text-[10px] text-gray-400">US 10Y Yield</span>
+            <span id="macro-us10y" class="text-sm font-bold text-cyan-300">-</span>
+          </div>
+          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-2">
+            <span class="block text-[10px] text-gray-400">Gold-DXY Corr (20D)</span>
+            <span id="macro-corr" class="text-sm font-bold text-purple-300">-</span>
+          </div>
+          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-2">
+            <span class="block text-[10px] text-gray-400">XAU Perp OI / Funding</span>
+            <span id="macro-perp-oi" class="text-sm font-bold text-emerald-300">-</span>
+          </div>
+          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-2 col-span-2 sm:col-span-1">
+            <span class="block text-[10px] text-gray-400">Spread ปัจจุบัน / เพดาน</span>
+            <span id="macro-spread" class="text-sm font-bold text-white">-</span>
+          </div>
+        </div>
+
+        <div id="v14-news-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+          <div class="bg-gray-900/70 border border-gray-800 rounded p-2 text-gray-400">กำลังโหลดปฏิทินข่าว USD จากหลังบ้าน...</div>
         </div>
       </section>
 
@@ -828,6 +875,50 @@
         if (rg.risk_pct && riskEl && document.activeElement !== riskEl) {
           riskEl.value = rg.risk_pct;
         }
+        const updEl = document.getElementById('v14-state-updated');
+        if (updEl) updEl.textContent = `Backend V${ver} Sync: ${data.updated_at || data.timestamp || 'ล่าสุด'}`;
+
+        const mc = data.macro || {};
+        const dxyEl = document.getElementById('macro-dxy');
+        const us10yEl = document.getElementById('macro-us10y');
+        const corrEl = document.getElementById('macro-corr');
+        const oiEl = document.getElementById('macro-perp-oi');
+        const spEl = document.getElementById('macro-spread');
+
+        if (dxyEl && mc.dxy !== undefined) dxyEl.textContent = Number(mc.dxy).toFixed(2);
+        if (us10yEl && mc.us10y !== undefined) us10yEl.textContent = `${Number(mc.us10y).toFixed(2)}%`;
+        if (corrEl && mc.gold_dxy_corr !== undefined) corrEl.textContent = Number(mc.gold_dxy_corr).toFixed(2);
+        if (oiEl && of.open_interest !== undefined) {
+          const oiK = (Number(of.open_interest) / 1000).toFixed(1);
+          const fr = Number(of.funding_rate_pct || 0).toFixed(3);
+          oiEl.textContent = `${oiK}K (${fr}%)`;
+        }
+        if (spEl && rg.spread_usd !== undefined) {
+          spEl.textContent = `$${Number(rg.spread_usd).toFixed(2)} / $${Number(rg.max_spread_usd || 0.65).toFixed(2)}`;
+          spEl.className = `text-sm font-bold ${rg.spread_pause ? 'text-rose-400' : 'text-emerald-400'}`;
+        }
+
+        const newsArr = Array.isArray(data.news) ? data.news : (Array.isArray(mc.news) ? mc.news : []);
+        const newsBox = document.getElementById('v14-news-list');
+        if (newsBox) {
+          if (!newsArr.length) {
+            newsBox.innerHTML = '<div class="bg-gray-900/70 border border-emerald-800/40 rounded p-2 text-emerald-300 col-span-full">✅ ไม่มีข่าวแรง USD (High/Medium Impact) ในช่วงใกล้เคียง</div>';
+          } else {
+            newsBox.innerHTML = newsArr.slice(0, 4).map(ev => {
+              const isHigh = String(ev.impact).toLowerCase() === 'high';
+              const badgeCls = isHigh ? 'bg-rose-950 text-rose-300 border-rose-600/60' : 'bg-amber-950 text-amber-300 border-amber-600/60';
+              return `<div class="bg-gray-900/85 border border-gray-800 rounded p-2 flex flex-col justify-between gap-1">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="px-1.5 py-0.2 text-[10px] font-bold border rounded ${badgeCls}">${ev.impact || 'USD'}</span>
+                  <span class="text-[10px] font-mono-num text-cyan-300">${ev.time_th || ''} (${ev.status || ''})</span>
+                </div>
+                <div class="font-bold text-gray-100 truncate" title="${ev.title || ''}">${ev.title || '-'}</div>
+                <div class="text-[10px] font-mono-num text-gray-400">คาดการณ์: ${ev.forecast || '-'} | ก่อนหน้า: ${ev.previous || '-'}</div>
+              </div>`;
+            }).join('');
+          }
+        }
+
         if (typeof recalcPropMath === "function") recalcPropMath();
       } catch (e) {}
     }
@@ -1412,7 +1503,7 @@
       btn.textContent = "กำลังส่ง...";
       const lotNow = getActiveLotSetting().scalpLot;
       const ok = await sendNtfy(
-        "XAU/USD V26.0 Unified Spot เชื่อมต่อสำเร็จ",
+        "XAU/USD V14.1 Unified Spot เชื่อมต่อสำเร็จ",
         [
           `✅ ช่อง: ${masterConfig.ntfyTopic} | Spot จริง: $${lastRenderedMid || '-'}`,
           `Lot ปัจจุบัน: ${lotNow.toFixed(2)} Lot ($${(lotNow * 100).toFixed(2)} ต่อ $1.00)`
@@ -1598,6 +1689,21 @@
 
       document.getElementById('calc-pip-val').textContent = `$${info.usdPerDollarMove.toFixed(2)} / $1`;
       document.getElementById('calc-dd-room').textContent = `ตรงกับ MT5 100%`;
+
+      const bal = Math.max(100, parseFloat(document.getElementById('input-balance')?.value) || 1000);
+      const riskPct = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct')?.value) || 1.0);
+      const maxRiskBudget = +(bal * (riskPct / 100.0)).toFixed(2);
+      const safeLot = Math.max(0.01, Math.floor((maxRiskBudget / Math.max(1, info.scSlPts)) * 100) / 100);
+      const warnEl = document.getElementById('over-risk-banner');
+      const warnTxt = document.getElementById('over-risk-text');
+      if (warnEl && warnTxt) {
+        if (masterConfig.lotMode === "FIXED" && info.scalpRiskUsd > maxRiskBudget + 0.50) {
+          warnTxt.textContent = `⚠️ OVER-RISK: โหมด Fixed ตั้งไว้ ${info.scalpLot.toFixed(2)} Lot (เสี่ยง -$${info.scalpRiskUsd.toFixed(2)}/ไม้) เกินงบ ${riskPct}% ($${maxRiskBudget.toFixed(2)}) — แนะนำ ${safeLot.toFixed(2)} Lot`;
+          warnEl.classList.remove('hidden');
+        } else {
+          warnEl.classList.add('hidden');
+        }
+      }
     }
 
     let aiBrain = {
