@@ -747,6 +747,9 @@
                 <button onclick="forceEndOfDayArchive()" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-amber-300 border border-gray-700 text-[11px]">
                   ย้ายสถิติวันนี้เข้าสมุดเรียนรู้
                 </button>
+            <button onclick="resetAllLedgerToZero()" class="px-2.5 py-1 text-xs font-mono-num font-bold rounded bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/70 transition">
+              🗑️ ล้างสถิติเริ่ม 0 ใหม่ (ซิงก์ทุกเครื่อง)
+            </button>
               </div>
             </div>
             <div class="overflow-x-auto">
@@ -2381,6 +2384,30 @@
         }
       }
       renderOrderAndLedgerUI(mid, bid, ask);
+    }
+
+    async function resetAllLedgerToZero() {
+      const pin = prompt("ใส่รหัส Creator PIN เพื่อล้างสถิติออเดอร์ทั้งหมดให้เริ่มใหม่จาก 0 (ซิงก์ทุกเครื่อง):");
+      if (pin === null) return;
+      if (pin.trim() !== String(masterConfig.creatorPin || "8888")) {
+        alert("รหัส PIN ไม่ถูกต้องครับ");
+        return;
+      }
+      sessionStartTimestamp = Date.now();
+      orderState = {
+        sessionStart: sessionStartTimestamp,
+        lastDateStr: getBangkokDateStr(),
+        activeOrder: null,
+        todayClosed: [],
+        learningArchive: [],
+        lastCloseTs: 0
+      };
+      slBreachStartMs = null;
+      localStorage.removeItem('gq_last_close_ts');
+      saveOrderStateLocal();
+      renderOrderAndLedgerUI();
+      await pushCloudSyncState(true);
+      alert("ล้างสถิติทั้งหมดเรียบร้อย! เริ่มต้นใหม่ที่ 0 ไม้ตรงกันทั้งคอม iPad และมือถือแล้วครับ");
     }
 
     function renderOrderAndLedgerUI(currentMid = lastRenderedMid, currentBid = lastRenderedBid, currentAsk = lastRenderedAsk) {
