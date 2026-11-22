@@ -210,6 +210,7 @@ def update_hydra_vault():
 
 
 def compute_technicals(df):
+    df = df[~df.index.duplicated(keep="last")].sort_index()
     close, high, low = df["Close"], df["High"], df["Low"]
     ema21 = close.ewm(span=21, adjust=False).mean()
     h1_ema200 = close.ewm(span=800, adjust=False).mean()
@@ -346,14 +347,13 @@ def load_or_init_mue_memory():
 
 
 def simulate_scalp_gene(df, target_shape, mode, sl_pts, tp_pts, tol_pts):
-    sl_usd, tp_usd, tol_usd = sl_pts / 100.0, tp_pts / 100.0, tol_pts / 100.0
+    base_tp_usd, tol_usd = tp_pts / 100.0, tol_pts / 100.0
     spread_pen = 0.20
-    trades_r, sim_records = [], []
+    trades_r, sim_records, sl_list = [], [], []
     n = len(df)
     i = max(80, n - 1800)
 
     while i < n - 12:
-        # Use 32-bar (8H) Session Micro-VP so scalp levels always track live auction!
         vp = analyze_volume_profile_anatomy(df.iloc[i - 32:i], bins=20)
         if vp["shape"] != target_shape:
             i += 3
@@ -361,6 +361,9 @@ def simulate_scalp_gene(df, target_shape, mode, sl_pts, tp_pts, tol_pts):
 
         row = df.iloc[i]
         c, ema21, rsi, adx = float(row["Close"]), float(row["ema21"]), float(row["rsi14"]), float(row["adx14"])
+        curr_atr = max(2.0, float(row["atr14"]))
+        sl_usd = round(min(9.0, max(3.5, curr_atr * 0.90)), 2)
+        tp_usd = round(max(base_tp_usd, sl_usd * 1.25), 2)
         side, entry = None, None
 
         if mode == "MEAN_REVERSION":
@@ -411,6 +414,7 @@ def simulate_scalp_gene(df, target_shape, mode, sl_pts, tp_pts, tol_pts):
                     break
 
         trades_r.append(res_r)
+        sl_list.append(sl_usd)
         sim_records.append({
             "engine": "SCALP",
             "shape": f"{target_shape} ({mode[:6]})",
@@ -420,7 +424,7 @@ def simulate_scalp_gene(df, target_shape, mode, sl_pts, tp_pts, tol_pts):
             "entry": round(entry, 2),
             "exit": round(exit_p, 2),
             "r": round(res_r, 2),
-            "pnl": round(res_r * 5.0, 2)
+            "pnl": round(res_r * 10.0, 2)
         })
         i = exit_i + 2
 
@@ -430,8 +434,9 @@ def simulate_scalp_gene(df, target_shape, mode, sl_pts, tp_pts, tol_pts):
     wr = round((wins / max(1, wins + losses)) * 100.0, 1)
     r_pf = round(sum(r for r in trades_r if r > 0) / max(0.5, abs(sum(r for r in trades_r if r < 0))), 2)
     fitness = round(max(0.20, min(0.99, (wr / 100.0) * 0.5 + min(1.0, r_pf / 2.5) * 0.5)), 2)
+    avg_sl_pts = int(round((sum(sl_list) / len(sl_list)) * 100)) if sl_list else 500
 
-    return {"trades": len(trades_r), "win_rate": wr, "net_r": net_r, "r_pf": r_pf, "fitness": fitness, "trades_r": trades_r, "sim_records": sim_records}
+    return {"trades": len(trades_r), "win_rate": wr, "net_r": net_r, "r_pf": r_pf, "fitness": fitness, "avg_sl_pts": avg_sl_pts, "trades_r": trades_r, "sim_records": sim_records}
 
 
 def evolve_mue_x_genes(df, mue_memory):
@@ -454,7 +459,6 @@ def evolve_mue_x_genes(df, mue_memory):
                     if cand["trades"] >= 4 and (cand["net_r"] > best_res["net_r"] + 0.15):
                         best_res = cand
                         best_cfg["mode"] = m_c
-                        best_cfg["sl_points"] = 500
                         best_cfg["tp_points"] = tp_c
                         best_cfg["tol_points"] = tol_c
                         mutated = True
@@ -462,16 +466,18 @@ def evolve_mue_x_genes(df, mue_memory):
         if mutated:
             best_cfg["generation"] = int(best_cfg.get("generation", 1)) + 1
 
+        avg_sl_pts = best_res.get("avg_sl_pts", 500)
+        best_cfg["sl_points"] = avg_sl_pts
         best_cfg["fitness"] = best_res["fitness"]
         best_cfg["obi_min"] = 0.18
-        best_cfg["rule_th"] = f"MUE-X Gen#{best_cfg['generation']}: {best_cfg['mode']} | SL 500 / TP {best_cfg['tp_points']} จุด (โซน ±{best_cfg['tol_points']} จุด + OBI >= 0.18)"
+        best_cfg["rule_th"] = f"MUE-X Gen#{best_cfg['generation']}: {best_cfg['mode']} | Dynamic ATR SL (~{avg_sl_pts} จุด) / TP >= {best_cfg['tp_points']} จุด (±{best_cfg['tol_points']} จุด + OBI >= 0.18)"
         mue_memory["genes"][shape_name] = best_cfg
 
         breakdown.append({
             "shape": shape_name,
             "mode": best_cfg["mode"],
             "generation": best_cfg["generation"],
-            "sl_points": 500,
+            "sl_points": avg_sl_pts,
             "tp_points": best_cfg["tp_points"],
             "tol_points": best_cfg["tol_points"],
             "trades": best_res["trades"],
@@ -639,12 +645,12 @@ def generate_live_ai_strategist_brief(spot, vp_session, scalp_setup, trend_setup
         f"• **ชั้นที่ 1 (Location):** รอราคาเข้าใกล้จุดยิง Scalp **${scalp_setup['entry']}** ในระยะไม่เกิน `±{scalp_setup['tol_points']} จุด`\n"
         f"• **ชั้นที่ 2 (3s Sustained OBI):** แรงฝั่ง **{scalp_setup['direction']}** ต้องยืนเหนือเกณฑ์ `{'+0.18' if scalp_setup['direction']=='LONG' else '-0.18'}` ต่อเนื่อง 3 วินาทีเต็ม (ตัดออเดอร์หลอก)\n"
         f"• **ชั้นที่ 3 (60s Tape Delta):** แรงเคาะซื้อ/ขายจริง 60 วินาทีต้องสอดคล้องทิศทางจึงเปิดออเดอร์\n\n"
-        f"**3. แผนเข้าเทรด Scalp ({scalp_setup['direction']}):** Entry **${scalp_setup['entry']}** | SL **${scalp_setup['sl']}** | BE (+250 จุด) **${scalp_setup['be_target']}** | TP **${scalp_setup['tp']}**\n"
+        f"**3. แผนเข้าเทรด Scalp ({scalp_setup['direction']}):** Entry **${scalp_setup['entry']}** | SL **${scalp_setup['sl']}** | BE (+{scalp_setup.get('be_points', 250)} จุด) **${scalp_setup['be_target']}** | TP **${scalp_setup['tp']}**\n"
         f"**4. แผน Trend Sniper ({trend_setup['direction']}):** Entry **${trend_setup['entry']}** | SL **${trend_setup['sl']}** | TP **${trend_setup['tp']}** (WR {trend_bt['best']['win_rate']}%)"
     )
 
     if not THAILLM_API_KEY:
-        return fallback_brief, "MUE-X Local Quant V14.0"
+        return fallback_brief, "MUE-X Local Quant V14.1"
 
     try:
         client = OpenAI(api_key=THAILLM_API_KEY, base_url="http://thaillm.or.th/api/typhoon/v1")
@@ -665,11 +671,11 @@ def generate_live_ai_strategist_brief(spot, vp_session, scalp_setup, trend_setup
         )
         txt = (resp.choices[0].message.content or "").strip()
         if len(txt) > 80:
-            return txt, "Typhoon-v2.5 + MUE-X V14.0"
+            return txt, "Typhoon-v2.5 + MUE-X V14.1"
     except Exception as e:
         print(f"[AI Brief Warning] {e}")
 
-    return fallback_brief, "MUE-X Quant V14.0"
+    return fallback_brief, "MUE-X Quant V14.1"
 
 
 def fetch_macro_and_news():
@@ -788,16 +794,18 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
     tj = _normalize_journal_schema(load_json_safe(JOURNAL_PATH, def_j), def_j)
     for t in tj["recent_trades"]:
         if t.get("status") == "OPEN":
+            tr_loss = -round(max(1.0, abs(float(t["entry"]) - float(t["sl"]))), 2)
+            tr_win = round(max(1.0, abs(float(t["tp"]) - float(t["entry"]))), 2)
             if t.get("direction") == "LONG":
                 if spot <= t["sl"]:
-                    t["status"], t["pnl"] = "LOSS", -75.0
+                    t["status"], t["pnl"] = "LOSS", tr_loss
                 elif spot >= t["tp"]:
-                    t["status"], t["pnl"] = "WIN", 165.0
+                    t["status"], t["pnl"] = "WIN", tr_win
             else:
                 if spot >= t["sl"]:
-                    t["status"], t["pnl"] = "LOSS", -75.0
+                    t["status"], t["pnl"] = "LOSS", tr_loss
                 elif spot <= t["tp"]:
-                    t["status"], t["pnl"] = "WIN", 165.0
+                    t["status"], t["pnl"] = "WIN", tr_win
 
     open_tr = [t for t in tj["recent_trades"] if t.get("status") == "OPEN"]
     if in_trend_hours and len(open_tr) == 0 and abs(spot - trend_setup["entry"]) <= 4.5:
