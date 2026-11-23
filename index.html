@@ -631,20 +631,20 @@
             <span class="block text-[10px] text-gray-400">XAU Perp OI / Funding</span>
             <span id="macro-perp-oi" class="text-sm font-bold text-emerald-300">-</span>
           </div>
-          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-2 col-span-2 sm:col-span-1">
+          <div class="bg-gray-900/90 border border-gray-800 rounded-lg p-2 col-span-2 sm:col-span-1" style="height: auto !important; align-self: start !important;">
             <span class="block text-[10px] text-gray-400">Spread ปัจจุบัน / เพดาน</span>
             <span id="macro-spread" class="text-sm font-bold text-white">-</span>
           </div>
         </div>
 
         <div id="v14-news-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs items-start" style="align-items: start !important;">
-          <div class="bg-gray-900/70 border border-gray-800 rounded p-2 text-gray-400">กำลังโหลดปฏิทินข่าว USD จากหลังบ้าน...</div>
+          <div class="bg-gray-900/70 border border-gray-800 rounded p-2 text-gray-400" style="height: auto !important; align-self: start !important;">กำลังโหลดปฏิทินข่าว USD จากหลังบ้าน...</div>
         </div>
       </section>
 
       <!-- LIVE ORDERFLOW & DUAL-ENGINE (ENGINE A + ENGINE B) GRID -->
       <section class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        <div class="card p-4 xl:col-span-4 border-cyan-600/40 space-y-3.5" style="height: auto !important; align-self: start !important;">
+        <div class="card p-4 xl:col-span-4 border-cyan-600/40 space-y-3.5" style="height: auto !important; align-self: start !important;; height: auto !important; align-self: start !important;">
           <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
             <h2 class="text-sm font-bold text-cyan-300">Spot L2 Order Book Depth & Walls</h2>
             <span id="of-absorption-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-300">LIVE SPOT L2</span>
@@ -660,11 +660,11 @@
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2 text-xs font-mono-num">
-            <div class="bg-emerald-950/30 border border-emerald-800/40 rounded p-2">
+            <div class="bg-emerald-950/30 border border-emerald-800/40 rounded p-2" style="height: auto !important; align-self: start !important;">
               <span class="block text-[10px] text-emerald-300">กำแพงรับ (Bid Walls)</span>
               <span id="of-bid-walls" class="font-bold text-emerald-400">กำลังสแกน...</span>
             </div>
-            <div class="bg-rose-950/30 border border-rose-800/40 rounded p-2">
+            <div class="bg-rose-950/30 border border-rose-800/40 rounded p-2" style="height: auto !important; align-self: start !important;">
               <span class="block text-[10px] text-rose-300">กำแพงต้าน (Ask Walls)</span>
               <span id="of-ask-walls" class="font-bold text-rose-400">กำลังสแกน...</span>
             </div>
@@ -676,7 +676,7 @@
         </div>
 
         <!-- Engine A (Near-Spot Scalp) -->
-        <div class="card p-3 xl:col-span-4 border-purple-600/40 space-y-2.5" style="height: auto !important; align-self: start !important;">
+        <div class="card p-3 xl:col-span-4 border-purple-600/40 space-y-2.5" style="height: auto !important; align-self: start !important;; height: auto !important; align-self: start !important;">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
             <div>
               <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">ENGINE A: NEAR-SPOT EXECUTION & BREAK-EVEN ADVISOR</span>
@@ -718,16 +718,16 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-between text-[11px] font-mono-num bg-purple-950/25 border border-purple-800/40 rounded px-2.5 py-1.5">
+          <div class="flex items-center justify-between text-[11px] font-mono-num bg-purple-950/25 border border-purple-800/40 rounded px-2.5 py-1.5" style="height: auto !important; align-self: start !important;">
             <span class="text-purple-300">V14.1 Backend Scalp:</span>
             <span id="v14-backend-scalp-ref" class="text-gray-200 font-bold">กำลังซิงก์...</span>
           </div>
 
-          <div id="anatomy-cards-grid" class="grid grid-cols-2 gap-2 font-mono-num text-xs"></div>
+          <div id="anatomy-cards-grid" class="grid grid-cols-2 gap-2 font-mono-num text-xs" style="height: auto !important; align-self: start !important;"></div>
         </div>
 
         <!-- Engine B (H1 EMA200 Trend & Swing Sniper) -->
-        <div class="card p-4 xl:col-span-4 border-amber-500/40 space-y-3.5" style="height: auto !important; align-self: start !important;">
+        <div class="card p-4 xl:col-span-4 border-amber-500/40 space-y-3.5" style="height: auto !important; align-self: start !important;; height: auto !important; align-self: start !important;">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
             <div>
               <span class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">ENGINE B: H1 EMA200 TREND & SWING SNIPER</span>
@@ -4289,6 +4289,271 @@
     };
     setTimeout(window.enforceCompactCards, 300);
     setInterval(window.enforceCompactCards, 2000);
+
+    // =========================================================================
+    // V14.1 MASTER UPGRADE:
+    // 1. คูลดาวน์อิงเวลาปิดแท่งเทียน M15 (:00, :15, :30, :45) รีเฟรชหน้าจอไม่ค้าง
+    // 2. ซิงก์ออเดอร์เปิด & ออเดอร์ปิดจาก Backend/ntfy เข้า LIVE ORDER BOARD อัตโนมัติ
+    // 3. แสดงผลกำไร/ขาดทุนสด (+/- $ และ R) ทุกวินาทีระหว่างถือออเดอร์
+    // 4. ล็อกความสูงการ์ด 3 คอลัมน์ให้พอดีเนื้อหา ไม่ยืดเป็นกล่องดำว่าง
+    // =========================================================================
+
+    window.getNextM15CandleCloseMs = function(fromMs) {
+      const M15_MS = 15 * 60 * 1000;
+      let nextClose = Math.ceil(fromMs / M15_MS) * M15_MS;
+      if (nextClose - fromMs < 45 * 1000) {
+        nextClose += M15_MS;
+      }
+      return nextClose;
+    };
+
+    window.formatBkkHHMM = function(ms) {
+      const d = new Date(ms + 7 * 3600 * 1000);
+      const hh = String(d.getUTCHours()).padStart(2, '0');
+      const mm = String(d.getUTCMinutes()).padStart(2, '0');
+      return `${hh}:${mm} น.`;
+    };
+
+    window.triggerM15CandleCooldown = function(closedAtMs) {
+      const baseMs = closedAtMs || Date.now();
+      const untilMs = window.getNextM15CandleCloseMs(baseMs);
+      try {
+        localStorage.setItem('gq_m15_cooldown_until', String(untilMs));
+        localStorage.setItem('gq_last_real_close_ms', String(baseMs));
+      } catch (e) {}
+      return untilMs;
+    };
+
+    window.getCooldownGuardStatus = function() {
+      const now = Date.now();
+      let untilMs = 0;
+      try {
+        untilMs = Number(localStorage.getItem('gq_m15_cooldown_until') || 0);
+      } catch (e) {}
+
+      if (!untilMs || now >= untilMs) {
+        if (untilMs && now >= untilMs) {
+          try { localStorage.removeItem('gq_m15_cooldown_until'); } catch (e) {}
+        }
+        return { inCooldown: false, cooldownRemMs: 0, targetTimeStr: '', reason: '' };
+      }
+
+      const remMs = Math.max(0, untilMs - now);
+      const targetStr = window.formatBkkHHMM(untilMs);
+      return {
+        inCooldown: remMs > 0,
+        cooldownRemMs: remMs,
+        targetTimeStr: targetStr,
+        reason: `พักรอจบแท่งเทียน M15 (ปิดแท่ง ${targetStr})`
+      };
+    };
+
+    window.syncBackendOrdersToBoard = function(backendPayload) {
+      if (!backendPayload || typeof backendPayload !== 'object') return;
+      let changed = false;
+
+      const bClosed = backendPayload.backend_closed_orders || backendPayload.closed_orders || backendPayload.recent_trades;
+      if (Array.isArray(bClosed) && bClosed.length > 0 && typeof todayClosed !== 'undefined' && Array.isArray(todayClosed)) {
+        const existingKeys = new Set(todayClosed.map(t => String(t.id || `${t.entry}_${t.exit}_${t.side}`)));
+        let latestClosedMs = 0;
+
+        bClosed.forEach((bt, idx) => {
+          const entry = Number(bt.entry || bt.entry_price || 0);
+          const exit = Number(bt.exit || bt.exit_price || 0);
+          const side = String(bt.side || bt.dir || bt.direction || 'SHORT').toUpperCase();
+          const uid = String(bt.id || bt.trade_id || `${entry}_${exit}_${side}_${bt.closed_at || idx}`);
+          if (entry > 0 && !existingKeys.has(uid)) {
+            const pnlR = Number(bt.pnl_r ?? bt.r ?? bt.net_r ?? 0);
+            const lot = Number(bt.lot || 0.01);
+            const pnlUsd = Number(bt.pnl_usd ?? bt.usd ?? (pnlR * 10));
+            const closedTimeStr = String(bt.closed_at || bt.time || new Date().toTimeString().slice(0, 5));
+            todayClosed.push({
+              id: uid,
+              side: side,
+              lot: lot,
+              entry: entry,
+              exit: exit,
+              pnlR: pnlR,
+              pnlUsd: pnlUsd,
+              reason: bt.reason || bt.status || (pnlR >= 0 ? 'TP HIT (ntfy)' : 'SL HIT (ntfy)'),
+              time: closedTimeStr
+            });
+            existingKeys.add(uid);
+            changed = true;
+            if (bt.closed_ts_ms) {
+              latestClosedMs = Math.max(latestClosedMs, Number(bt.closed_ts_ms));
+            }
+          }
+        });
+
+        if (latestClosedMs > 0 && (Date.now() - latestClosedMs) < 15 * 60 * 1000) {
+          const prevClose = Number(localStorage.getItem('gq_last_real_close_ms') || 0);
+          if (latestClosedMs > prevClose) {
+            window.triggerM15CandleCooldown(latestClosedMs);
+          }
+        }
+      }
+
+      const bActive = backendPayload.backend_active_order || backendPayload.active_order || backendPayload.open_position;
+      if (bActive && typeof bActive === 'object' && Number(bActive.entry || bActive.entry_price || 0) > 0) {
+        const st = String(bActive.status || 'OPEN').toUpperCase();
+        if (['OPEN', 'HOLDING', 'ACTIVE', 'PENDING', 'LIMIT'].includes(st)) {
+          if (typeof activeOrder === 'undefined' || !activeOrder) {
+            window.activeOrder = {
+              id: bActive.id || ('BE_' + Date.now()),
+              side: String(bActive.side || bActive.dir || 'SHORT').toUpperCase(),
+              lot: Number(bActive.lot || 0.01),
+              entry: Number(bActive.entry || bActive.entry_price),
+              sl: Number(bActive.sl || bActive.stop_loss || 0),
+              tp: Number(bActive.tp || bActive.take_profit || 0),
+              bePrice: Number(bActive.be_price || bActive.be || 0),
+              status: st === 'PENDING' || st === 'LIMIT' ? 'PENDING' : 'OPEN',
+              engine: bActive.engine || 'BACKEND_SYNC',
+              time: bActive.opened_at || new Date().toTimeString().slice(0, 5)
+            };
+            changed = true;
+          }
+        } else if (['CLOSED', 'TP', 'SL'].includes(st) && typeof activeOrder !== 'undefined' && activeOrder && String(activeOrder.id).startsWith('BE_')) {
+          window.activeOrder = null;
+          changed = true;
+        }
+      }
+
+      if (changed && typeof renderOrderAndLedgerUI === 'function') {
+        renderOrderAndLedgerUI();
+      }
+    };
+
+    window.runV14LiveBoardTick = function() {
+      const cd = window.getCooldownGuardStatus();
+      const cdPill = document.getElementById('lob-cooldown-pill');
+      const cdNote = document.getElementById('lob-cooldown-note');
+      if (cdPill) {
+        if (cd.inCooldown && cd.cooldownRemMs > 0) {
+          const cm = Math.floor(cd.cooldownRemMs / 60000);
+          const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
+          cdPill.classList.remove('hidden');
+          cdPill.textContent = `⏳ รอจบแท่ง M15 (${cd.targetTimeStr} | เหลือ ${cm}:${cs})`;
+          if (cdNote) cdNote.textContent = `⏳ พักรอจบแท่งเทียน M15 ปัจจุบัน (เปิดเข้าใหม่ตอน ${cd.targetTimeStr} | เหลือ ${cm}:${cs} นาที)`;
+        } else {
+          cdPill.classList.add('hidden');
+          if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
+        }
+      }
+
+      document.querySelectorAll('span, div, p, h1, h2, h3').forEach(el => {
+        if (el.children.length > 0) return;
+        const txt = (el.textContent || '').trim();
+        if (txt.startsWith('⏳ COOLDOWN (') || txt.includes('พักหลังปิดออเดอร์ 15 นาที')) {
+          if (cd.inCooldown && cd.cooldownRemMs > 0) {
+            const cm = Math.floor(cd.cooldownRemMs / 60000);
+            const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
+            if (txt.startsWith('⏳ COOLDOWN (')) {
+              el.textContent = `⏳ รอจบแท่ง M15 (${cd.targetTimeStr} | ${cm}:${cs})`;
+            } else {
+              el.textContent = `พักรอจบแท่งเทียน M15 รอบ ${cd.targetTimeStr} (เหลืออีก ${cm}:${cs} นาที) เพื่อป้องกันการเข้าไม้ซ้ำในแท่งเดิม`;
+            }
+          } else {
+            if (txt.startsWith('⏳ COOLDOWN (')) {
+              el.textContent = '🟢 M15 CANDLE READY';
+              el.className = el.className.replace(/amber|yellow|rose/g, 'emerald');
+            } else if (typeof liveModel !== 'undefined' && liveModel && liveModel.headline) {
+              el.textContent = liveModel.headline;
+            }
+          }
+        }
+      });
+
+      if (typeof activeOrder !== 'undefined' && activeOrder) {
+        const pill = document.getElementById('live-order-status-pill');
+        const emptyEl = document.getElementById('active-order-empty');
+        const cardEl = document.getElementById('active-order-card');
+        const closeBtn = document.getElementById('btn-close-order');
+        if (emptyEl) emptyEl.classList.add('hidden');
+        if (cardEl) cardEl.classList.remove('hidden');
+        if (closeBtn) closeBtn.classList.remove('hidden');
+
+        let curPrice = 0;
+        const spotEl = document.getElementById('spot-price-main') || document.getElementById('ticker-spot-price');
+        if (spotEl) {
+          const parsed = parseFloat((spotEl.textContent || '').replace(/[^0-9.]/g, ''));
+          if (parsed > 1000) curPrice = parsed;
+        }
+        if (!curPrice && typeof lastSpotPrice !== 'undefined' && lastSpotPrice > 1000) {
+          curPrice = Number(lastSpotPrice) + (typeof mt5Offset !== 'undefined' ? Number(mt5Offset) : 0);
+        }
+
+        const isPending = (activeOrder.status === 'PENDING' || activeOrder.status === 'LIMIT');
+        if (pill) {
+          if (isPending) {
+            pill.textContent = `⏳ PENDING LIMIT (${activeOrder.side})`;
+            pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500 rounded-full";
+          } else {
+            pill.textContent = `🟢 HOLDING / เข้าออเดอร์แล้ว (${activeOrder.side})`;
+            pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-500 rounded-full animate-pulse";
+          }
+        }
+
+        if (!isPending && curPrice > 1000 && activeOrder.entry > 1000) {
+          const lot = Number(activeOrder.lot || 0.01);
+          const diff = activeOrder.side === 'LONG' ? (curPrice - activeOrder.entry) : (activeOrder.entry - curPrice);
+          const pnlUsd = diff * lot * 100;
+          const slDist = Math.abs(activeOrder.entry - (activeOrder.sl || activeOrder.entry));
+          const riskUsd = slDist > 0 ? (slDist * lot * 100) : 10;
+          const pnlR = riskUsd > 0 ? (pnlUsd / riskUsd) : 0;
+
+          const pnlUsdEl = document.getElementById('ao-pnl-usd');
+          const pnlREl = document.getElementById('ao-pnl-r');
+          const distEntryEl = document.getElementById('ao-dist-entry');
+          if (pnlUsdEl) {
+            pnlUsdEl.textContent = `${pnlUsd >= 0 ? '+' : '-'}$${Math.abs(pnlUsd).toFixed(2)}`;
+            pnlUsdEl.className = `text-base font-bold ${pnlUsd >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+          }
+          if (pnlREl) {
+            pnlREl.textContent = `${pnlR >= 0 ? '+' : ''}${pnlR.toFixed(2)}R`;
+            pnlREl.className = `block text-[11px] font-bold ${pnlR >= 0 ? 'text-emerald-300' : 'text-rose-300'}`;
+          }
+          if (distEntryEl) {
+            const pts = Math.round(diff * 100);
+            distEntryEl.textContent = `ราคาสด $${curPrice.toFixed(2)} (${pts >= 0 ? '+' : ''}${pts} จุด)`;
+          }
+        }
+      }
+
+      document.querySelectorAll('.grid').forEach(g => {
+        if (g.textContent && g.textContent.includes('Spot L2 Order Book') && g.textContent.includes('ENGINE B:')) {
+          g.style.setProperty('align-items', 'start', 'important');
+          Array.from(g.children).forEach(col => {
+            col.style.setProperty('height', 'auto', 'important');
+            col.style.setProperty('min-height', '0', 'important');
+            col.style.setProperty('align-self', 'start', 'important');
+            const innerCard = col.querySelector('.card');
+            if (innerCard) {
+              innerCard.style.setProperty('height', 'auto', 'important');
+              innerCard.style.setProperty('min-height', '0', 'important');
+            }
+          });
+        }
+      });
+    };
+
+    if (typeof closeActiveOrder === 'function' && !window._v14WrappedClose) {
+      window._v14WrappedClose = true;
+      const _origCloseActiveOrder = closeActiveOrder;
+      window.closeActiveOrder = function() {
+        const res = _origCloseActiveOrder.apply(this, arguments);
+        window.triggerM15CandleCooldown(Date.now());
+        return res;
+      };
+    }
+
+    setInterval(() => {
+      if (typeof liveModel !== 'undefined' && liveModel) {
+        window.syncBackendOrdersToBoard(liveModel);
+      }
+      window.runV14LiveBoardTick();
+    }, 1000);
+    setTimeout(window.runV14LiveBoardTick, 250);
 </script>
 </body>
 </html>

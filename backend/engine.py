@@ -13,6 +13,44 @@ import yfinance as yf
 from openai import OpenAI
 
 from datetime import datetime as _bkk_dt, timezone as _bkk_tz, timedelta as _bkk_td
+
+# === V14.1 FRONTEND-BACKEND ORDER & JOURNAL SYNC BRIDGE ===
+def _attach_order_sync_payload(payload_dict):
+    import os, json
+    from datetime import datetime, timezone, timedelta
+    if not isinstance(payload_dict, dict):
+        return payload_dict
+    bkk_tz = timezone(timedelta(hours=7))
+    today_str = datetime.now(bkk_tz).strftime("%Y-%m-%d")
+    closed_today = []
+    for jpath in ("data/trade_journal.json", "data/scalp_journal.json"):
+        if os.path.exists(jpath):
+            try:
+                with open(jpath, "r", encoding="utf-8") as jf:
+                    jdata = json.load(jf)
+                records = jdata if isinstance(jdata, list) else jdata.get("trades", jdata.get("records", []))
+                if isinstance(records, list):
+                    for r in records:
+                        if not isinstance(r, dict):
+                            continue
+                        ts_str = str(r.get("closed_at") or r.get("exit_time") or r.get("time") or r.get("timestamp") or "")
+                        if today_str in ts_str or not ts_str:
+                            closed_today.append(r)
+            except Exception:
+                pass
+    payload_dict["backend_closed_orders"] = closed_today[-30:]
+    for spath in ("data/active_order.json", "data/order_state.json", "data/live_order.json"):
+        if os.path.exists(spath):
+            try:
+                with open(spath, "r", encoding="utf-8") as sf:
+                    sdata = json.load(sf)
+                if isinstance(sdata, dict) and sdata.get("status") in ("OPEN", "HOLDING", "ACTIVE", "PENDING"):
+                    payload_dict["backend_active_order"] = sdata
+                    break
+            except Exception:
+                pass
+    return payload_dict
+
 def _get_bkk_now():
     return _bkk_dt.now(_bkk_tz(_bkk_td(hours=7)))
 
@@ -88,7 +126,7 @@ def load_json_safe(path, default_obj):
 def save_json_safe(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=2)
+        json.dump(_attach_order_sync_payload(obj) if isinstance(obj, dict) and ("spot_price" in obj or "headline" in obj or "scalp_setup" in obj or "market_closed" in obj) else obj, f, ensure_ascii=False, indent=2)
 
 
 def fetch_order_flow_snapshot(fallback_spot=3550.0):
