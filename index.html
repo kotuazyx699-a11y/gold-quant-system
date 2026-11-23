@@ -4168,26 +4168,36 @@
           if (txt.includes('MARKET CLOSED (เสาร์-อาทิตย์ | เปิดจันทร์')) {
             el.textContent = '🟢 V14.1 MARKET OPEN (LIVE | จันทร์–เสาร์)';
             el.className = el.className.replace(/amber|yellow|gray/g, 'emerald');
+          } else if (txt.includes('WEEKEND_MARKET_CLOSED_UTC_IGNORED') && txt.startsWith('PAUSED:')) {
+            el.textContent = '🟢 MARKET OPEN (ACTIVE — BANGKOK UTC+7)';
+            el.className = el.className.replace(/rose|red|amber|yellow/g, 'emerald');
+          } else if (txt.includes('Backend Risk Guard สั่งเบรกการเข้าออเดอร์อัตโนมัติ') && txt.includes('WEEKEND_MARKET_CLOSED_UTC_IGNORED')) {
+            el.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์และเทรดสดพร้อมทำงาน';
           } else if (txt === '🌙 MARKET CLOSED (เสาร์-อาทิตย์)' || txt === 'MARKET CLOSED (เสาร์-อาทิตย์)') {
             el.textContent = '🟢 MARKET OPEN (ACTIVE)';
             el.className = el.className.replace(/amber|yellow|gray/g, 'emerald');
           } else if (txt.includes('ตลาดทองคำ Spot/MT5 ปิดทำการ')) {
-            if (typeof liveModel !== 'undefined' && liveModel && liveModel.headline) {
-              el.textContent = liveModel.headline;
-            } else {
-              el.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์และเทรดสดพร้อมทำงาน';
-            }
-          }
-        } else {
-          if (txt.includes('V14.1 MARKET OPEN')) {
-            el.textContent = '🌙 V14.1 MARKET CLOSED (เสาร์-อาทิตย์ | เปิดจันทร์ 06:00 น.)';
+            el.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์และเทรดสดพร้อมทำงาน';
           }
         }
       });
+
+      const pSc = document.getElementById('lob-preview-scalp');
+      const pSw = document.getElementById('lob-preview-swing');
+      if (typeof liveModel !== 'undefined' && liveModel) {
+        if (pSc && liveModel.scalpSetup && liveModel.scalpSetup.entry) {
+          const s = liveModel.scalpSetup;
+          pSc.textContent = `${s.dir} Limit @ $${Number(s.entry).toFixed(2)} | SL $${Number(s.sl).toFixed(2)} | TP $${Number(s.tp).toFixed(2)}`;
+        }
+        if (pSw && liveModel.trendSetup && liveModel.trendSetup.entry) {
+          const t = liveModel.trendSetup;
+          pSw.textContent = `${t.dir} Limit @ $${Number(t.entry).toFixed(2)} | SL $${Number(t.sl).toFixed(2)} | TP $${Number(t.tp).toFixed(2)}`;
+        }
+      }
     };
 
-    setTimeout(window.syncMarketStatusBadges, 300);
-    setInterval(window.syncMarketStatusBadges, 2000);
+    setTimeout(window.syncMarketStatusBadges, 200);
+    setInterval(window.syncMarketStatusBadges, 1500);
 </script>
 </body>
 </html>

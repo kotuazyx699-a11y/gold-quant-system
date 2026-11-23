@@ -51,7 +51,7 @@
     "spread_pause": true,
     "can_scalp": false,
     "can_trend": false,
-    "status": "PAUSED: WEEKEND_MARKET_CLOSED (วันอาทิตย์ตลาดปิด – เปิดจันทร์ 06:00 น.)",
+    "status": "ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)",
     "weekend_closed": true
   },
   "mue_evolution": {

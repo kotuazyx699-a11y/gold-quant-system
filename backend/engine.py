@@ -12,13 +12,17 @@ import pandas as pd
 import yfinance as yf
 from openai import OpenAI
 
+from datetime import datetime as _bkk_dt, timezone as _bkk_tz, timedelta as _bkk_td
+def _get_bkk_now():
+    return _bkk_dt.now(_bkk_tz(_bkk_td(hours=7)))
+
 THAI_TZ = timezone(timedelta(hours=7))
 
 
 def is_gold_market_closed_bkk(now_th=None):
     if os.getenv("IGNORE_WEEKEND_GUARD", "0").strip() == "1":
         return False, ""
-    now_th = now_th or datetime.now(THAI_TZ)
+    now_th = now_th or _get_bkk_now()
     wd = now_th.weekday()  # Mon=0 .. Sat=5, Sun=6
     hr_dec = now_th.hour + (now_th.minute / 60.0)
     if wd == 5 and hr_dec >= 5.0:
