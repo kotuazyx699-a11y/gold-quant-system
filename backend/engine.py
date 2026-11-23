@@ -77,6 +77,7 @@ STATE_PATH = os.path.join(DATA_DIR, "state.json")
 VAULT_PATH = os.path.join(DATA_DIR, "gold_m15_vault.csv")
 JOURNAL_PATH = os.path.join(DATA_DIR, "trade_journal.json")
 SCALP_JOURNAL_PATH = os.path.join(DATA_DIR, "scalp_journal.json")
+ACTIVE_ORDER_PATH = os.path.join(DATA_DIR, "active_order.json")
 MUE_MEMORY_PATH = os.path.join(DATA_DIR, "mue_memory.json")
 
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "pansakorn888").strip()
@@ -927,13 +928,24 @@ def update_journals(spot, scalp_setup, trend_setup, in_scalp_hours, in_trend_hou
     tj["live_win_rate"] = round((tj["wins"] / max(1, tj["closed_trades"])) * 100.0, 1)
     tj["recent_trades"] = tj["recent_trades"][:15]
     save_json_safe(JOURNAL_PATH, tj)
+    
+    # บันทึก active_order.json สำหรับ frontend sync
+    all_open = open_sc + open_tr
+    if all_open:
+        active_order = all_open[0]  # เอาออเดอร์แรกที่เปิดอยู่
+        active_order["status"] = "OPEN"
+        active_order["last_update_th"] = now_str
+        save_json_safe(ACTIVE_ORDER_PATH, active_order)
+    else:
+        # ไม่มีออเดอร์เปิด ลบหรือเคลียร์ active_order.json
+        save_json_safe(ACTIVE_ORDER_PATH, {"status": "NONE", "last_update_th": now_str})
+    
     return sj, tj
 
 
 def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items, in_scalp_hours, in_trend_hours):
     acct_bal = float(os.getenv("ACCOUNT_BALANCE", "1000.0"))
     risk_pct = float(os.getenv("RISK_PER_TRADE_PCT", "1.0"))
-    max_spread = float(os.getenv("MAX_SPREAD_USD", "0.65"))
     risk_usd = round(max(1.0, acct_bal * (risk_pct / 100.0)), 2)
 
     # 1. Dynamic ATR-based Scalp SL / BE / TP (clamped $3.50 - $9.00)
@@ -960,16 +972,15 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
                 news_reason = f"HIGH_NEWS: {ev.get('title', 'USD Event')} ({ev.get('time_th', '')})"
                 break
 
-    # 4. Live Spread Guard
+    # 4. Live Spread (คำนวณแต่ไม่เอามาเป็นเงื่อนไข pause)
     spread_usd = round(max(0.0, float(ask) - float(bid)), 2) if (bid and ask and ask >= bid) else 0.0
-    spread_pause = spread_usd > max_spread
 
     now_th = datetime.now(THAI_TZ)
     wk_closed, wk_reason = is_gold_market_closed_bkk(now_th)
     daily_net_r, cooldown_rem_min = compute_daily_risk_guard_metrics(now_th)
     cooldown_pause = cooldown_rem_min > 0
 
-    blocked = wk_closed or news_pause or spread_pause or cooldown_pause
+    blocked = wk_closed or news_pause or cooldown_pause
     can_scalp = bool(in_scalp_hours and not blocked)
     can_trend = bool(in_trend_hours and not blocked)
 
@@ -980,8 +991,6 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
         pause_reasons.append(f"COOLDOWN ({cooldown_rem_min}m)")
     if news_pause:
         pause_reasons.append(news_reason)
-    if spread_pause:
-        pause_reasons.append(f"HIGH_SPREAD (${spread_usd} > ${max_spread})")
     if not in_scalp_hours and not in_trend_hours:
         pause_reasons.append("OUTSIDE_SESSION")
 
@@ -998,14 +1007,13 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
         "sc_lot": sc_lot,
         "tr_lot": tr_lot,
         "spread_usd": spread_usd,
-        "max_spread_usd": max_spread,
         "weekend_closed": wk_closed,
         "daily_net_r": daily_net_r,
         "daily_loss_pause": False,
         "cooldown_rem_min": cooldown_rem_min,
         "cooldown_pause": cooldown_pause,
         "news_pause": news_pause,
-        "spread_pause": spread_pause,
+        "spread_pause": False,
         "can_scalp": can_scalp,
         "can_trend": can_trend,
         "status": "PAUSED: " + " | ".join(pause_reasons) if pause_reasons else "ACTIVE_READY"

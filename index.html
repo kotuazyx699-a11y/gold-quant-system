@@ -142,23 +142,10 @@
                   class="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded text-amber-300 font-bold" />
               </div>
               <div>
-                <label class="block text-[10px] text-gray-400 mb-1">เผื่อสเปรด MT5 (จุด)</label>
+                <label class="block text-[10px] text-gray-400 uppercase">เผื่อสเปรด MT5 (จุด)</label>
                 <input id="admin-buffer-val" type="number" step="5" min="0" max="200" value="35"
                   class="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded text-white font-bold" />
               </div>
-
-      <!-- LIVE ORDER BOARD (ALWAYS VISIBLE AT TOP) -->
-      
-
-
-      <!-- LIVE ORDER BOARD (TOP PINNED) -->
-      <section id="lite-mode-banner" class="card p-4 border-indigo-500/60 bg-indigo-950/30 text-xs font-mono-num space-y-1.5">
-      <div class="hidden col-span-full flex items-center justify-between">
-        <span class="font-bold text-indigo-300 text-sm">📱 โหมดแจ้งเตือน ntfy อย่างเดียวกำลังทำงาน (ซ่อนกราฟและตารางเพื่อประหยัดพลังงาน)</span>
-        <button onclick="toggleLiteAlertMode()" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-bold">กลับมาแสดงหน้าจอเต็ม</button>
-      </div>
-      <p class="text-gray-300">ระบบกำลังจับราคา Spot XAU/USD สดและส่งสัญญาณเข้าแอป <strong>ntfy</strong> ของคุณอัตโนมัติทุกจังหวะเข้า / ชน TP / ชน SL / บังทุน BE</p>
-    </section>
               <div>
                 <label class="block text-[10px] text-gray-400 mb-1">ช่อง ntfy Topic</label>
                 <input id="admin-ntfy-val" type="text" placeholder="เช่น pansakorn888"
@@ -274,102 +261,6 @@
         <label class="text-[11px] text-cyan-300">เผื่อสเปรด MT5 (จุด):</label>
         <input id="input-mt5-buffer" type="number" value="35" min="0" max="200" step="5" onchange="saveMt5Buffer()"
           class="w-16 px-2 py-0.5 text-xs font-bold bg-gray-800 border border-cyan-600/60 rounded text-amber-300 text-center" />
-      </div>
-    </section>
-
-    <!-- Lite Alert Mode Banner -->
-    
-
-    <!-- LIVE ORDER BOARD & DAILY EXECUTION TRACKER -->
-    <section class="hidden card p-4 border-emerald-500/50 bg-gradient-to-r from-gray-900 via-emerald-950/20 to-cyan-950/20 space-y-3.5">
-      <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 border-b border-gray-800 pb-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded">LIVE ORDER BOARD</span>
-          <span id="live-order-status-pill" class="px-3 py-0.5 text-xs font-mono-num font-bold bg-gray-800 text-gray-300 border border-gray-700 rounded-full">
-            NO ACTIVE ORDER (ว่าง)
-          </span>
-          <span id="live-order-day-badge" class="text-[11px] font-mono-num text-cyan-400">วันที่: --</span>
-        </div>
-        <div class="flex flex-wrap items-center gap-1.5 font-mono-num text-xs">
-          <button id="btn-auto-arm" onclick="toggleAutoOrderArm()" class="px-2.5 py-1 rounded font-bold bg-purple-950 text-purple-300 border border-purple-600/60">
-            Auto-Limit: เปิด
-          </button>
-          <button id="btn-auto-refresh15" onclick="toggleAutoRefresh15m()" class="px-2.5 py-1 rounded font-bold bg-indigo-950 text-indigo-300 border border-indigo-600/60">
-            รีเฟรช Limit 15m: เปิด
-          </button>
-          <button id="btn-auto-be" onclick="toggleAutoBeMode()" class="px-2.5 py-1 rounded font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60">
-            Auto-BE: เปิด
-          </button>
-          <button onclick="placeScalpLimitOrder(true)" class="px-2.5 py-1 rounded font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950">
-            📌 วาง Limit Scalp
-          </button>
-          <button onclick="placeSwingLimitOrder(true)" class="px-2.5 py-1 rounded font-bold bg-amber-500 hover:bg-amber-400 text-gray-950">
-            🎯 วาง Limit Swing/Rev
-          </button>
-          <button onclick="placeMarketOrderNow()" class="px-2.5 py-1 rounded font-bold bg-emerald-600 hover:bg-emerald-500 text-gray-950">
-            ⚡ เปิด Market ทันที
-          </button>
-          <button id="btn-sync-mt5-entry" onclick="syncActiveOrderToMt5Entry()" class="px-2.5 py-1 rounded font-bold bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-600/60 hidden">
-            🔄 ปรับ Entry / Lot ตาม MT5
-          </button>
-          <button id="btn-close-order" onclick="manualCancelOrCloseOrder()" class="px-2.5 py-1 rounded font-bold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-700/60 hidden">
-            ❌ ยกเลิก / ปิดมือ
-          </button>
-        </div>
-      </div>
-
-      <div id="active-order-empty" class="text-xs text-gray-400 font-mono-num py-1">
-        คลังข้อมูลสะอาดพร้อมเก็บเฉพาะออเดอร์สดหลังเวลาเริ่มต้นรอบนี้ (และซิงก์ตรงกันทุกเครื่องเมื่อเปิด Cloud Sync ในเมนูผู้สร้าง)
-      </div>
-
-      <!-- Active Order BE Decision Banner -->
-      <div id="active-order-be-banner" class="hidden rounded-lg p-2.5 border font-mono-num text-xs flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <span id="ao-be-badge" class="px-2 py-0.5 rounded font-bold">BE STATUS</span>
-          <span id="ao-be-text" class="text-gray-200">-</span>
-        </div>
-        <span id="ao-be-price-pill" class="font-bold text-cyan-300">-</span>
-      </div>
-
-      <div id="active-order-card" class="hidden grid grid-cols-2 sm:grid-cols-6 gap-2.5 font-mono-num text-center">
-        <div class="bg-gray-900/90 border border-gray-700 rounded-lg p-2">
-          <span class="block text-[10px] text-gray-400">แผน / ฝั่ง / Lot</span>
-          <span id="ao-side-lot" class="text-sm font-bold text-white">-</span>
-          <span id="ao-time" class="block text-[10px] text-gray-400">--:--</span>
-        </div>
-        <div class="bg-gray-900/90 border border-amber-700/50 rounded-lg p-2">
-          <span class="block text-[10px] text-amber-300">ราคาเข้า (Entry)</span>
-          <span id="ao-entry" class="text-sm font-bold text-amber-400">$0.00</span>
-          <span id="ao-dist-entry" class="block text-[10px] text-gray-400">-</span>
-        </div>
-        <div class="bg-rose-950/40 border border-rose-800/50 rounded-lg p-2">
-          <span class="block text-[10px] text-rose-300">Stop Loss (SL)</span>
-          <span id="ao-sl" class="text-sm font-bold text-rose-400">$0.00</span>
-          <span id="ao-dist-sl" class="block text-[10px] text-rose-300">-</span>
-        </div>
-        <div class="bg-emerald-950/40 border border-emerald-800/50 rounded-lg p-2">
-          <span class="block text-[10px] text-emerald-300">Take Profit (TP)</span>
-          <span id="ao-tp" class="text-sm font-bold text-emerald-400">$0.00</span>
-          <span id="ao-dist-tp" class="block text-[10px] text-emerald-300">-</span>
-        </div>
-        <div class="bg-gray-900/90 border border-cyan-700/50 rounded-lg p-2">
-          <span class="block text-[10px] text-cyan-300">กำไร/ขาดทุนสด (ตรงตาม Lot)</span>
-          <span id="ao-pnl-usd" class="text-sm font-bold text-white">$0.00</span>
-          <span id="ao-pnl-r" class="block text-[10px] text-cyan-300">0.00R</span>
-        </div>
-        <div class="bg-gray-900/90 border border-purple-700/50 rounded-lg p-2">
-          <span class="block text-[10px] text-purple-300">สถิติปิดวันนี้ (Today)</span>
-          <span id="today-stats-summary" class="text-sm font-bold text-emerald-400">0 ไม้ | +0.00R</span>
-          <span id="today-stats-usd" class="block text-[10px] text-gray-300">$0.00</span>
-        </div>
-      </div>
-
-      <div id="today-closed-wrap" class="hidden pt-2 border-t border-gray-800/80">
-        <div class="flex items-center justify-between text-[11px] font-mono-num mb-1.5">
-          <span class="text-emerald-300 font-bold">ออเดอร์ที่ปิดจบ TP/SL วันนี้ (ย้ายเข้าสมุดเรียนรู้ AI อัตโนมัติเมื่อขึ้นวันใหม่)</span>
-          <span id="today-wr-badge" class="text-cyan-400">WR วันนี้: -%</span>
-        </div>
-        <div id="today-closed-list" class="grid grid-cols-1 md:grid-cols-3 gap-2 font-mono-num text-[11px]"></div>
       </div>
     </section>
 
@@ -4162,166 +4053,27 @@
       runFullLiveQuantAndAI(false);
     });
   
-    // === EXACT BANGKOK (UTC+7) MARKET HOURS GUARD ===
+    // === V14.1 UNIFIED MASTER LOOP (ALL-IN-ONE) ===
+    // รวมทุก setInterval ให้เหลือ 1 ลูปหลัก (1000ms) พร้อม DOM diffing
+    window._lastDomStates = {};
+    
+    // ฟังก์ชันเช็คตลาดปิด (Bangkok UTC+7)
     window.isGoldMarketClosedBKK = function() {
       const bkk = new Date(Date.now() + 7 * 3600 * 1000);
-      const day = bkk.getUTCDay(); // 0=อาทิตย์, 1=จันทร์, ..., 6=เสาร์
+      const day = bkk.getUTCDay();
       const hour = bkk.getUTCHours();
-      if (day === 0) return true; // อาทิตย์ปิดทั้งวัน
-      if (day === 6 && hour >= 5) return true; // เสาร์ 05:00 น. เป็นต้นไปปิด
-      if (day === 1 && hour < 6) return true; // จันทร์ก่อน 06:00 น. ปิด
+      if (day === 0) return true;
+      if (day === 6 && hour >= 5) return true;
+      if (day === 1 && hour < 6) return true;
       return false;
     };
 
-    window.syncMarketStatusBadges = function() { return; }; window._disabled_syncMarketStatusBadges = function() { return; }; window._disabled_syncMarketStatusBadges = function() {
-      const closed = window.isGoldMarketClosedBKK();
-      const allNodes = document.querySelectorAll('span, div, p, h1, h2, h3');
-      allNodes.forEach(el => {
-        if (el.children.length > 0) return;
-        const txt = (el.textContent || '').trim();
-        if (!closed) {
-          if (txt.includes('MARKET CLOSED (เสาร์-อาทิตย์ | เปิดจันทร์')) {
-            el.textContent = '🟢 V14.1 MARKET OPEN (LIVE | จันทร์–เสาร์)';
-            el.className = el.className.replace(/amber|yellow|gray/g, 'emerald');
-          } else if (txt.includes('WEEKEND_MARKET_CLOSED_UTC_IGNORED') && txt.startsWith('PAUSED:')) {
-            el.textContent = '🟢 MARKET OPEN (ACTIVE — BANGKOK UTC+7)';
-            el.className = el.className.replace(/rose|red|amber|yellow/g, 'emerald');
-          } else if (txt.includes('Backend Risk Guard แจ้งเตือนสภาวะตลาด') && txt.includes('WEEKEND_MARKET_CLOSED_UTC_IGNORED')) {
-            el.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์และเทรดสดพร้อมทำงาน';
-          } else if (txt === '🌙 MARKET CLOSED (เสาร์-อาทิตย์)' || txt === 'MARKET CLOSED (เสาร์-อาทิตย์)') {
-            el.textContent = '🟢 MARKET OPEN (ACTIVE)';
-            el.className = el.className.replace(/amber|yellow|gray/g, 'emerald');
-          } else if (txt.includes('ตลาดทองคำ Spot/MT5 ปิดทำการ')) {
-            el.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์และเทรดสดพร้อมทำงาน';
-          }
-        }
-      });
-
-      const pSc = document.getElementById('lob-preview-scalp');
-      const pSw = document.getElementById('lob-preview-swing');
-      if (typeof liveModel !== 'undefined' && liveModel) {
-        if (pSc && liveModel.scalpSetup && liveModel.scalpSetup.entry) {
-          const s = liveModel.scalpSetup;
-          pSc.textContent = `${s.dir} Limit @ $${Number(s.entry).toFixed(2)} | SL $${Number(s.sl).toFixed(2)} | TP $${Number(s.tp).toFixed(2)}`;
-        }
-        if (pSw && liveModel.trendSetup && liveModel.trendSetup.entry) {
-          const t = liveModel.trendSetup;
-          pSw.textContent = `${t.dir} Limit @ $${Number(t.entry).toFixed(2)} | SL $${Number(t.sl).toFixed(2)} | TP $${Number(t.tp).toFixed(2)}`;
-        }
-      }
-    };
-
-    setTimeout(window.syncMarketStatusBadges, 200);
-    setInterval(window.syncMarketStatusBadges, 1500);
-
-    // === FRONTEND MACRO FALLBACK (DXY, US 10Y YIELD, CORR) ===
-    window.hydrateMacroFallback = async function() {
-      try {
-        const findCardVal = (labelStr) => {
-          const nodes = Array.from(document.querySelectorAll('div, span'));
-          const lbl = nodes.find(el => el.children.length === 0 && (el.textContent || '').trim() === labelStr);
-          if (!lbl || !lbl.parentElement) return null;
-          const siblings = Array.from(lbl.parentElement.children).filter(c => c !== lbl);
-          return siblings.length ? siblings[0] : null;
-        };
-
-        const dxyNode = document.getElementById('macro-dxy') || findCardVal('DXY Index');
-        const yldNode = document.getElementById('macro-us10y') || findCardVal('US 10Y Yield');
-        const corrNode = document.getElementById('macro-corr') || findCardVal('Gold-DXY Corr (20D)');
-
-        const needDxy = dxyNode && (dxyNode.textContent.trim() === '-' || dxyNode.textContent.trim() === '');
-        const needYld = yldNode && (yldNode.textContent.trim() === '-' || yldNode.textContent.trim() === '');
-        if (!needDxy && !needYld) return;
-
-        const fetchSym = async (sym) => {
-          const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1mo&interval=1d`;
-          const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`;
-          const res = await fetch(proxy);
-          if (!res.ok) return null;
-          const j = await res.json();
-          const closes = (j?.chart?.result?.[0]?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
-          return closes.length ? closes : null;
-        };
-
-        const [dxyCloses, tnxCloses] = await Promise.all([
-          needDxy ? fetchSym('DX-Y.NYB') : Promise.resolve(null),
-          needYld ? fetchSym('^TNX') : Promise.resolve(null)
-        ]);
-
-        if (dxyNode && dxyCloses && dxyCloses.length) {
-          const last = dxyCloses[dxyCloses.length - 1];
-          const prev = dxyCloses.length > 1 ? dxyCloses[dxyCloses.length - 2] : last;
-          const chg = ((last - prev) / prev * 100).toFixed(2);
-          dxyNode.textContent = `${last.toFixed(2)} (${chg >= 0 ? '+' : ''}${chg}%)`;
-          dxyNode.className = 'text-sm font-bold ' + (chg >= 0 ? 'text-rose-400' : 'text-emerald-400');
-        }
-        if (yldNode && tnxCloses && tnxCloses.length) {
-          const lastY = tnxCloses[tnxCloses.length - 1];
-          yldNode.textContent = `${lastY.toFixed(2)}%`;
-          yldNode.className = 'text-sm font-bold text-cyan-300';
-        }
-        if (corrNode && corrNode.textContent.trim() === '-' && dxyCloses && dxyCloses.length >= 10) {
-          corrNode.textContent = '-0.68 (Inverse)';
-          corrNode.className = 'text-sm font-bold text-amber-300';
-        }
-      } catch (e) {}
-    };
-    setTimeout(window.hydrateMacroFallback, 2000);
-    setInterval(window.hydrateMacroFallback, 300000);
-
-    // === ENFORCE COMPACT 3-COLUMN & ADMIN MODAL LAYOUT AFTER RENDER ===
-    window.enforceCompactCards = function() { return; }; window._disabled_enforceCompactCards = function() { return; }; window._disabled_enforceCompactCards = function() {
-      document.querySelectorAll('.grid').forEach(g => {
-        if (g.textContent && g.textContent.includes('Spot L2 Order Book') && g.textContent.includes('ENGINE B:')) {
-          g.style.alignItems = 'start';
-          Array.from(g.children).forEach(col => {
-            col.style.height = 'auto';
-            col.style.alignSelf = 'start';
-          });
-        }
-      });
-      document.querySelectorAll('div').forEach(d => {
-        if (d.children.length <= 4 && d.textContent && d.textContent.includes('โหมดแจ้งเตือน ntfy อย่างเดียวกำลังทำงาน')) {
-          d.style.gridColumn = '1 / -1';
-          d.style.width = '100%';
-        }
-      });
-    };
-    setTimeout(window.enforceCompactCards, 300);
-    setInterval(window.enforceCompactCards, 2000);
-
-    // =========================================================================
-    // V14.1 MASTER UPGRADE:
-    // 1. คูลดาวน์อิงเวลาปิดแท่งเทียน M15 (:00, :15, :30, :45) รีเฟรชหน้าจอไม่ค้าง
-    // 2. ซิงก์ออเดอร์เปิด & ออเดอร์ปิดจาก Backend/ntfy เข้า LIVE ORDER BOARD อัตโนมัติ
-    // 3. แสดงผลกำไร/ขาดทุนสด (+/- $ และ R) ทุกวินาทีระหว่างถือออเดอร์
-    // 4. ล็อกความสูงการ์ด 3 คอลัมน์ให้พอดีเนื้อหา ไม่ยืดเป็นกล่องดำว่าง
-    // =========================================================================
-
+    // ฟังก์ชันคูลดาวน์อิงเวลาปิดแท่ง M15
     window.getNextM15CandleCloseMs = function(fromMs) {
       const M15_MS = 15 * 60 * 1000;
       let nextClose = Math.ceil(fromMs / M15_MS) * M15_MS;
-      if (nextClose - fromMs < 45 * 1000) {
-        nextClose += M15_MS;
-      }
+      if (nextClose - fromMs < 45 * 1000) nextClose += M15_MS;
       return nextClose;
-    };
-
-    window.formatBkkHHMM = function(ms) {
-      const d = new Date(ms + 7 * 3600 * 1000);
-      const hh = String(d.getUTCHours()).padStart(2, '0');
-      const mm = String(d.getUTCMinutes()).padStart(2, '0');
-      return `${hh}:${mm} น.`;
-    };
-
-    window.triggerM15CandleCooldown = function(closedAtMs) {
-      const baseMs = closedAtMs || Date.now();
-      const untilMs = window.getNextM15CandleCloseMs(baseMs);
-      try {
-        localStorage.setItem('gq_m15_cooldown_until', String(untilMs));
-        localStorage.setItem('gq_last_real_close_ms', String(baseMs));
-      } catch (e) {}
-      return untilMs;
     };
 
     window.getCooldownGuardStatus = function() {
@@ -4330,417 +4082,28 @@
       try {
         untilMs = Number(localStorage.getItem('gq_m15_cooldown_until') || 0);
       } catch (e) {}
-
       if (!untilMs || now >= untilMs) {
         if (untilMs && now >= untilMs) {
           try { localStorage.removeItem('gq_m15_cooldown_until'); } catch (e) {}
         }
         return { inCooldown: false, cooldownRemMs: 0, targetTimeStr: '', reason: '' };
       }
-
       const remMs = Math.max(0, untilMs - now);
-      const targetStr = window.formatBkkHHMM(untilMs);
+      const bkk = new Date(untilMs + 7 * 3600 * 1000);
+      const hh = String(bkk.getUTCHours()).padStart(2, '0');
+      const mm = String(bkk.getUTCMinutes()).padStart(2, '0');
       return {
         inCooldown: remMs > 0,
         cooldownRemMs: remMs,
-        targetTimeStr: targetStr,
-        reason: `พักรอจบแท่งเทียน M15 (ปิดแท่ง ${targetStr})`
+        targetTimeStr: `${hh}:${mm} น.`,
+        reason: `พักรอจบแท่งเทียน M15 (ปิดแท่ง ${hh}:${mm} น.)`
       };
     };
 
-    window.syncBackendOrdersToBoard = function(backendPayload) {
-      if (!backendPayload || typeof backendPayload !== 'object') return;
-      let changed = false;
-
-      const bClosed = backendPayload.backend_closed_orders || backendPayload.closed_orders || backendPayload.recent_trades;
-      if (Array.isArray(bClosed) && bClosed.length > 0 && typeof todayClosed !== 'undefined' && Array.isArray(todayClosed)) {
-        const existingKeys = new Set(todayClosed.map(t => String(t.id || `${t.entry}_${t.exit}_${t.side}`)));
-        let latestClosedMs = 0;
-
-        bClosed.forEach((bt, idx) => {
-          const entry = Number(bt.entry || bt.entry_price || 0);
-          const exit = Number(bt.exit || bt.exit_price || 0);
-          const side = String(bt.side || bt.dir || bt.direction || 'SHORT').toUpperCase();
-          const uid = String(bt.id || bt.trade_id || `${entry}_${exit}_${side}_${bt.closed_at || idx}`);
-          if (entry > 0 && !existingKeys.has(uid)) {
-            const pnlR = Number(bt.pnl_r ?? bt.r ?? bt.net_r ?? 0);
-            const lot = Number(bt.lot || 0.01);
-            const pnlUsd = Number(bt.pnl_usd ?? bt.usd ?? (pnlR * 10));
-            const closedTimeStr = String(bt.closed_at || bt.time || new Date().toTimeString().slice(0, 5));
-            todayClosed.push({
-              id: uid,
-              side: side,
-              lot: lot,
-              entry: entry,
-              exit: exit,
-              pnlR: pnlR,
-              pnlUsd: pnlUsd,
-              reason: bt.reason || bt.status || (pnlR >= 0 ? 'TP HIT (ntfy)' : 'SL HIT (ntfy)'),
-              time: closedTimeStr
-            });
-            existingKeys.add(uid);
-            changed = true;
-            if (bt.closed_ts_ms) {
-              latestClosedMs = Math.max(latestClosedMs, Number(bt.closed_ts_ms));
-            }
-          }
-        });
-
-        if (latestClosedMs > 0 && (Date.now() - latestClosedMs) < 15 * 60 * 1000) {
-          const prevClose = Number(localStorage.getItem('gq_last_real_close_ms') || 0);
-          if (latestClosedMs > prevClose) {
-            window.triggerM15CandleCooldown(latestClosedMs);
-          }
-        }
-      }
-
-      const bActive = backendPayload.backend_active_order || backendPayload.active_order || backendPayload.open_position;
-      if (bActive && typeof bActive === 'object' && Number(bActive.entry || bActive.entry_price || 0) > 0) {
-        const st = String(bActive.status || 'OPEN').toUpperCase();
-        if (['OPEN', 'HOLDING', 'ACTIVE', 'PENDING', 'LIMIT'].includes(st)) {
-          if (typeof activeOrder === 'undefined' || !activeOrder) {
-            window.activeOrder = {
-              id: bActive.id || ('BE_' + Date.now()),
-              side: String(bActive.side || bActive.dir || 'SHORT').toUpperCase(),
-              lot: Number(bActive.lot || 0.01),
-              entry: Number(bActive.entry || bActive.entry_price),
-              sl: Number(bActive.sl || bActive.stop_loss || 0),
-              tp: Number(bActive.tp || bActive.take_profit || 0),
-              bePrice: Number(bActive.be_price || bActive.be || 0),
-              status: st === 'PENDING' || st === 'LIMIT' ? 'PENDING' : 'OPEN',
-              engine: bActive.engine || 'BACKEND_SYNC',
-              time: bActive.opened_at || new Date().toTimeString().slice(0, 5)
-            };
-            changed = true;
-          }
-        } else if (['CLOSED', 'TP', 'SL'].includes(st) && typeof activeOrder !== 'undefined' && activeOrder && String(activeOrder.id).startsWith('BE_')) {
-          window.activeOrder = null;
-          changed = true;
-        }
-      }
-
-      if (changed && typeof renderOrderAndLedgerUI === 'function') {
-        renderOrderAndLedgerUI();
-      }
-    };
-
-    window.runV14LiveBoardTick = function() {
-      const cd = window.getCooldownGuardStatus();
-      const cdPill = document.getElementById('lob-cooldown-pill');
-      const cdNote = document.getElementById('lob-cooldown-note');
-      if (cdPill) {
-        if (cd.inCooldown && cd.cooldownRemMs > 0) {
-          const cm = Math.floor(cd.cooldownRemMs / 60000);
-          const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
-          cdPill.classList.remove('hidden');
-          cdPill.textContent = `⏳ รอจบแท่ง M15 (${cd.targetTimeStr} | เหลือ ${cm}:${cs})`;
-          if (cdNote) cdNote.textContent = `⏳ พักรอจบแท่งเทียน M15 ปัจจุบัน (เปิดเข้าใหม่ตอน ${cd.targetTimeStr} | เหลือ ${cm}:${cs} นาที)`;
-        } else {
-          cdPill.classList.add('hidden');
-          if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
-        }
-      }
-
-      document.querySelectorAll('span, div, p, h1, h2, h3').forEach(el => {
-        if (el.children.length > 0) return;
-        const txt = (el.textContent || '').trim();
-        if (txt.startsWith('⏳ COOLDOWN (') || txt.includes('พักหลังปิดออเดอร์ 15 นาที')) {
-          if (cd.inCooldown && cd.cooldownRemMs > 0) {
-            const cm = Math.floor(cd.cooldownRemMs / 60000);
-            const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
-            if (txt.startsWith('⏳ COOLDOWN (')) {
-              el.textContent = `⏳ รอจบแท่ง M15 (${cd.targetTimeStr} | ${cm}:${cs})`;
-            } else {
-              el.textContent = `พักรอจบแท่งเทียน M15 รอบ ${cd.targetTimeStr} (เหลืออีก ${cm}:${cs} นาที) เพื่อป้องกันการเข้าไม้ซ้ำในแท่งเดิม`;
-            }
-          } else {
-            if (txt.startsWith('⏳ COOLDOWN (')) {
-              el.textContent = '🟢 M15 CANDLE READY';
-              el.className = el.className.replace(/amber|yellow|rose/g, 'emerald');
-            } else if (typeof liveModel !== 'undefined' && liveModel && liveModel.headline) {
-              el.textContent = liveModel.headline;
-            }
-          }
-        }
-      });
-
-      if (typeof activeOrder !== 'undefined' && activeOrder) {
-        const pill = document.getElementById('live-order-status-pill');
-        const emptyEl = document.getElementById('active-order-empty');
-        const cardEl = document.getElementById('active-order-card');
-        const closeBtn = document.getElementById('btn-close-order');
-        if (emptyEl) emptyEl.classList.add('hidden');
-        if (cardEl) cardEl.classList.remove('hidden');
-        if (closeBtn) closeBtn.classList.remove('hidden');
-
-        let curPrice = 0;
-        const spotEl = document.getElementById('spot-price-main') || document.getElementById('ticker-spot-price');
-        if (spotEl) {
-          const parsed = parseFloat((spotEl.textContent || '').replace(/[^0-9.]/g, ''));
-          if (parsed > 1000) curPrice = parsed;
-        }
-        if (!curPrice && typeof lastSpotPrice !== 'undefined' && lastSpotPrice > 1000) {
-          curPrice = Number(lastSpotPrice) + (typeof mt5Offset !== 'undefined' ? Number(mt5Offset) : 0);
-        }
-
-        const isPending = (activeOrder.status === 'PENDING' || activeOrder.status === 'LIMIT');
-        if (pill) {
-          if (isPending) {
-            pill.textContent = `⏳ PENDING LIMIT (${activeOrder.side})`;
-            pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500 rounded-full";
-          } else {
-            pill.textContent = `🟢 HOLDING / เข้าออเดอร์แล้ว (${activeOrder.side})`;
-            pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-500 rounded-full animate-pulse";
-          }
-        }
-
-        if (!isPending && curPrice > 1000 && activeOrder.entry > 1000) {
-          const lot = Number(activeOrder.lot || 0.01);
-          const diff = activeOrder.side === 'LONG' ? (curPrice - activeOrder.entry) : (activeOrder.entry - curPrice);
-          const pnlUsd = diff * lot * 100;
-          const slDist = Math.abs(activeOrder.entry - (activeOrder.sl || activeOrder.entry));
-          const riskUsd = slDist > 0 ? (slDist * lot * 100) : 10;
-          const pnlR = riskUsd > 0 ? (pnlUsd / riskUsd) : 0;
-
-          const pnlUsdEl = document.getElementById('ao-pnl-usd');
-          const pnlREl = document.getElementById('ao-pnl-r');
-          const distEntryEl = document.getElementById('ao-dist-entry');
-          if (pnlUsdEl) {
-            pnlUsdEl.textContent = `${pnlUsd >= 0 ? '+' : '-'}$${Math.abs(pnlUsd).toFixed(2)}`;
-            pnlUsdEl.className = `text-base font-bold ${pnlUsd >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
-          }
-          if (pnlREl) {
-            pnlREl.textContent = `${pnlR >= 0 ? '+' : ''}${pnlR.toFixed(2)}R`;
-            pnlREl.className = `block text-[11px] font-bold ${pnlR >= 0 ? 'text-emerald-300' : 'text-rose-300'}`;
-          }
-          if (distEntryEl) {
-            const pts = Math.round(diff * 100);
-            distEntryEl.textContent = `ราคาสด $${curPrice.toFixed(2)} (${pts >= 0 ? '+' : ''}${pts} จุด)`;
-          }
-        }
-      }
-
-      document.querySelectorAll('.grid').forEach(g => {
-        if (g.textContent && g.textContent.includes('Spot L2 Order Book') && g.textContent.includes('ENGINE B:')) {
-          g.style.setProperty('align-items', 'start', 'important');
-          Array.from(g.children).forEach(col => {
-            col.style.setProperty('height', 'auto', 'important');
-            col.style.setProperty('min-height', '0', 'important');
-            col.style.setProperty('align-self', 'start', 'important');
-            const innerCard = col.querySelector('.card');
-            if (innerCard) {
-              innerCard.style.setProperty('height', 'auto', 'important');
-              innerCard.style.setProperty('min-height', '0', 'important');
-            }
-          });
-        }
-      });
-    };
-
-    if (typeof closeActiveOrder === 'function' && !window._v14WrappedClose) {
-      window._v14WrappedClose = true;
-      const _origCloseActiveOrder = closeActiveOrder;
-      window.closeActiveOrder = function() {
-        const res = _origCloseActiveOrder.apply(this, arguments);
-        window.triggerM15CandleCooldown(Date.now());
-        return res;
-      };
-    }
-
-    setInterval(() => {
-      if (typeof liveModel !== 'undefined' && liveModel) {
-        window.syncBackendOrdersToBoard(liveModel);
-      }
-      window.runV14LiveBoardTick();
-    }, 1000);
-    setTimeout(window.runV14LiveBoardTick, 250);
-
-    
-
-    // =========================================================================
-    // V14.3 SIDE-BY-SIDE JOURNAL + BALANCED HEIGHT MATCHING WITH TALL ENGINE A
-    // =========================================================================
-
-    window.rebalanceEngineGrid = function() {
-      const grids = Array.from(document.querySelectorAll('.grid'));
-      const targetGrid = grids.find(g =>
-        g.textContent &&
-        g.textContent.includes('Spot L2 Order Book') &&
-        g.textContent.includes('ENGINE A:') &&
-        g.textContent.includes('ENGINE B:')
-      );
-      if (!targetGrid || targetGrid.dataset.v14JournalAligned === '1') return;
-
-      const allCards = Array.from(targetGrid.querySelectorAll('.card'));
-      const l2Box = allCards.find(c => c.textContent.includes('Spot L2 Order Book') && !c.textContent.includes('ENGINE A:'));
-      const engABox = allCards.find(c => c.textContent.includes('ENGINE A:') && !c.textContent.includes('Spot L2 Order Book'));
-      const engBBox = allCards.find(c => c.textContent.includes('ENGINE B:') && !c.textContent.includes('ENGINE A:'));
-
-      // ค้นหากล่อง "สมุดบันทึกสถิติพอร์ตจริงข้ามวัน" จากด้านล่าง
-      const journalBox = Array.from(document.querySelectorAll('section.card, div.card, section')).find(el =>
-        el.textContent &&
-        el.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') &&
-        !el.textContent.includes('Chief Quant Strategist') &&
-        !el.textContent.includes('LIVE ORDER BOARD')
-      );
-
-      if (!l2Box || !engABox || !engBBox) return;
-
-      targetGrid.dataset.v14JournalAligned = '1';
-
-      if (journalBox) {
-        // แบ่ง 3 คอลัมน์ความสูงเท่ากัน (4 + 4 + 4):
-        // ซ้าย: Spot L2 (บน) + Engine B (ล่าง) | กลาง: Engine A (กล่องยาว) | ขวา: สมุดบันทึกพอร์ตจริง (สูงเท่ากล่องยาว)
-        targetGrid.className = 'grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch';
-
-        // คอลัมน์ซ้าย: ซ้อน Spot L2 + Engine B
-        const leftStack = document.createElement('div');
-        leftStack.className = 'lg:col-span-4 flex flex-col gap-4 justify-between';
-        [l2Box, engBBox].forEach(box => {
-          box.classList.remove('lg:col-span-1', 'xl:col-span-1', 'col-span-1');
-          box.style.setProperty('width', '100%', 'important');
-          box.style.setProperty('height', 'auto', 'important');
-        });
-        engBBox.style.setProperty('flex', '1', 'important');
-        leftStack.appendChild(l2Box);
-        leftStack.appendChild(engBBox);
-
-        // คอลัมน์กลาง: Engine A (กล่องยาว)
-        engABox.classList.remove('lg:col-span-1', 'xl:col-span-1', 'col-span-1', 'lg:col-span-7');
-        engABox.classList.add('lg:col-span-4');
-        engABox.style.setProperty('height', '100%', 'important');
-
-        // คอลัมน์ขวา: สมุดบันทึกสถิติพอร์ตจริงข้ามวัน ย้ายมาวางข้างๆ และยืดให้พอดีกล่องยาว
-        journalBox.classList.remove('mt-4', 'mt-6', 'my-4', 'my-6');
-        journalBox.classList.add('lg:col-span-4', 'flex', 'flex-col');
-        journalBox.style.setProperty('height', '100%', 'important');
-        journalBox.style.setProperty('margin-top', '0', 'important');
-
-        const jHeading = journalBox.querySelector('h2, h3, .text-base, .text-lg');
-        if (jHeading) {
-          jHeading.style.setProperty('font-size', '0.95rem', 'important');
-          jHeading.style.setProperty('line-height', '1.3', 'important');
-        }
-
-        const tbl = journalBox.querySelector('table');
-        if (tbl) {
-          tbl.style.setProperty('font-size', '11px', 'important');
-          tbl.querySelectorAll('th, td').forEach(cell => {
-            cell.style.setProperty('padding', '6px 6px', 'important');
-          });
-          const tblWrapper = tbl.parentElement;
-          if (tblWrapper && tblWrapper !== journalBox) {
-            tblWrapper.style.setProperty('flex', '1', 'important');
-            tblWrapper.style.setProperty('overflow-y', 'auto', 'important');
-            tblWrapper.style.setProperty('overflow-x', 'auto', 'important');
-            tblWrapper.style.setProperty('max-height', 'none', 'important');
-            tblWrapper.style.setProperty('min-height', '260px', 'important');
-          }
-        }
-
-        targetGrid.innerHTML = '';
-        targetGrid.appendChild(leftStack);
-        targetGrid.appendChild(engABox);
-        targetGrid.appendChild(journalBox);
-      } else {
-        targetGrid.className = 'grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch';
-        engABox.classList.add('lg:col-span-7');
-        engABox.style.setProperty('height', '100%', 'important');
-        const rightStack = document.createElement('div');
-        rightStack.className = 'lg:col-span-5 flex flex-col gap-4 justify-between';
-        engBBox.style.setProperty('flex', '1', 'important');
-        rightStack.appendChild(l2Box);
-        rightStack.appendChild(engBBox);
-        targetGrid.innerHTML = '';
-        targetGrid.appendChild(engABox);
-        targetGrid.appendChild(rightStack);
-      }
-    };
-
-    if (typeof window.syncRiskGuardAndLimits !== 'function') {
-      window.syncRiskGuardAndLimits = function() { return; }; window._disabled_syncRiskGuardAndLimits = function() { return; }; window._disabled_syncRiskGuardAndLimits = function() {
-        if (typeof liveModel !== 'undefined' && liveModel) {
-          const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
-          if (pr.includes('ตลาดทองคำเปิดทำการปกติ') || pr.includes('WEEKEND_MARKET_CLOSED')) {
-            liveModel.pauseReason = '';
-            liveModel.pause_reason = '';
-            liveModel.isPaused = false;
-            liveModel.is_paused = false;
-          }
-        }
-        const allCards = Array.from(document.querySelectorAll('.card, section, div'));
-        const guardCard = allCards.find(el =>
-          el.textContent &&
-          el.textContent.includes('CONFIDENCE:') &&
-          el.textContent.includes('ระยะห่างจุดเข้า') &&
-          el.className && (el.className.includes('card') || el.className.includes('rounded'))
-        );
-        let isGuardRedOrBlocked = false;
-        let guardBlockReason = '';
-        if (guardCard) {
-          guardCard.querySelectorAll('span, div, p, h1, h2, h3').forEach(node => {
-            if (node.children.length > 0) return;
-            const t = (node.textContent || '').trim();
-            if (t.includes('Backend Risk Guard สั่งเบรก') && t.includes('ตลาดทองคำเปิดทำการปกติ')) {
-              node.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — วิเคราะห์โครงสร้าง 24H Daily VP + 4H Micro-VP สด';
-            } else if (t === '') {
-              node.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
-              node.className = node.className.replace(/rose|red|amber/g, 'emerald');
-            }
-          });
-          const cardTxt = guardCard.textContent || '';
-          const hasRealPause = cardTxt.includes('PAUSED:') || cardTxt.includes('SPREAD_OK') || cardTxt.includes('NEWS_GUARD') || cardTxt.includes('พักรอจบแท่งเทียน M15');
-          if (!hasRealPause && guardCard.className.includes('rose')) {
-            guardCard.className = guardCard.className.replace(/border-rose-\d+(\/\d+)?/g, 'border-gray-800').replace(/bg-rose-\d+(\/\d+)?/g, '');
-          }
-          const isRedStyled = /border-rose|border-red|bg-rose-950/.test(guardCard.className);
-          const distMatch = cardTxt.match(/(\d+)\s*\/\s*(\d+)\s*จุด\s*(✓)?/);
-          if (isRedStyled || hasRealPause) {
-            isGuardRedOrBlocked = true;
-            const pm = cardTxt.match(/PAUSED:\s*([A-Z0-9_]+(?:\s*\([^)]+\))?)/);
-            guardBlockReason = pm ? `PAUSED: ${pm[1]}` : 'Risk Guard สั่งเบรกชั่วคราว';
-          } else if (distMatch && !distMatch[3] && Number(distMatch[1]) > Number(distMatch[2])) {
-            isGuardRedOrBlocked = true;
-            guardBlockReason = `ระยะห่างจุดเข้าเกินกำหนด (${distMatch[1]}/${distMatch[2]} จุด)`;
-          }
-        }
-        if (typeof activeOrder === 'undefined' || !activeOrder) {
-          const pill = document.getElementById('live-order-status-pill');
-          const pSc = document.getElementById('lob-preview-scalp');
-          const pSw = document.getElementById('lob-preview-swing');
-          if (isGuardRedOrBlocked) {
-            if (pill) {
-              pill.textContent = '⛔ งดออกออเดอร์ LIMIT (ติดเงื่อนไขกรอง)';
-              pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500/70 rounded-full';
-            }
-            if (pSc) { pSc.textContent = `⛔ งดวาง Limit (${guardBlockReason})`; pSc.className = 'text-rose-400 font-bold'; }
-            if (pSw) { pSw.textContent = `⛔ งดวาง Limit (${guardBlockReason})`; pSw.className = 'text-rose-400 font-bold'; }
-          }
-        }
-      };
-    }
-
-    setTimeout(() => {
-      window.rebalanceEngineGrid();
-      window.syncRiskGuardAndLimits();
-    }, 200);
-    setInterval(() => {
-      window.rebalanceEngineGrid();
-      window.syncRiskGuardAndLimits();
-    }, 1000);
-
-    // =========================================================================
-    // V14.4 MASTER FIX:
-    // 1. หยุดอาการ Risk Guard กะพริบสลับไปมา (ล้างค่าจากต้นทาง liveModel ก่อนวาดจอ)
-    // 2. ซิงก์ออเดอร์สดจาก ntfy (pansakorn888) เข้า LIVE ORDER BOARD อัตโนมัติ
-    //    -> เมื่อ ntfy เข้า LONG/SHORT แล้ว กระดานจะขึ้น HOLDING + บวก/ลบ $ สดทันที
-    // 3. ขยายกล่อง "สมุดบันทึกสถิติพอร์ตจริงข้ามวัน" ให้สูงเท่ากล่องยาว (Engine A) พอดีเป๊ะ
-    // =========================================================================
-
-    // 1. ล้างค่า pauseReason หลอกใน liveModel ทุกๆ 250ms (กันการกะพริบ 100%)
-    window.sanitizeLiveModelPause = function() {
+    // ฟังก์ชันกรองค่า WEEKEND/SPREAD จาก liveModel และทำความสะอาด DOM
+    window.sanitizeLiveModel = function() {
       if (typeof liveModel !== 'undefined' && liveModel && typeof liveModel === 'object') {
-        const badPhrases = ['ตลาดทองคำเปิดทำการปกติ', 'WEEKEND_MARKET_CLOSED', 'วันอาทิตย์ตลาดปิด'];
+        const badPhrases = ['ตลาดทองคำเปิดทำการปกติ', 'WEEKEND_MARKET_CLOSED', 'วันอาทิตย์ตลาดปิด', 'SPREAD_OK'];
         ['pauseReason', 'pause_reason', 'blockReason', 'block_reason'].forEach(k => {
           if (typeof liveModel[k] === 'string' && badPhrases.some(p => liveModel[k].includes(p))) {
             liveModel[k] = '';
@@ -4751,572 +4114,85 @@
           if (liveModel.isPaused === true) liveModel.isPaused = false;
           if (liveModel.is_paused === true) liveModel.is_paused = false;
         }
-        if (typeof liveModel.headline === 'string' && liveModel.headline.includes('Backend Risk Guard สั่งเบรก') && !curReason) {
-          liveModel.headline = 'ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP พร้อมทำงาน (Bangkok UTC+7)';
-        }
       }
     };
-    setInterval(window.sanitizeLiveModelPause, 250);
 
-    // 2. ดึงและซิงก์ออเดอร์ล่าสุดจาก ntfy.sh (pansakorn888) เข้า LIVE ORDER BOARD อัตโนมัติ
-    window.syncOrdersFromNtfy = async function() {
-      try {
-        let topic = 'pansakorn888';
-        const topicInput = document.querySelector('input[value*="pansakorn"], #ntfy-topic-input, #creator-ntfy-topic');
-        if (topicInput && topicInput.value && topicInput.value.trim()) {
-          topic = topicInput.value.trim();
+    // Master Loop: รวมทุกอย่างไว้ชุดเดียว (1000ms)
+    window.masterUnifiedLoop = function() {
+      // 1. เช็คและล้างค่าหลอก
+      sanitizeLiveModel();
+
+      // 2. Countdown รอบวิเคราะห์ถัดไป
+      const now = new Date();
+      const mins = now.getMinutes(), secs = now.getSeconds();
+      const slot = Math.floor(mins / 15);
+      const nextSlot = (slot + 1) * 15;
+      const remMins = (nextSlot - mins - 1 + 60) % 60;
+      const remSecs = 59 - secs;
+      const countdownEl = document.getElementById('next-cycle-countdown');
+      if (countdownEl) {
+        countdownEl.textContent = `รอบวิเคราะห์ + รีเฟรช Limit ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
+      }
+
+      // 3. แสดง "อัปเดตสด" elapsed time
+      if (lastAiUpdateMs > 0) {
+        const elapsedMins = Math.floor((Date.now() - lastAiUpdateMs) / 60000);
+        const lastUpdatedEl = document.getElementById('last-updated');
+        if (lastUpdatedEl) {
+          lastUpdatedEl.textContent = `อัปเดตสด: ${lastAiTimeStr} (${elapsedMins} นาทีที่แล้ว)`;
+        }
+      }
+
+      // 4. คูลดาวน์ M15
+      const cd = getCooldownGuardStatus();
+      const cdPill = document.getElementById('lob-cooldown-pill');
+      const cdNote = document.getElementById('lob-cooldown-note');
+      if (cdPill) {
+        if (cd.inCooldown && cd.cooldownRemMs > 0) {
+          const cm = Math.floor(cd.cooldownRemMs / 60000);
+          const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
+          cdPill.classList.remove('hidden');
+          cdPill.textContent = `⏳ รอจบแท่ง M15 (${cd.targetTimeStr} | เหลือ ${cm}:${cs})`;
+          if (cdNote) cdNote.textContent = `⏳ พักรอจบแท่งเทียน M15 รอบ ${cd.targetTimeStr} (เหลือ ${cm}:${cs} นาที)`;
         } else {
-          const badge = Array.from(document.querySelectorAll('span, button, div')).find(el =>
-            el.children.length === 0 && (el.textContent || '').includes('ntfy:')
-          );
-          if (badge) {
-            const m = badge.textContent.match(/ntfy:\s*([a-zA-Z0-9_\-]+)/);
-            if (m && m[1]) topic = m[1].trim();
-          }
+          cdPill.classList.add('hidden');
+          if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
         }
-
-        const url = `https://ntfy.sh/${encodeURIComponent(topic)}/json?poll=1&since=12h`;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) return;
-        const rawText = await res.text();
-        if (!rawText.trim()) return;
-
-        const lines = rawText.trim().split('\n');
-        const events = [];
-        for (const line of lines) {
-          try {
-            const obj = JSON.parse(line);
-            if (obj && obj.event === 'message' && obj.message) {
-              events.push(obj);
-            }
-          } catch (e) {}
-        }
-        if (!events.length) return;
-
-        let latestTradeSignal = null;
-        let latestCloseSignal = null;
-
-        for (const ev of events) {
-          const fullText = `${ev.title || ''} ${ev.message || ''}`;
-          if (fullText.includes('ทดสอบ') || fullText.includes('Test')) continue;
-
-          const evMs = (Number(ev.time || 0)) * 1000;
-          const isCloseMsg = /(TP\s*HIT|SL\s*HIT|ชน\s*TP|ชน\s*SL|ปิดออเดอร์|CLOSED|ปิดไม้|จบออเดอร์|ตัดขาดทุน|ถึงเป้าหมาย)/i.test(fullText);
-          const sideMatch = fullText.match(/(LONG|SHORT|BUY|SELL)/i);
-          const priceMatches = Array.from(fullText.matchAll(/\$?(2\d{3}\.\d{1,2}|3\d{3}\.\d{1,2}|4\d{3}\.\d{1,2})/g)).map(m => parseFloat(m[1]));
-
-          if (isCloseMsg) {
-            latestCloseSignal = { ev, evMs, fullText, priceMatches };
-          } else if (sideMatch && priceMatches.length >= 1) {
-            const rawSide = sideMatch[1].toUpperCase();
-            const side = (rawSide === 'BUY' || rawSide === 'LONG') ? 'LONG' : 'SHORT';
-
-            let entry = priceMatches[0];
-            let sl = 0;
-            let tp = 0;
-
-            const entryExplicit = fullText.match(/(?:@|Entry|เข้า|ราคาเข้า)[^\d]{0,10}(3\d{3}\.\d{1,2}|2\d{3}\.\d{1,2}|4\d{3}\.\d{1,2})/i);
-            const slExplicit = fullText.match(/(?:SL|Stop)[^\d]{0,10}(3\d{3}\.\d{1,2}|2\d{3}\.\d{1,2}|4\d{3}\.\d{1,2})/i);
-            const tpExplicit = fullText.match(/(?:TP|Target|เป้า)[^\d]{0,10}(3\d{3}\.\d{1,2}|2\d{3}\.\d{1,2}|4\d{3}\.\d{1,2})/i);
-
-            if (entryExplicit) entry = parseFloat(entryExplicit[1]);
-            if (slExplicit) sl = parseFloat(slExplicit[1]);
-            if (tpExplicit) tp = parseFloat(tpExplicit[1]);
-
-            if (!sl || !tp) {
-              for (const p of priceMatches) {
-                if (Math.abs(p - entry) < 0.05) continue;
-                if (side === 'LONG') {
-                  if (p < entry && !sl) sl = p;
-                  if (p > entry && !tp) tp = p;
-                } else {
-                  if (p > entry && !sl) sl = p;
-                  if (p < entry && !tp) tp = p;
-                }
-              }
-            }
-
-            if (entry > 1000) {
-              const bkkDate = new Date(evMs + 7 * 3600 * 1000);
-              const hhmm = `${String(bkkDate.getUTCHours()).padStart(2, '0')}:${String(bkkDate.getUTCMinutes()).padStart(2, '0')}`;
-              latestTradeSignal = {
-                id: 'NTFY_' + ev.id,
-                evMs,
-                side,
-                entry,
-                sl: sl || (side === 'LONG' ? entry - 8.5 : entry + 8.5),
-                tp: tp || (side === 'LONG' ? entry + 17.0 : entry - 17.0),
-                time: hhmm,
-                engine: fullText.includes('Swing') ? 'Swing (ntfy)' : 'Scalp (ntfy)'
-              };
-            }
-          }
-        }
-
-        if (latestTradeSignal && (!latestCloseSignal || latestTradeSignal.evMs > latestCloseSignal.evMs)) {
-          const curAo = (typeof activeOrder !== 'undefined') ? activeOrder : window.activeOrder;
-          const isSameOrder = curAo && Math.abs(Number(curAo.entry) - latestTradeSignal.entry) < 0.2 && curAo.side === latestTradeSignal.side;
-
-          if (!curAo || curAo.status === 'PENDING' || !isSameOrder) {
-            const lotInput = document.querySelector('#lot-size-input, input[step="0.01"]');
-            const lotVal = (lotInput && parseFloat(lotInput.value) > 0) ? parseFloat(lotInput.value) : 0.01;
-
-            const syncedOrder = {
-              id: latestTradeSignal.id,
-              side: latestTradeSignal.side,
-              lot: lotVal,
-              entry: latestTradeSignal.entry,
-              sl: latestTradeSignal.sl,
-              tp: latestTradeSignal.tp,
-              bePrice: 0,
-              status: 'OPEN',
-              engine: latestTradeSignal.engine,
-              time: latestTradeSignal.time
-            };
-
-            if (typeof activeOrder !== 'undefined') {
-              activeOrder = syncedOrder;
-            }
-            window.activeOrder = syncedOrder;
-
-            try { localStorage.removeItem('gq_m15_cooldown_until'); } catch (e) {}
-
-            if (typeof renderOrderAndLedgerUI === 'function') {
-              renderOrderAndLedgerUI();
-            }
-            if (typeof window.runV14LiveBoardTick === 'function') {
-              window.runV14LiveBoardTick();
-            }
-          }
-        } else if (latestCloseSignal && latestTradeSignal && latestCloseSignal.evMs >= latestTradeSignal.evMs) {
-          const curAo = (typeof activeOrder !== 'undefined') ? activeOrder : window.activeOrder;
-          if (curAo && String(curAo.id || '').startsWith('NTFY_')) {
-            const exitP = latestCloseSignal.priceMatches.length ? latestCloseSignal.priceMatches[latestCloseSignal.priceMatches.length - 1] : curAo.entry;
-            const diff = curAo.side === 'LONG' ? (exitP - curAo.entry) : (curAo.entry - exitP);
-            const pnlUsd = diff * (curAo.lot || 0.01) * 100;
-            const slDist = Math.abs(curAo.entry - curAo.sl) || 8.5;
-            const pnlR = diff / slDist;
-
-            if (typeof todayClosed !== 'undefined' && Array.isArray(todayClosed)) {
-              const alreadyLogged = todayClosed.some(t => String(t.id) === String(curAo.id));
-              if (!alreadyLogged) {
-                todayClosed.push({
-                  id: curAo.id,
-                  side: curAo.side,
-                  lot: curAo.lot || 0.01,
-                  entry: curAo.entry,
-                  exit: exitP,
-                  pnlR: Number(pnlR.toFixed(2)),
-                  pnlUsd: Number(pnlUsd.toFixed(2)),
-                  reason: latestCloseSignal.fullText.includes('TP') ? 'TP HIT (ntfy)' : 'SL HIT (ntfy)',
-                  time: new Date(latestCloseSignal.evMs + 7 * 3600 * 1000).toISOString().slice(11, 16)
-                });
-              }
-            }
-            if (typeof activeOrder !== 'undefined') activeOrder = null;
-            window.activeOrder = null;
-            if (typeof window.triggerM15CandleCooldown === 'function') {
-              window.triggerM15CandleCooldown(latestCloseSignal.evMs);
-            }
-            if (typeof renderOrderAndLedgerUI === 'function') {
-              renderOrderAndLedgerUI();
-            }
-          }
-        }
-      } catch (err) {}
-    };
-
-    // 3. ขยายการ์ด "สมุดบันทึกสถิติพอร์ตจริงข้ามวัน" ให้สูงเท่ากล่องยาว (Engine A) พอดีเป๊ะ
-    window.matchJournalHeightToEngineA = function() {
-      const engACard = Array.from(document.querySelectorAll('.card')).find(c =>
-        c.textContent && c.textContent.includes('ENGINE A: NEAR-SPOT') && !c.textContent.includes('Spot L2 Order Book')
-      );
-      const journalCard = Array.from(document.querySelectorAll('.card')).find(c =>
-        c.textContent && c.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') && !c.textContent.includes('ENGINE A:')
-      );
-      if (!engACard || !journalCard) return;
-
-      if (journalCard.parentElement && journalCard.parentElement.classList.contains('grid')) {
-        journalCard.style.setProperty('height', '100%', 'important');
-        journalCard.style.setProperty('display', 'flex', 'important');
-        journalCard.style.setProperty('flex-direction', 'column', 'important');
-        journalCard.style.setProperty('justify-content', 'flex-start', 'important');
-      } else if (journalCard.parentElement) {
-        journalCard.parentElement.style.setProperty('height', '100%', 'important');
-        journalCard.parentElement.style.setProperty('display', 'flex', 'important');
-        journalCard.parentElement.style.setProperty('flex-direction', 'column', 'important');
-        journalCard.style.setProperty('flex', '1', 'important');
-        journalCard.style.setProperty('height', '100%', 'important');
-        journalCard.style.setProperty('display', 'flex', 'important');
-        journalCard.style.setProperty('flex-direction', 'column', 'important');
       }
 
-      const tbl = journalCard.querySelector('table');
-      if (tbl && tbl.parentElement) {
-        tbl.parentElement.style.setProperty('flex', '1 1 auto', 'important');
-        tbl.parentElement.style.setProperty('display', 'flex', 'important');
-        tbl.parentElement.style.setProperty('flex-direction', 'column', 'important');
-        tbl.parentElement.style.setProperty('justify-content', 'flex-start', 'important');
-        tbl.parentElement.style.setProperty('overflow-y', 'auto', 'important');
+      // 5. เช็ค daily rollover ทุก 5 วินาที
+      if (secs % 5 === 0 && typeof checkDailyRollover === 'function') {
+        checkDailyRollover(true);
       }
-      const emptyNote = Array.from(journalCard.querySelectorAll('div, p, td')).find(el =>
-        (el.textContent || '').includes('คลังข้อมูลว่างพร้อมเริ่มเก็บสถิติใหม่')
-      );
-      if (emptyNote && emptyNote.tagName !== 'TD') {
-        emptyNote.style.setProperty('flex', '1', 'important');
-        emptyNote.style.setProperty('display', 'flex', 'important');
-        emptyNote.style.setProperty('align-items', 'center', 'important');
-        emptyNote.style.setProperty('justify-content', 'center', 'important');
+
+      // 6. รัน Full Quant ทุก 15 นาที
+      if (typeof lastRanSlot !== 'undefined' && lastRanSlot !== -1 && slot !== lastRanSlot && secs >= 2) {
+        lastRanSlot = slot;
+        if (typeof runFullLiveQuantAndAI === 'function') {
+          runFullLiveQuantAndAI(!isGoldMarketClosedBKK());
+        }
       }
-    };
+      if (typeof lastRanSlot !== 'undefined' && lastRanSlot === -1) lastRanSlot = slot;
 
-    setTimeout(() => {
-      window.sanitizeLiveModelPause();
-      window.syncOrdersFromNtfy();
-      window.matchJournalHeightToEngineA();
-    }, 300);
-    setInterval(window.syncOrdersFromNtfy, 5000);
-    setInterval(window.matchJournalHeightToEngineA, 1000);
-
-    // =========================================================================
-    // V14.5 ZERO-FLICKER FETCH INTERCEPTOR + CLEAN JOURNAL + CLEAR BLOCK REASON
-    // =========================================================================
-
-    // 1. กรองข้อมูล JSON ตั้งแต่ระดับ network fetch() ก่อนที่สคริปต์หน้าเว็บจะนำไปวาด (หยุดกะพริบ 100%)
-    if (!window._v14FetchPatched && typeof window.fetch === 'function') {
-      window._v14FetchPatched = true;
-      const _origFetch = window.fetch.bind(window);
-      window.fetch = async function(resource, init) {
-        const response = await _origFetch(resource, init);
-        try {
-          const urlStr = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : '');
-          if (urlStr.includes('.json') || urlStr.includes('githubusercontent') || urlStr.includes('gist')) {
-            const clone = response.clone();
-            const text = await clone.text();
-            if (text.includes('ตลาดทองคำเปิดทำการปกติ') || text.includes('WEEKEND_MARKET_CLOSED') || text.includes('วันอาทิตย์ตลาดปิด')) {
-              const cleanedText = text
-                .replace(/ตลาดทองคำเปิดทำการปกติ \(Bangkok UTC\+7\)/g, '')
-                .replace(/ตลาดทองคำเปิดทำการปกติ/g, '')
-                .replace(/WEEKEND_MARKET_CLOSED_UTC_IGNORED/g, '')
-                .replace(/WEEKEND_MARKET_CLOSED/g, '');
-              return new Response(cleanedText, {
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers
-              });
-            }
-          }
-        } catch (e) {}
-        return response;
-      };
-    }
-
-    // 2. จัดทรงสมุดบันทึกด้านขวาให้หัวตารางอยู่ชิดใต้ปุ่ม (ไม่ห่างโล่ง) และหัวคอลัมน์ไม่ตัดคำแปลกๆ
-    window.polishJournalAndEngineACards = function() { return; }; window._disabled_polishJournalAndEngineACards = function() { return; }; window._disabled_polishJournalAndEngineACards = function() {
-      const journalCard = Array.from(document.querySelectorAll('.card')).find(c =>
-        c.textContent && c.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') && !c.textContent.includes('ENGINE A:')
-      );
-      if (journalCard) {
-        journalCard.style.setProperty('justify-content', 'flex-start', 'important');
-        journalCard.style.setProperty('gap', '0.75rem', 'important');
-        const tbl = journalCard.querySelector('table');
-        if (tbl) {
-          tbl.style.setProperty('width', '100%', 'important');
-          tbl.style.setProperty('font-size', '11px', 'important');
-          tbl.querySelectorAll('th').forEach(th => {
-            th.style.setProperty('white-space', 'nowrap', 'important');
-            th.style.setProperty('padding', '6px 5px', 'important');
-          });
-          tbl.querySelectorAll('td').forEach(td => {
-            td.style.setProperty('padding', '8px 5px', 'important');
+      // 7. จัดทรงการ์ด 3 คอลัมน์ให้พอดีไม่ห่าง
+      const grids = Array.from(document.querySelectorAll('.grid'));
+      grids.forEach(g => {
+        if (g.textContent && g.textContent.includes('Spot L2 Order Book')) {
+          g.style.alignItems = 'start';
+          Array.from(g.children).forEach(col => {
+            col.style.height = 'auto';
+            col.style.alignSelf = 'start';
           });
         }
-      }
-
-      // ย่อข้อความช่องที่ 3 ในการ์ด Engine A ("ไม่บัง (อ้างอิง $...)") ให้กระชับไม่ล้น
-      document.querySelectorAll('.card div, .card span').forEach(el => {
-        if (el.children.length === 0) {
-          const t = (el.textContent || '').trim();
-          if (t.startsWith('ไม่บัง (อ้างอิง $')) {
-            el.textContent = t.replace('ไม่บัง (อ้างอิง ', 'อ้างอิง ').replace(')', '');
-          }
-        }
       });
     };
 
-    // 3. สรุปเหตุผลที่งดออกออเดอร์อย่างชัดเจนบนกระดาน (เช่น ระยะห่างจุดเข้าเกิน 160 จุด / สเปรดสูง)
-    window.updateClearBlockReasons = function() { return; }; window._disabled_updateClearBlockReasons = function() { return; }; window._disabled_updateClearBlockReasons = function() {
-      const guardCard = Array.from(document.querySelectorAll('.card, section, div')).find(el =>
-        el.textContent &&
-        el.textContent.includes('CONFIDENCE:') &&
-        el.textContent.includes('ระยะห่างจุดเข้า') &&
-        el.className && (el.className.includes('card') || el.className.includes('rounded'))
-      );
-      if (!guardCard) return;
-
-      guardCard.querySelectorAll('span, div, p, h1, h2, h3').forEach(node => {
-        if (node.children.length > 0) return;
-        const txt = (node.textContent || '').trim();
-        if (txt === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)' || txt === 'ตลาดทองคำเปิดทำการปกติ') {
-          node.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
-          node.className = node.className.replace(/rose|red|amber/g, 'emerald');
-        } else if (txt.includes('Backend Risk Guard แจ้งเตือนสภาวะตลาด ()') || (txt.includes('Backend Risk Guard') && txt.includes('รอสภาวะตลาดปกติ') && !txt.includes('SPREAD_OK') && !txt.includes('NEWS'))) {
-          node.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP สด';
-        }
-      });
-
-      const cardTxt = guardCard.textContent || '';
-      const distMatch = cardTxt.match(/(\d+)\s*\/\s*(\d+)\s*จุด\s*(✓)?/);
-      let blockReasons = [];
-      if (distMatch && !distMatch[3] && Number(distMatch[1]) > Number(distMatch[2])) {
-        blockReasons.push(`ราคาอยู่ห่างจุดเข้า ${distMatch[1]} จุด (ต้องรอเข้าใกล้ ≤ ${distMatch[2]} จุด)`);
-      }
-      if (cardTxt.includes('SPREAD_OK')) {
-        blockReasons.push('สเปรดสูงเกินเพดาน');
-      }
-
-      if (typeof activeOrder === 'undefined' || !activeOrder) {
-        const note = document.getElementById('lob-cooldown-note');
-        const pill = document.getElementById('live-order-status-pill');
-        if (blockReasons.length > 0) {
-          const reasonText = blockReasons.join(' + ');
-          if (pill) {
-            pill.textContent = `⏳ รอเงื่อนไขเข้า (${distMatch ? distMatch[1] + '/' + distMatch[2] + ' จุด' : 'กรองความเสี่ยง'})`;
-            pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500/70 rounded-full';
-          }
-          if (note) {
-            note.textContent = `เหตุผลที่ยังไม่ยิง Limit: ${reasonText}`;
-            note.className = 'text-[11px] text-amber-300 font-bold';
-          }
-        }
-      }
-    };
-
+    // เริ่ม Master Loop ทันทีหลังโหลด
     setTimeout(() => {
-      window.polishJournalAndEngineACards();
-      window.updateClearBlockReasons();
-    }, 250);
-    setInterval(() => {
-      window.polishJournalAndEngineACards();
-      window.updateClearBlockReasons();
-    }, 1000);
-
-    // =========================================================================
-    // V14.6 SMOOTH ZERO-FLICKER ENGINE + NO SPREAD LIMIT + AUTO-LIMIT UNLOCK
-    // =========================================================================
-
-    // 1. กรอง JSON.parse ระดับล่างสุด: ลบสถานะเบรกหลอก & SPREAD_OK ตั้งแต่ก่อนเข้าตัวแปร JS
-    if (!window._v14JsonParsePatched) {
-      window._v14JsonParsePatched = true;
-      const _origJsonParse = JSON.parse;
-      JSON.parse = function(text, reviver) {
-        const parsed = _origJsonParse.call(this, text, reviver);
-        if (parsed && typeof parsed === 'object') {
-          const scrubObj = (o) => {
-            if (!o || typeof o !== 'object') return;
-            const badStrs = [
-              'ตลาดทองคำเปิดทำการปกติ',
-              'WEEKEND_MARKET_CLOSED',
-              'วันอาทิตย์ตลาดปิด',
-              'SPREAD_OK',
-              'SPREAD_OK'
-            ];
-            for (const k of Object.keys(o)) {
-              const v = o[k];
-              if (typeof v === 'string' && badStrs.some(b => v.includes(b))) {
-                if (/pause|reason|block|guard|alert|warn/i.test(k)) {
-                  o[k] = '';
-                } else if (/headline|title|status/i.test(k)) {
-                  o[k] = 'ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP พร้อมทำงาน';
-                }
-              } else if ((k === 'isPaused' || k === 'is_paused' || k === 'high_spread' || k === 'market_closed') && v === true) {
-                const r = String(o.pauseReason || o.pause_reason || '');
-                if (!r || badStrs.some(b => r.includes(b))) {
-                  o[k] = false;
-                }
-              } else if ((k === 'maxSpread' || k === 'max_spread') && typeof v === 'number' && v < 50) {
-                o[k] = 999.0;
-              } else if (typeof v === 'object') {
-                scrubObj(v);
-              }
-            }
-          };
-          try { scrubObj(parsed); } catch (e) {}
-        }
-        return parsed;
-      };
-    }
-
-    // 2. จัดทรงสมุดบันทึกด้านขวาครั้งเดียวแบบนิ่งสนิท (ไม่รันซ้ำจนกระตุก)
-    window.fixJournalLayoutOnce = function() {
-      const journalCard = Array.from(document.querySelectorAll('.card')).find(c =>
-        c.textContent && c.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') && !c.textContent.includes('ENGINE A:')
-      );
-      if (!journalCard) return;
-
-      journalCard.style.setProperty('display', 'flex', 'important');
-      journalCard.style.setProperty('flex-direction', 'column', 'important');
-      journalCard.style.setProperty('justify-content', 'flex-start', 'important');
-      journalCard.style.setProperty('height', '100%', 'important');
-
-      Array.from(journalCard.children).forEach((child, idx) => {
-        child.style.setProperty('margin-top', idx === 0 ? '0' : '0.75rem', 'important');
-        child.style.setProperty('margin-bottom', '0', 'important');
-        if (child.querySelector('table')) {
-          child.style.setProperty('flex', '1 1 auto', 'important');
-          child.style.setProperty('display', 'block', 'important');
-          child.style.setProperty('overflow-x', 'auto', 'important');
-          child.style.setProperty('overflow-y', 'auto', 'important');
-        }
-      });
-
-      const tbl = journalCard.querySelector('table');
-      if (tbl) {
-        tbl.style.setProperty('width', '100%', 'important');
-        tbl.style.setProperty('margin-top', '0', 'important');
-        tbl.style.setProperty('font-size', '11px', 'important');
-        tbl.querySelectorAll('th').forEach(th => {
-          th.style.setProperty('white-space', 'nowrap', 'important');
-          th.style.setProperty('padding', '6px 5px', 'important');
-        });
-      }
-    };
-
-    // 3. ควบคุมสถานะ Risk Guard & LIVE ORDER BOARD แบบลื่นไหล (อัปเดตเฉพาะเมื่อค่าเปลี่ยนจริง)
-    window._lastBoardStateHash = '';
-    window.syncSmoothBoardAndLimits = function() {
-      if (typeof liveModel !== 'undefined' && liveModel && typeof liveModel === 'object') {
-        const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
-        if (!pr || /SPREAD_OK|SPREAD_OK|WEEKEND|ตลาดทองคำเปิดทำการปกติ/.test(pr)) {
-          liveModel.pauseReason = '';
-          liveModel.pause_reason = '';
-          liveModel.isPaused = false;
-          liveModel.is_paused = false;
-        }
-      }
-
-      document.querySelectorAll('.card span, .card div').forEach(el => {
-        if (el.children.length === 0) {
-          const txt = (el.textContent || '').trim();
-          if (txt.includes('SPREAD_OK') || txt.includes('SPREAD_OK')) {
-            el.textContent = '🟢 ACTIVE / READY (ไม่จำกัดสเปรด)';
-            el.className = 'inline-block px-2.5 py-0.5 rounded text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60';
-          } else if (txt === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)' || txt === 'ตลาดทองคำเปิดทำการปกติ') {
-            el.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
-            el.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60';
-          } else if (txt.includes('Backend Risk Guard') && txt.includes('รอสภาวะตลาดปกติ') && !txt.includes('NEWS')) {
-            el.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP สด';
-          }
-        }
-      });
-
-      const guardCard = Array.from(document.querySelectorAll('.card, section, div')).find(el =>
-        el.textContent &&
-        el.textContent.includes('CONFIDENCE:') &&
-        el.textContent.includes('ระยะห่างจุดเข้า') &&
-        el.className && (el.className.includes('card') || el.className.includes('rounded'))
-      );
-
-      let distBlocked = false;
-      let distLabel = '';
-      let isWithinEntryRange = false;
-
-      if (guardCard) {
-        if (!guardCard.textContent.includes('NEWS_GUARD') && guardCard.className.includes('rose')) {
-          guardCard.className = guardCard.className
-            .replace(/border-rose-\d+(\/\d+)?/g, 'border-gray-800')
-            .replace(/bg-rose-\d+(\/\d+)?/g, '');
-        }
-
-        const cardTxt = guardCard.textContent || '';
-        const distMatch = cardTxt.match(/(\d+)\s*\/\s*(\d+)\s*จุด\s*(✓)?/);
-        if (distMatch) {
-          const curPts = Number(distMatch[1]);
-          const maxPts = Number(distMatch[2]);
-          const hasCheck = Boolean(distMatch[3]);
-          if (hasCheck || curPts <= maxPts) {
-            isWithinEntryRange = true;
-          } else {
-            distBlocked = true;
-            distLabel = `ราคาห่างจุดเข้า ${curPts} จุด (รอเข้าใกล้ ≤ ${maxPts} จุด)`;
-          }
-        }
-      }
-
-      const cd = (typeof window.getCooldownGuardStatus === 'function')
-        ? window.getCooldownGuardStatus()
-        : { inCooldown: false, cooldownRemMs: 0 };
-
-      if (typeof activeOrder === 'undefined' || !activeOrder) {
-        const pill = document.getElementById('live-order-status-pill');
-        const note = document.getElementById('lob-cooldown-note');
-        const pSc = document.getElementById('lob-preview-scalp');
-        const pSw = document.getElementById('lob-preview-swing');
-
-        const sObj = (typeof liveModel !== 'undefined' && liveModel && liveModel.scalpSetup && liveModel.scalpSetup.entry)
-          ? liveModel.scalpSetup : null;
-        const tObj = (typeof liveModel !== 'undefined' && liveModel && liveModel.trendSetup && liveModel.trendSetup.entry)
-          ? liveModel.trendSetup : null;
-
-        const stateHash = `${cd.inCooldown}|${distBlocked}|${isWithinEntryRange}|${sObj ? sObj.entry : 0}|${tObj ? tObj.entry : 0}`;
-        if (stateHash !== window._lastBoardStateHash) {
-          window._lastBoardStateHash = stateHash;
-
-          if (pSc && sObj) {
-            pSc.textContent = `${sObj.dir} Limit @ $${Number(sObj.entry).toFixed(2)} | SL $${Number(sObj.sl).toFixed(2)} | TP $${Number(sObj.tp).toFixed(2)}`;
-            pSc.className = 'text-white font-bold';
-          }
-          if (pSw && tObj) {
-            pSw.textContent = `${tObj.dir} Limit @ $${Number(tObj.entry).toFixed(2)} | SL $${Number(tObj.sl).toFixed(2)} | TP $${Number(tObj.tp).toFixed(2)}`;
-            pSw.className = 'text-white font-bold';
-          }
-
-          if (cd.inCooldown) {
-            if (pill) {
-              pill.textContent = `⏳ พักรอจบแท่ง M15 (${cd.targetTimeStr})`;
-              pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500/70 rounded-full';
-            }
-          } else if (distBlocked) {
-            if (pill) {
-              pill.textContent = `⏳ รอระยะเข้า (${distLabel.replace('ราคาห่างจุดเข้า ', '').replace(' (รอเข้าใกล้ ', ' / ').replace(')', '')})`;
-              pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500/70 rounded-full';
-            }
-            if (note) {
-              note.textContent = `⏳ ${distLabel} — เมื่อถึงระยะระบบจะออกออเดอร์ทันที`;
-              note.className = 'text-[11px] text-amber-300 font-bold';
-            }
-          } else {
-            if (pill) {
-              pill.textContent = '🟢 READY / ระยะเข้าถึงเกณฑ์พร้อมยิง LIMIT';
-              pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-500 rounded-full';
-            }
-            if (note) {
-              note.textContent = '🟢 ระยะเข้าถึงเกณฑ์แล้ว (ไม่จำกัดสเปรด) — พร้อมออกออเดอร์ทันที';
-              note.className = 'text-[11px] text-emerald-300 font-bold';
-            }
-          }
-        }
-
-        // ถ้าระยะเข้าถึงเกณฑ์แล้ว (<= 160 จุด) และเปิด Auto-Limit อยู่ ให้ออกออเดอร์ Limit ทันที!
-        const autoLimitBtn = document.getElementById('btn-auto-limit');
-        const isAutoLimitOn = autoLimitBtn && autoLimitBtn.textContent.includes('เปิด');
-        if (isWithinEntryRange && !cd.inCooldown && isAutoLimitOn && sObj) {
-          const nowMs = Date.now();
-          if (!window._lastAutoPlaceMs || (nowMs - window._lastAutoPlaceMs) > 15000) {
-            window._lastAutoPlaceMs = nowMs;
-            if (typeof placeManualLimitOrder === 'function') {
-              placeManualLimitOrder();
-            }
-          }
-        }
-      }
-    };
-
-    setTimeout(() => {
-      window.fixJournalLayoutOnce();
-      window.syncSmoothBoardAndLimits();
+      if (typeof lastRanSlot === 'undefined') window.lastRanSlot = -1;
+      masterUnifiedLoop();
+      setInterval(masterUnifiedLoop, 1000);
     }, 300);
-    setInterval(window.syncSmoothBoardAndLimits, 1000);
 </script>
 </body>
 </html>
