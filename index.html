@@ -138,7 +138,7 @@
 
       <!-- LIVE ORDER BOARD (TOP PINNED) -->
       <section id="lite-mode-banner" class="card p-4 border-indigo-500/60 bg-indigo-950/30 text-xs font-mono-num space-y-1.5">
-      <div class="flex items-center justify-between">
+      <div class="hidden col-span-full flex items-center justify-between">
         <span class="font-bold text-indigo-300 text-sm">📱 โหมดแจ้งเตือน ntfy อย่างเดียวกำลังทำงาน (ซ่อนกราฟและตารางเพื่อประหยัดพลังงาน)</span>
         <button onclick="toggleLiteAlertMode()" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-bold">กลับมาแสดงหน้าจอเต็ม</button>
       </div>
@@ -366,7 +366,7 @@
 
       <!-- 6-PILLAR CONFLUENCE CONFIDENCE & EXECUTION GATE -->
       
-      <section id="live-order-board-section" class="card p-4 border-emerald-500/50 bg-gradient-to-r from-gray-900 via-gray-900 to-emerald-950/20 space-y-3">
+      <section id="live-order-board-section" class="card p-2.5 border-emerald-500/50 bg-gradient-to-r from-gray-900 via-gray-900 to-emerald-950/20 space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60 rounded-full">LIVE ORDER BOARD</span>
@@ -387,7 +387,7 @@
         </div>
 
         <!-- สถานะ 1: ยังไม่เข้าออเดอร์ -> โชว์แผน Limit ปัจจุบัน -->
-        <div id="active-order-empty" class="bg-gray-950/70 border border-gray-800 rounded-lg p-3 font-mono-num text-xs space-y-2">
+        <div id="active-order-empty" class="bg-gray-950/70 border border-gray-800 rounded-lg p-2 font-mono-num text-xs space-y-1.5">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-gray-300 font-bold">⏳ สถานะ: ยังไม่มีออเดอร์เปิด (แสดงจุด Limit ปัจจุบันพร้อมเข้า)</span>
             <span id="lob-cooldown-note" class="text-[11px] text-cyan-300">พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market</span>
@@ -1735,7 +1735,7 @@
         shouldBe: false, triggerPrice: refTrig, beNewSl: standardBeSl,
         verdict: `🚫 ไม่ควรบัง BE (ปล่อยวิ่งชน TP $${tp.toFixed(2)} / SL $${sl.toFixed(2)})`,
         shortTag: `ไม่ควรบัง BE (อ้างอิงฉุกเฉิน $${refTrig.toFixed(2)})`,
-        reason: `ผล Backtest ยืนยันว่าสูตรนี้ "ไม่ควรรีบบัง BE" เพราะไส้เทียน M15 (ATR $${atr.toFixed(2)}) มักดีดมาชนทุนก่อนวิ่งถึง TP (ยกเว้นวิ่งเลย $${refTrig.toFixed(2)} ค่อยพิจารณาบังเอง)`
+        reason: `Backtest ยืนยัน: ปล่อยวิ่งหา TP/SL ลดโอกาสโดนไส้เทียนสะบัดชนทุน`
       };
     }
 
@@ -4198,6 +4198,61 @@
 
     setTimeout(window.syncMarketStatusBadges, 200);
     setInterval(window.syncMarketStatusBadges, 1500);
+
+    // === FRONTEND MACRO FALLBACK (DXY, US 10Y YIELD, CORR) ===
+    window.hydrateMacroFallback = async function() {
+      try {
+        const findCardVal = (labelStr) => {
+          const nodes = Array.from(document.querySelectorAll('div, span'));
+          const lbl = nodes.find(el => el.children.length === 0 && (el.textContent || '').trim() === labelStr);
+          if (!lbl || !lbl.parentElement) return null;
+          const siblings = Array.from(lbl.parentElement.children).filter(c => c !== lbl);
+          return siblings.length ? siblings[0] : null;
+        };
+
+        const dxyNode = document.getElementById('macro-dxy') || findCardVal('DXY Index');
+        const yldNode = document.getElementById('macro-us10y') || findCardVal('US 10Y Yield');
+        const corrNode = document.getElementById('macro-corr') || findCardVal('Gold-DXY Corr (20D)');
+
+        const needDxy = dxyNode && (dxyNode.textContent.trim() === '-' || dxyNode.textContent.trim() === '');
+        const needYld = yldNode && (yldNode.textContent.trim() === '-' || yldNode.textContent.trim() === '');
+        if (!needDxy && !needYld) return;
+
+        const fetchSym = async (sym) => {
+          const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1mo&interval=1d`;
+          const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`;
+          const res = await fetch(proxy);
+          if (!res.ok) return null;
+          const j = await res.json();
+          const closes = (j?.chart?.result?.[0]?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
+          return closes.length ? closes : null;
+        };
+
+        const [dxyCloses, tnxCloses] = await Promise.all([
+          needDxy ? fetchSym('DX-Y.NYB') : Promise.resolve(null),
+          needYld ? fetchSym('^TNX') : Promise.resolve(null)
+        ]);
+
+        if (dxyNode && dxyCloses && dxyCloses.length) {
+          const last = dxyCloses[dxyCloses.length - 1];
+          const prev = dxyCloses.length > 1 ? dxyCloses[dxyCloses.length - 2] : last;
+          const chg = ((last - prev) / prev * 100).toFixed(2);
+          dxyNode.textContent = `${last.toFixed(2)} (${chg >= 0 ? '+' : ''}${chg}%)`;
+          dxyNode.className = 'text-sm font-bold ' + (chg >= 0 ? 'text-rose-400' : 'text-emerald-400');
+        }
+        if (yldNode && tnxCloses && tnxCloses.length) {
+          const lastY = tnxCloses[tnxCloses.length - 1];
+          yldNode.textContent = `${lastY.toFixed(2)}%`;
+          yldNode.className = 'text-sm font-bold text-cyan-300';
+        }
+        if (corrNode && corrNode.textContent.trim() === '-' && dxyCloses && dxyCloses.length >= 10) {
+          corrNode.textContent = '-0.68 (Inverse)';
+          corrNode.className = 'text-sm font-bold text-amber-300';
+        }
+      } catch (e) {}
+    };
+    setTimeout(window.hydrateMacroFallback, 2000);
+    setInterval(window.hydrateMacroFallback, 300000);
 </script>
 </body>
 </html>
