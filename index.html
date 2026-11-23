@@ -816,6 +816,7 @@
     let liteAlertMode = false;
     let adminUnlocked = false;
     let lastCloudRevision = 0;
+    let sessionGistHalted = false; // true = Gist ถูกปฏิเสธถาวรในเซสชันนี้ → หยุดยิง Gist แล้วอ่าน ./data/state.json แทน
 
     // Unified Master Configuration (Shared identically across PC & Mobile)
     let masterConfig = {
@@ -1157,6 +1158,8 @@
       if (newPin.length >= 4) masterConfig.creatorPin = newPin;
       masterConfig.ghToken = document.getElementById('admin-gh-token').value.trim();
       masterConfig.ghGistId = document.getElementById('admin-gh-gist').value.trim();
+      // ผู้ใช้กรอก Token/Gist ใหม่เอง → ล้างสถานะหยุดซิงก์ชั่วคราว เพื่อให้ลองซิงก์ใหม่ได้
+      if (masterConfig.ghToken && masterConfig.ghGistId) sessionGistHalted = false;
       masterConfig.thaillmApiKey = document.getElementById('admin-thaillm-key').value.trim();
       masterConfig.thaillmEndpoint = (document.getElementById('admin-thaillm-endpoint').value.trim() || "https://thaillm-proxy.kotuazyx699.workers.dev/");
       masterConfig.thaillmModel = (document.getElementById('admin-thaillm-model').value.trim() || "typhoon-s-thaillm-8b-instruct");
@@ -1255,6 +1258,7 @@
     }
 
     async function pushCloudSyncState(manual = false) {
+      if (sessionGistHalted) return; // หยุดยิง Gist ตลอดเซสชันนี้ (กัน Error ซ้ำ)
       if (!masterConfig.ghToken || !masterConfig.ghGistId) return;
       try {
         const rev = Date.now();
@@ -1292,6 +1296,7 @@
         alert("กรุณาใส่ GitHub Token และ Sync Gist ID ก่อนครับ");
         return;
       }
+      sessionGistHalted = false; // ลองซิงก์ใหม่ด้วย Token ที่ผู้ใช้กรอกสด ๆ
       await pushCloudSyncState(true);
       alert("อัปโหลดข้อมูลขึ้น Cloud เรียบร้อย!");
     }
@@ -1321,6 +1326,8 @@
 
     async function pullCloudSyncState() {
       if (!masterConfig.ghGistId) return;
+      // Gist ถูกปฏิเสธถาวร (401/404) แล้วในเซสชันนี้ → หยุดยิง Gist ทั้งหมด แล้วอ่านข้อมูลสำรองจาก ./data/state.json แทน
+      if (sessionGistHalted) { await pullBackendStateFallback(); return; }
       try {
         const url = `https://api.github.com/gists/${encodeURIComponent(masterConfig.ghGistId)}?t=${Date.now()}`;
         let headers = { "Accept": "application/vnd.github+json" };
@@ -1334,7 +1341,17 @@
           res = await fetch(url, { headers, cache: "no-store" });
         }
 
-        // Gist ตอบไม่ปกติ (เช่นยัง 401/404/429) → ดึงข้อมูลสำรองจาก ./data/state.json
+        // ยิงซ้ำแบบไม่แนบ Token แล้วยังได้ 401/404 → หยุดยิง Gist ตลอดเซสชันนี้ แล้วอ่าน ./data/state.json แทน
+        if (res.status === 401 || res.status === 404) {
+          sessionGistHalted = true;
+          const auditEl = document.getElementById('data-audit-line');
+          if (auditEl) auditEl.textContent = `⚠️ Gist ตอบ ${res.status} (Token ไม่ถูกต้อง/Gist ถูกลบ) — หยุดซิงก์ Gist ในเซสชันนี้ และอ่านข้อมูลสำรองจาก ./data/state.json แทน`;
+          console.warn(`[CloudSync] Gist ตอบ ${res.status} แม้ไม่แนบ Token — ตั้ง sessionGistHalted = true เพื่อหยุดยิงซ้ำ`);
+          await pullBackendStateFallback();
+          return;
+        }
+
+        // Gist ตอบไม่ปกติอื่น ๆ (เช่น 429) → ดึงข้อมูลสำรองชั่วคราวจาก ./data/state.json (ยังไม่หยุดถาวร)
         if (!res.ok) { await pullBackendStateFallback(); return; }
         const data = await res.json();
         const rawContent = data?.files?.["gold_quant_sync.json"]?.content;
@@ -2487,27 +2504,36 @@
       alert("ล้างสถิติทั้งหมดเรียบร้อย! เริ่มต้นใหม่ที่ 0 ไม้ตรงกันทั้งคอม iPad และมือถือแล้วครับ");
     }
 
+    // Helper null-safe: เช็ก Element ก่อนเขียน DOM เสมอ — กัน TypeError เมื่อ ID บางตัวไม่มีอยู่ในหน้าเว็บ
+    function setElProps(id, props) {
+      const el = document.getElementById(id);
+      if (el) Object.assign(el, props);
+      return el;
+    }
+
     function renderOrderAndLedgerUI(currentMid = lastRenderedMid, currentBid = lastRenderedBid, currentAsk = lastRenderedAsk) {
-      const autoBtn = document.getElementById('btn-auto-arm');
-      autoBtn.textContent = `Auto-Limit: ${orderState.autoArm ? 'เปิด' : 'ปิด'}`;
-      autoBtn.className = orderState.autoArm
-        ? "px-2.5 py-1 rounded font-bold bg-purple-950 text-purple-300 border border-purple-600/60"
-        : "px-2.5 py-1 rounded font-bold bg-gray-800 text-gray-400 border border-gray-700";
+      setElProps('btn-auto-arm', {
+        textContent: `Auto-Limit: ${orderState.autoArm ? 'เปิด' : 'ปิด'}`,
+        className: orderState.autoArm
+          ? "px-2.5 py-1 rounded font-bold bg-purple-950 text-purple-300 border border-purple-600/60"
+          : "px-2.5 py-1 rounded font-bold bg-gray-800 text-gray-400 border border-gray-700"
+      });
 
-      const refBtn = document.getElementById('btn-auto-refresh15');
-      refBtn.textContent = `รีเฟรช Limit 15m: ${orderState.autoRefresh15m ? 'เปิด' : 'ปิด'}`;
-      refBtn.className = orderState.autoRefresh15m
-        ? "px-2.5 py-1 rounded font-bold bg-indigo-950 text-indigo-300 border border-indigo-600/60"
-        : "px-2.5 py-1 rounded font-bold bg-gray-800 text-gray-400 border border-gray-700";
+      setElProps('btn-auto-refresh15', {
+        textContent: `รีเฟรช Limit 15m: ${orderState.autoRefresh15m ? 'เปิด' : 'ปิด'}`,
+        className: orderState.autoRefresh15m
+          ? "px-2.5 py-1 rounded font-bold bg-indigo-950 text-indigo-300 border border-indigo-600/60"
+          : "px-2.5 py-1 rounded font-bold bg-gray-800 text-gray-400 border border-gray-700"
+      });
 
-      const beBtn = document.getElementById('btn-auto-be');
-      beBtn.textContent = `Auto-BE: ${masterConfig.autoBeEnabled ? 'เปิด' : 'ปิด'}`;
-      beBtn.className = masterConfig.autoBeEnabled
-        ? "px-2.5 py-1 rounded font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60"
-        : "px-2.5 py-1 rounded font-bold bg-gray-800 text-gray-400 border border-gray-700";
+      setElProps('btn-auto-be', {
+        textContent: `Auto-BE: ${masterConfig.autoBeEnabled ? 'เปิด' : 'ปิด'}`,
+        className: masterConfig.autoBeEnabled
+          ? "px-2.5 py-1 rounded font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60"
+          : "px-2.5 py-1 rounded font-bold bg-gray-800 text-gray-400 border border-gray-700"
+      });
 
       const ao = orderState.activeOrder;
-      const pill = document.getElementById('live-order-status-pill');
       const emptyEl = document.getElementById('active-order-empty');
       const cardEl = document.getElementById('active-order-card');
       const beBanner = document.getElementById('active-order-be-banner');
@@ -2515,13 +2541,15 @@
       const syncMt5Btn = document.getElementById('btn-sync-mt5-entry');
 
       if (!ao) {
-        pill.textContent = "READY / รอเข้า LIMIT";
-        pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60 rounded-full";
-        emptyEl.classList.remove('hidden');
-        cardEl.classList.add('hidden');
-        beBanner.classList.add('hidden');
-        closeBtn.classList.add('hidden');
-        syncMt5Btn.classList.add('hidden');
+        setElProps('live-order-status-pill', {
+          textContent: "READY / รอเข้า LIMIT",
+          className: "px-3 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60 rounded-full"
+        });
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        if (cardEl) cardEl.classList.add('hidden');
+        if (beBanner) beBanner.classList.add('hidden');
+        if (closeBtn) closeBtn.classList.add('hidden');
+        if (syncMt5Btn) syncMt5Btn.classList.add('hidden');
 
         const pSc = document.getElementById('lob-preview-scalp');
         const pSw = document.getElementById('lob-preview-swing');
@@ -2534,78 +2562,77 @@
           pSw.textContent = `${t.dir} Limit @ $${Number(t.entry).toFixed(2)} | SL $${Number(t.sl).toFixed(2)} | TP $${Number(t.tp).toFixed(2)}`;
         }
       } else {
-        emptyEl.classList.add('hidden');
-        cardEl.classList.remove('hidden');
-        beBanner.classList.remove('hidden');
-        closeBtn.classList.remove('hidden');
-        syncMt5Btn.classList.remove('hidden');
-        closeBtn.textContent = ao.mode === "LIMIT" ? "❌ ยกเลิก Limit" : "💰 ปิดมือ (Close)";
+        if (emptyEl) emptyEl.classList.add('hidden');
+        if (cardEl) cardEl.classList.remove('hidden');
+        if (beBanner) beBanner.classList.remove('hidden');
+        if (closeBtn) {
+          closeBtn.classList.remove('hidden');
+          closeBtn.textContent = ao.mode === "LIMIT" ? "❌ ยกเลิก Limit" : "💰 ปิดมือ (Close)";
+        }
+        if (syncMt5Btn) syncMt5Btn.classList.remove('hidden');
 
         if (ao.mode === "LIMIT") {
-          pill.textContent = `⏳ PENDING LIMIT [${ao.planType}] ${ao.dir} (${ao.lot.toFixed(2)} Lot) @ $${ao.entry.toFixed(2)}`;
-          pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500 rounded-full";
+          setElProps('live-order-status-pill', {
+            textContent: `⏳ PENDING LIMIT [${ao.planType}] ${ao.dir} (${ao.lot.toFixed(2)} Lot) @ $${ao.entry.toFixed(2)}`,
+            className: "px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500 rounded-full"
+          });
         } else if (slBreachStartMs) {
           const rem = Math.max(0, 2.0 - (Date.now() - slBreachStartMs) / 1000).toFixed(1);
-          pill.textContent = `⚠️ WICK TEST SL (${rem}s) — กันไส้เทียนกระชากตาม MT5`;
-          pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-500 text-gray-950 rounded-full animate-pulse";
+          setElProps('live-order-status-pill', {
+            textContent: `⚠️ WICK TEST SL (${rem}s) — กันไส้เทียนกระชากตาม MT5`,
+            className: "px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-500 text-gray-950 rounded-full animate-pulse"
+          });
         } else {
-          pill.textContent = `🟢 HOLDING [${ao.planType}] ${ao.dir} (${ao.lot.toFixed(2)} Lot) @ $${ao.entry.toFixed(2)}`;
-          pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full";
+          setElProps('live-order-status-pill', {
+            textContent: `🟢 HOLDING [${ao.planType}] ${ao.dir} (${ao.lot.toFixed(2)} Lot) @ $${ao.entry.toFixed(2)}`,
+            className: "px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-500 text-gray-950 rounded-full"
+          });
         }
 
         const bInfo = ao.beInfo || evaluateBeRecommendation(ao.entry, ao.sl, ao.tp, ao.dir, ao.beRule || "NO_BE");
-        const beBadge = document.getElementById('ao-be-badge');
-        const beText = document.getElementById('ao-be-text');
-        const bePricePill = document.getElementById('ao-be-price-pill');
         if (ao.beTriggered) {
-          beBanner.className = "rounded-lg p-2.5 border border-emerald-500 bg-emerald-950/40 font-mono-num text-xs flex flex-wrap items-center justify-between gap-2";
-          beBadge.textContent = "🛡️ REACHED BE!";
-          beBadge.className = "px-2 py-0.5 rounded font-bold bg-emerald-500 text-gray-950";
-          beText.textContent = `ถึงจุดบังทุนแล้ว! ให้เลื่อน SL ใน MT5 มาบังทุนที่ $${bInfo.beNewSl.toFixed(2)}`;
-          bePricePill.textContent = `SL บังทุน: $${bInfo.beNewSl.toFixed(2)}`;
+          if (beBanner) beBanner.className = "rounded-lg p-2.5 border border-emerald-500 bg-emerald-950/40 font-mono-num text-xs flex flex-wrap items-center justify-between gap-2";
+          setElProps('ao-be-badge', { textContent: "🛡️ REACHED BE!", className: "px-2 py-0.5 rounded font-bold bg-emerald-500 text-gray-950" });
+          setElProps('ao-be-text', { textContent: `ถึงจุดบังทุนแล้ว! ให้เลื่อน SL ใน MT5 มาบังทุนที่ $${bInfo.beNewSl.toFixed(2)}` });
+          setElProps('ao-be-price-pill', { textContent: `SL บังทุน: $${bInfo.beNewSl.toFixed(2)}` });
         } else if (bInfo.shouldBe) {
-          beBanner.className = "rounded-lg p-2.5 border border-cyan-600/60 bg-cyan-950/30 font-mono-num text-xs flex flex-wrap items-center justify-between gap-2";
-          beBadge.textContent = "✅ ควรบัง BE";
-          beBadge.className = "px-2 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40";
-          beText.textContent = `รอราคาวิ่งถึง $${bInfo.triggerPrice.toFixed(2)} แล้วเลื่อน SL มาบังทุนที่ $${bInfo.beNewSl.toFixed(2)}`;
-          bePricePill.textContent = `เป้าบังทุน: $${bInfo.triggerPrice.toFixed(2)}`;
+          if (beBanner) beBanner.className = "rounded-lg p-2.5 border border-cyan-600/60 bg-cyan-950/30 font-mono-num text-xs flex flex-wrap items-center justify-between gap-2";
+          setElProps('ao-be-badge', { textContent: "✅ ควรบัง BE", className: "px-2 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" });
+          setElProps('ao-be-text', { textContent: `รอราคาวิ่งถึง $${bInfo.triggerPrice.toFixed(2)} แล้วเลื่อน SL มาบังทุนที่ $${bInfo.beNewSl.toFixed(2)}` });
+          setElProps('ao-be-price-pill', { textContent: `เป้าบังทุน: $${bInfo.triggerPrice.toFixed(2)}` });
         } else {
-          beBanner.className = "rounded-lg p-2.5 border border-amber-600/50 bg-amber-950/20 font-mono-num text-xs flex flex-wrap items-center justify-between gap-2";
-          beBadge.textContent = "🚫 ไม่ควรบัง BE";
-          beBadge.className = "px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40";
-          beText.textContent = `สูตรนี้ไม่ควรรีบบัง BE (ปล่อยวิ่งชน TP $${ao.tp.toFixed(2)} — ยกเว้นวิ่งเลย $${bInfo.triggerPrice.toFixed(2)})`;
-          bePricePill.textContent = `อ้างอิงฉุกเฉิน: $${bInfo.triggerPrice.toFixed(2)}`;
+          if (beBanner) beBanner.className = "rounded-lg p-2.5 border border-amber-600/50 bg-amber-950/20 font-mono-num text-xs flex flex-wrap items-center justify-between gap-2";
+          setElProps('ao-be-badge', { textContent: "🚫 ไม่ควรบัง BE", className: "px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40" });
+          setElProps('ao-be-text', { textContent: `สูตรนี้ไม่ควรรีบบัง BE (ปล่อยวิ่งชน TP $${ao.tp.toFixed(2)} — ยกเว้นวิ่งเลย $${bInfo.triggerPrice.toFixed(2)})` });
+          setElProps('ao-be-price-pill', { textContent: `อ้างอิงฉุกเฉิน: $${bInfo.triggerPrice.toFixed(2)}` });
         }
 
         const evalPx = ao.dir === "LONG" ? (currentBid || currentMid) : (currentAsk || currentMid);
         const guardedSl = ao.dir === "LONG" ? (ao.sl - masterConfig.mt5BufferPts / 100) : (ao.sl + masterConfig.mt5BufferPts / 100);
 
-        document.getElementById('ao-side-lot').textContent = `${ao.dir} (${ao.lot.toFixed(2)} Lot)`;
-        document.getElementById('ao-side-lot').className = `text-sm font-bold ${ao.dir === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}`;
-        document.getElementById('ao-time').textContent = `${ao.planType} | ${ao.openTime}`;
-        document.getElementById('ao-entry').textContent = `$${ao.entry.toFixed(2)}`;
-        document.getElementById('ao-sl').textContent = `$${ao.sl.toFixed(2)}`;
-        document.getElementById('ao-tp').textContent = `$${ao.tp.toFixed(2)}`;
+        setElProps('ao-side-lot', { textContent: `${ao.dir} (${ao.lot.toFixed(2)} Lot)`, className: `text-sm font-bold ${ao.dir === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}` });
+        setElProps('ao-time', { textContent: `${ao.planType} | ${ao.openTime}` });
+        setElProps('ao-entry', { textContent: `$${ao.entry.toFixed(2)}` });
+        setElProps('ao-sl', { textContent: `$${ao.sl.toFixed(2)}` });
+        setElProps('ao-tp', { textContent: `$${ao.tp.toFixed(2)}` });
 
         if (evalPx) {
           const distEntryPts = Math.round(Math.abs(evalPx - ao.entry) * 100);
           const distSlPts = Math.round(Math.abs(evalPx - guardedSl) * 100);
           const distTpPts = Math.round(Math.abs(evalPx - ao.tp) * 100);
-          document.getElementById('ao-dist-entry').textContent = ao.mode === "LIMIT" ? `ห่าง ${distEntryPts} จุด` : `${ao.dir === 'LONG' ? 'Bid' : 'Ask'} $${evalPx.toFixed(2)}`;
-          document.getElementById('ao-dist-sl').textContent = `เหลือ ${distSlPts} จุด`;
-          document.getElementById('ao-dist-tp').textContent = `เหลือ ${distTpPts} จุด`;
+          setElProps('ao-dist-entry', { textContent: ao.mode === "LIMIT" ? `ห่าง ${distEntryPts} จุด` : `${ao.dir === 'LONG' ? 'Bid' : 'Ask'} $${evalPx.toFixed(2)}` });
+          setElProps('ao-dist-sl', { textContent: `เหลือ ${distSlPts} จุด` });
+          setElProps('ao-dist-tp', { textContent: `เหลือ ${distTpPts} จุด` });
 
           if (ao.mode === "OPEN") {
             const diff = ao.dir === "LONG" ? (evalPx - ao.entry) : (ao.entry - evalPx);
             const flUsd = diff * ao.lot * 100;
             const flR = diff / Math.max(0.5, Math.abs(ao.entry - ao.sl));
-            document.getElementById('ao-pnl-usd').textContent = `${flUsd >= 0 ? '+' : ''}$${flUsd.toFixed(2)}`;
-            document.getElementById('ao-pnl-usd').className = `text-sm font-bold ${flUsd >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
-            document.getElementById('ao-pnl-r').textContent = `${flR >= 0 ? '+' : ''}${flR.toFixed(2)}R (${ao.lot.toFixed(2)} Lot)`;
+            setElProps('ao-pnl-usd', { textContent: `${flUsd >= 0 ? '+' : ''}$${flUsd.toFixed(2)}`, className: `text-sm font-bold ${flUsd >= 0 ? 'text-emerald-400' : 'text-rose-400'}` });
+            setElProps('ao-pnl-r', { textContent: `${flR >= 0 ? '+' : ''}${flR.toFixed(2)}R (${ao.lot.toFixed(2)} Lot)` });
           } else {
-            document.getElementById('ao-pnl-usd').textContent = "รอแมตช์";
-            document.getElementById('ao-pnl-usd').className = "text-sm font-bold text-amber-300";
-            document.getElementById('ao-pnl-r').textContent = `${ao.lot.toFixed(2)} Lot`;
+            setElProps('ao-pnl-usd', { textContent: "รอแมตช์", className: "text-sm font-bold text-amber-300" });
+            setElProps('ao-pnl-r', { textContent: `${ao.lot.toFixed(2)} Lot` });
           }
         }
       }
@@ -2614,17 +2641,17 @@
       const tNetR = tList.reduce((a, x) => a + x.pnlR, 0);
       const tNetUsd = tList.reduce((a, x) => a + x.pnlUsd, 0);
       const tWins = tList.filter(x => x.outcome === "WIN").length;
-      document.getElementById('today-stats-summary').textContent = `${tList.length} ไม้ | ${tNetR >= 0 ? '+' : ''}${tNetR.toFixed(2)}R`;
-      document.getElementById('today-stats-summary').className = `text-sm font-bold ${tNetUsd >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
-      document.getElementById('today-stats-usd').textContent = `${tNetUsd >= 0 ? '+' : ''}$${tNetUsd.toFixed(2)}`;
+      setElProps('today-stats-summary', { textContent: `${tList.length} ไม้ | ${tNetR >= 0 ? '+' : ''}${tNetR.toFixed(2)}R`, className: `text-sm font-bold ${tNetUsd >= 0 ? 'text-emerald-400' : 'text-rose-400'}` });
+      setElProps('today-stats-usd', { textContent: `${tNetUsd >= 0 ? '+' : ''}$${tNetUsd.toFixed(2)}` });
 
       const tWrap = document.getElementById('today-closed-wrap');
       if (tWrap) {
         tWrap.classList.remove('hidden');
         const parityTag = ` | ซิงก์ตรงกัน 100% (Offset ${spotBasisOffset >= 0 ? '+' : ''}$${spotBasisOffset.toFixed(2)} | พอร์ต $${Number(masterConfig.accountBalance || 1000).toLocaleString()} | เสี่ยง ${masterConfig.riskPct || 1.0}%)`;
+        const closedListEl = document.getElementById('today-closed-list');
         if (tList.length > 0) {
-          document.getElementById('today-wr-badge').textContent = `ผลออเดอร์วันนี้: ${tList.length} ไม้ (WR ${((tWins / tList.length) * 100).toFixed(0)}% | ชนะ ${tWins} / แพ้ ${tList.length - tWins})${parityTag}`;
-          document.getElementById('today-closed-list').innerHTML = tList.map((x, idx) => {
+          setElProps('today-wr-badge', { textContent: `ผลออเดอร์วันนี้: ${tList.length} ไม้ (WR ${((tWins / tList.length) * 100).toFixed(0)}% | ชนะ ${tWins} / แพ้ ${tList.length - tWins})${parityTag}` });
+          if (closedListEl) closedListEl.innerHTML = tList.map((x, idx) => {
             const ordNo = tList.length - idx;
             const isWin = x.pnlUsd > 0.05;
             const isLoss = x.pnlUsd < -0.05;
@@ -2651,8 +2678,8 @@
               </div>`;
           }).join('');
         } else {
-          document.getElementById('today-wr-badge').textContent = `ผลออเดอร์วันนี้: 0 ไม้${parityTag}`;
-          document.getElementById('today-closed-list').innerHTML = `
+          setElProps('today-wr-badge', { textContent: `ผลออเดอร์วันนี้: 0 ไม้${parityTag}` });
+          if (closedListEl) closedListEl.innerHTML = `
             <div class="col-span-full bg-gray-900/70 border border-gray-800 rounded p-2.5 text-center text-gray-400">
               ยังไม่มีออเดอร์ที่ปิดในวันนี้ — เมื่อมีการปิดออเดอร์ ระบบจะแสดงผลกำไร/ขาดทุนรายไม้ (#1, #2, ...) เหมือนกันทุกเครื่องทันที
             </div>`;
@@ -2665,10 +2692,11 @@
       const allUsd = allHistorical.reduce((a, x) => a + x.pnlUsd, 0);
       const allWins = allHistorical.filter(x => x.outcome === "WIN").length;
       const allWr = allHistorical.length ? ((allWins / allHistorical.length) * 100).toFixed(0) : 0;
-      document.getElementById('ledger-summary-badge').textContent = `สะสม: ${allHistorical.length} ไม้ (WR ${allWr}%) | ${allUsd >= 0 ? '+' : ''}$${allUsd.toFixed(2)} (${allR >= 0 ? '+' : ''}${allR.toFixed(2)}R)`;
+      setElProps('ledger-summary-badge', { textContent: `สะสม: ${allHistorical.length} ไม้ (WR ${allWr}%) | ${allUsd >= 0 ? '+' : ''}$${allUsd.toFixed(2)} (${allR >= 0 ? '+' : ''}${allR.toFixed(2)}R)` });
 
+      const ledgerBodyEl = document.getElementById('learning-ledger-body');
       if (arch.length > 0) {
-        document.getElementById('learning-ledger-body').innerHTML = arch.slice(0, 15).map(x => `
+        if (ledgerBodyEl) ledgerBodyEl.innerHTML = arch.slice(0, 15).map(x => `
           <tr>
             <td class="py-1.5 pr-2 text-gray-400">${x.dateStr}</td>
             <td class="py-1.5 pr-2 text-purple-300">${x.shape}</td>
@@ -2678,7 +2706,7 @@
             <td class="py-1.5 text-gray-300">${x.lesson}</td>
           </tr>`).join('');
       } else {
-        document.getElementById('learning-ledger-body').innerHTML = `<tr><td colspan="6" class="py-3 text-center text-gray-500">คลังข้อมูลว่างพร้อมเริ่มเก็บสถิติใหม่ (0 ไม้)</td></tr>`;
+        if (ledgerBodyEl) ledgerBodyEl.innerHTML = `<tr><td colspan="6" class="py-3 text-center text-gray-500">คลังข้อมูลว่างพร้อมเริ่มเก็บสถิติใหม่ (0 ไม้)</td></tr>`;
       }
     }
 
@@ -2710,12 +2738,11 @@
       const remMins = (nextSlot - mins - 1 + 60) % 60;
       const remSecs = 59 - secs;
 
-      document.getElementById('next-cycle-countdown').textContent =
-        `รอบวิเคราะห์ + รีเฟรช Limit ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
+      setElProps('next-cycle-countdown', { textContent: `รอบวิเคราะห์ + รีเฟรช Limit ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที` });
 
       if (lastAiUpdateMs > 0) {
         const elapsedMins = Math.floor((Date.now() - lastAiUpdateMs) / 60000);
-        document.getElementById('last-updated').textContent = `อัปเดตสด: ${lastAiTimeStr} (${elapsedMins} นาทีที่แล้ว)`;
+        setElProps('last-updated', { textContent: `อัปเดตสด: ${lastAiTimeStr} (${elapsedMins} นาทีที่แล้ว)` });
       }
 
       if (typeof getCooldownGuardStatus === 'function') {
@@ -3259,16 +3286,36 @@
         }
       } catch (e) {}
 
+      // ตัวหลัก: Swissquote XAU/USD (รองรับ CORS — ใช้ได้บน GitHub Pages โดยตรง)
+      let swissquoteSpotOk = false;
       try {
-        const rGp = await fetch("https://data-asg.goldprice.org/dbXRates/USD", { cache: "no-store" });
-        if (rGp.ok) {
-          const j = await rGp.json();
-          const xauPx = j?.items?.[0]?.xauPrice;
-          if (xauPx && parseFloat(xauPx) > 1000) {
-            candidates.push({ px: parseFloat(xauPx), name: "GoldPrice.org Spot" });
+        const rSw = await fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" });
+        if (rSw.ok) {
+          const j = await rSw.json();
+          const sp = Array.isArray(j) ? j[0]?.spreadProfilePrices?.[0] : null;
+          const bid = parseFloat(sp?.bid);
+          const ask = parseFloat(sp?.ask);
+          if (bid > 1000 && ask > 1000) {
+            candidates.push({ px: (bid + ask) / 2, name: "Swissquote XAU/USD" });
+            swissquoteSpotOk = true;
           }
         }
       } catch (e) {}
+
+      // ตัวสำรอง: Binance PAXG/USDT (ใช้เมื่อ Swissquote ใช้ไม่ได้เท่านั้น)
+      if (!swissquoteSpotOk) {
+        try {
+          const rPaxg = await fetch("https://api.binance.com/api/v3/ticker/bookTicker?symbol=PAXGUSDT", { cache: "no-store" });
+          if (rPaxg.ok) {
+            const j = await rPaxg.json();
+            const bid = parseFloat(j?.bidPrice);
+            const ask = parseFloat(j?.askPrice);
+            if (bid > 1000 && ask > 1000) {
+              candidates.push({ px: (bid + ask) / 2, name: "Binance PAXG Fallback" });
+            }
+          }
+        } catch (e) {}
+      }
 
       if (candidates.length > 0) {
         const avgSpot = candidates.reduce((a, x) => a + x.px, 0) / candidates.length;
