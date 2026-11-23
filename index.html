@@ -1341,12 +1341,14 @@
           res = await fetch(url, { headers, cache: "no-store" });
         }
 
-        // ยิงซ้ำแบบไม่แนบ Token แล้วยังได้ 401/404 → หยุดยิง Gist ตลอดเซสชันนี้ แล้วอ่าน ./data/state.json แทน
-        if (res.status === 401 || res.status === 404) {
+        // ยิงซ้ำแบบไม่แนบ Token แล้วยังได้ 401/404/403 → หยุดยิง Gist ตลอดเซสชันนี้ แล้วอ่าน ./data/state.json แทน
+        // (403 = ติด Rate Limit 60 ครั้ง/ชม. ของ GitHub — ยิงซ้ำทุก 3.5 วิ มีแต่เจอ 403 ทุกครั้ง ไม่มีประโยชน์)
+        if (res.status === 401 || res.status === 404 || res.status === 403) {
           sessionGistHalted = true;
+          const reason = res.status === 403 ? "ติด Rate Limit 60 ครั้ง/ชม. หรือไม่มีสิทธิ์เข้าถึง Gist" : "Token ไม่ถูกต้อง/Gist ถูกลบ";
           const auditEl = document.getElementById('data-audit-line');
-          if (auditEl) auditEl.textContent = `⚠️ Gist ตอบ ${res.status} (Token ไม่ถูกต้อง/Gist ถูกลบ) — หยุดซิงก์ Gist ในเซสชันนี้ และอ่านข้อมูลสำรองจาก ./data/state.json แทน`;
-          console.warn(`[CloudSync] Gist ตอบ ${res.status} แม้ไม่แนบ Token — ตั้ง sessionGistHalted = true เพื่อหยุดยิงซ้ำ`);
+          if (auditEl) auditEl.textContent = `⚠️ Gist ตอบ ${res.status} (${reason}) — หยุดซิงก์ Gist ในเซสชันนี้ และอ่านข้อมูลสำรองจาก ./data/state.json แทน`;
+          console.warn(`[CloudSync] Gist ตอบ ${res.status} — ตั้ง sessionGistHalted = true เพื่อหยุดยิงซ้ำในเซสชันนี้`);
           await pullBackendStateFallback();
           return;
         }

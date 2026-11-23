@@ -1,37 +1,37 @@
 {
   "version": "14.1",
-  "updated_at": "2026-11-23T12:41:49.834436+07:00",
+  "updated_at": "2026-11-23T13:15:47.088239+07:00",
   "order_flow": {
     "source": "Binance XAUUSDT Perp L2",
-    "mid_price": 3630.44,
-    "obi_25bps": 0.758,
-    "bid_liq_total": 176.51,
-    "ask_liq_total": 24.31,
+    "mid_price": 3625.28,
+    "obi_25bps": 0.34,
+    "bid_liq_total": 133.49,
+    "ask_liq_total": 65.7,
     "bid_walls": [
       {
-        "price": 3630.44,
-        "size": 37.32
+        "price": 3625.28,
+        "size": 57.23
       },
       {
-        "price": 3630.42,
-        "size": 24.79
+        "price": 3625.23,
+        "size": 22.7
       },
       {
-        "price": 3630.39,
-        "size": 18.69
+        "price": 3625.22,
+        "size": 20.15
       }
     ],
     "ask_walls": [
       {
-        "price": 3630.45,
-        "size": 15.98
+        "price": 3625.29,
+        "size": 52.46
       }
     ],
-    "tick_cvd": -150.07,
+    "tick_cvd": 91.71,
     "absorption_flag": "BID_DOMINANCE",
-    "open_interest": 119976.98,
+    "open_interest": 119080.08,
     "funding_rate_pct": 0.0,
-    "of_regime": "TWO_WAY_ROTATION"
+    "of_regime": "STRONG_BUY_IMBALANCE"
   },
   "risk_guard": {
     "account_balance": 1000.0,
@@ -54,42 +54,42 @@
     "news_pause": false,
     "spread_pause": false,
     "can_scalp": true,
-    "can_trend": false,
+    "can_trend": true,
     "status": "ACTIVE_READY"
   },
   "mue_evolution": {
-    "generation": 4,
-    "last_evolved_at": "2026-11-23 12:42:34",
+    "generation": 5,
+    "last_evolved_at": "2026-11-23 13:16:29",
     "genes": {
       "D_SHAPED": {
         "mode": "POC_PULLBACK",
-        "sl_points": 674,
+        "sl_points": 653,
         "tp_points": 750,
-        "tol_points": 220,
+        "tol_points": 150,
         "obi_min": 0.18,
-        "generation": 3,
-        "fitness": 0.83,
-        "rule_th": "MUE-X Gen#3: POC_PULLBACK | Dynamic ATR SL (~674 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
+        "generation": 4,
+        "fitness": 0.99,
+        "rule_th": "MUE-X Gen#4: POC_PULLBACK | Dynamic ATR SL (~653 จุด) / TP >= 750 จุด (±150 จุด + OBI >= 0.18)"
       },
       "B_SHAPED": {
         "mode": "VALLEY_MIGRATION",
-        "sl_points": 654,
+        "sl_points": 672,
         "tp_points": 550,
         "tol_points": 150,
         "obi_min": 0.18,
         "generation": 2,
         "fitness": 0.21,
-        "rule_th": "MUE-X Gen#2: VALLEY_MIGRATION | Dynamic ATR SL (~654 จุด) / TP >= 550 จุด (±150 จุด + OBI >= 0.18)"
+        "rule_th": "MUE-X Gen#2: VALLEY_MIGRATION | Dynamic ATR SL (~672 จุด) / TP >= 550 จุด (±150 จุด + OBI >= 0.18)"
       },
       "P_SHAPED": {
         "mode": "POC_PULLBACK",
-        "sl_points": 592,
+        "sl_points": 600,
         "tp_points": 750,
         "tol_points": 220,
         "obi_min": 0.18,
         "generation": 2,
         "fitness": 0.68,
-        "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~592 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
+        "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~600 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
       },
       "DOUBLE_ZONE": {
         "mode": "POC_PULLBACK",
@@ -104,144 +104,149 @@
     }
   },
   "quant": {
-    "spot_price": 3623.49,
-    "bid": 3623.17,
-    "ask": 3623.82,
+    "spot_price": 3618.4,
+    "bid": 3618.08,
+    "ask": 3618.73,
     "feed_source": "Swissquote XAU/USD Spot",
-    "dxy_price": 103.73,
+    "dxy_price": 103.64,
     "us10y_yield": 4.91,
     "corr_gold_dxy_20d": -0.83,
     "data_audit": {
-      "total_bars": 4693,
+      "total_bars": 4695,
       "vault_days": 48.9
     },
     "technicals": {
-      "adx14": 49.7,
-      "rsi14": 68.8,
-      "atr14": 15.6,
-      "ema21": 3588.88,
-      "h1_ema200": 3800.08,
-      "pdh": 3755.09,
-      "pdl": 3528.49
+      "adx14": 48.7,
+      "rsi14": 67.2,
+      "atr14": 15.72,
+      "ema21": 3592.81,
+      "h1_ema200": 3797.79,
+      "pdh": 3745.9,
+      "pdl": 3518.8
     },
     "setup": {
       "active_factor": "EMA21_RETEST",
-      "regime": "BEARISH TREND (ADX 49.7 | RSI 68.8)",
+      "regime": "BEARISH TREND (ADX 48.7 | RSI 67.2)",
       "direction": "SHORT",
-      "bias": "ANTI-CHASE RETEST SHORT (รอเด้งชน $3588.88)",
-      "entry": 3588.88,
-      "sl": 3616.96,
-      "be_target": 3560.8,
-      "tp": 3527.1,
-      "sl_dist": 28.08,
-      "tp_dist": 61.78,
+      "bias": "ANTI-CHASE RETEST SHORT (รอเด้งชน $3592.81)",
+      "entry": 3592.81,
+      "sl": 3621.11,
+      "be_target": 3564.51,
+      "tp": 3530.56,
+      "sl_dist": 28.3,
+      "tp_dist": 62.25,
       "rr": 2.2,
       "has_edge": true,
-      "in_killzone": false,
-      "session_name": "NO TRADE ZONE (รอ 13:00 น.)",
+      "in_killzone": true,
+      "session_name": "ACTIVE SESSION",
       "lot_size": 0.01,
       "risk_usd": 10.0
     }
+  },
+  "macro": {
+    "dxy": 103.64,
+    "us10y": 4.91,
+    "gold_dxy_corr": -0.83
   },
   "scalp": {
     "anatomy": {
       "shape": "DOUBLE_ZONE",
       "title_th": "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)",
       "desc_th": "Session VP 8 ชม. เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — ใช้ OrderFlow ยืนยันจังหวะเด้งหรือทะลุโซน",
-      "poc": 3525.51,
-      "vah": 3605.56,
-      "val": 3519.79,
+      "poc": 3524.12,
+      "vah": 3609.89,
+      "val": 3518.4,
       "poc_pos_pct": 15.9,
-      "lower_peak": 3525.51,
-      "upper_peak": 3611.28,
-      "valley": 3542.66,
+      "lower_peak": 3524.12,
+      "upper_peak": 3615.61,
+      "valley": 3541.27,
       "histogram": [
         {
-          "price": 3508.35,
+          "price": 3506.96,
           "volume": 2612
         },
         {
-          "price": 3514.07,
+          "price": 3512.68,
           "volume": 0
         },
         {
-          "price": 3519.79,
-          "volume": 4913
+          "price": 3518.4,
+          "volume": 3405
         },
         {
-          "price": 3525.51,
-          "volume": 14535
+          "price": 3524.12,
+          "volume": 11919
         },
         {
-          "price": 3531.23,
+          "price": 3529.84,
           "volume": 3684
         },
         {
-          "price": 3536.95,
+          "price": 3535.55,
           "volume": 0
         },
         {
-          "price": 3542.66,
+          "price": 3541.27,
           "volume": 0
         },
         {
-          "price": 3548.38,
+          "price": 3546.99,
           "volume": 0
         },
         {
-          "price": 3554.1,
+          "price": 3552.71,
           "volume": 0
         },
         {
-          "price": 3559.82,
+          "price": 3558.43,
           "volume": 0
         },
         {
-          "price": 3565.54,
+          "price": 3564.15,
           "volume": 0
         },
         {
-          "price": 3571.25,
+          "price": 3569.86,
           "volume": 0
         },
         {
-          "price": 3576.97,
+          "price": 3575.58,
           "volume": 8588
         },
         {
-          "price": 3582.69,
+          "price": 3581.3,
           "volume": 4823
         },
         {
-          "price": 3588.41,
+          "price": 3587.02,
           "volume": 3675
         },
         {
-          "price": 3594.13,
+          "price": 3592.74,
           "volume": 3176
         },
         {
-          "price": 3599.85,
+          "price": 3598.45,
           "volume": 0
         },
         {
-          "price": 3605.56,
+          "price": 3604.17,
           "volume": 7623
         },
         {
-          "price": 3611.28,
+          "price": 3609.89,
           "volume": 3572
         },
         {
-          "price": 3617.0,
+          "price": 3615.61,
           "volume": 6716
         },
         {
-          "price": 3622.72,
-          "volume": 824
+          "price": 3621.33,
+          "volume": 10452
         },
         {
-          "price": 3628.44,
+          "price": 3627.05,
           "volume": 0
         }
       ],
@@ -253,11 +258,11 @@
       "generation": 2,
       "shape_active": true,
       "direction": "LONG",
-      "bias": "DOUBLE_ZONE POC PULLBACK BUY (รอย่อฐาน Session POC $3525.51 + OBI)",
-      "entry": 3525.51,
-      "sl": 3516.51,
-      "be_target": 3530.01,
-      "tp": 3536.76,
+      "bias": "DOUBLE_ZONE POC PULLBACK BUY (รอย่อฐาน Session POC $3524.12 + OBI)",
+      "entry": 3524.12,
+      "sl": 3515.12,
+      "be_target": 3528.62,
+      "tp": 3535.37,
       "sl_points": 900,
       "be_points": 450,
       "tp_points": 1125,
@@ -265,109 +270,109 @@
       "sl_usd": 9.0,
       "tp_usd": 11.25,
       "rr": 1.25,
-      "dist_usd": 97.98,
-      "dist_points": 9798,
+      "dist_usd": 94.28,
+      "dist_points": 9428,
       "lot_size": 0.01,
       "risk_usd": 10.0,
-      "obi": 0.758,
+      "obi": 0.34,
       "obi_req": 0.18
     },
     "backtest": {
-      "trades": 102,
-      "win_rate": 51.4,
-      "net_r": 7.87,
+      "trades": 92,
+      "win_rate": 51.5,
+      "net_r": 7.62,
       "expectancy_r": 0.08,
       "max_dd_r": 5.0,
-      "sharpe": 0.84,
-      "sortino": 1.18,
-      "oos_trades": 34,
+      "sharpe": 0.88,
+      "sortino": 1.23,
+      "oos_trades": 31,
       "oos_win_rate": 47.1,
       "oos_r_pf": 1.16,
       "equity_curve_r": [
-        5.64,
-        4.64,
-        4.64,
-        4.64,
-        4.64,
-        4.64,
-        4.64,
-        4.64,
-        3.64,
+        5.39,
+        4.39,
+        4.39,
+        4.39,
+        4.39,
+        4.39,
+        4.39,
+        4.39,
+        3.39,
+        4.7,
+        4.7,
+        4.7,
+        3.7,
+        3.7,
+        3.7,
+        3.7,
+        3.7,
+        3.7,
+        3.7,
+        3.7,
+        3.7,
+        3.7,
+        3.7,
         4.95,
         4.95,
-        4.95,
-        3.95,
-        3.95,
-        3.95,
-        3.95,
-        3.95,
-        3.95,
-        3.95,
-        3.95,
-        3.95,
-        3.95,
-        3.95,
-        5.2,
-        5.2,
-        6.45,
-        6.45,
-        6.45,
-        6.45,
-        6.45,
-        7.86,
-        6.86,
-        5.86,
-        5.86,
-        5.86,
-        5.86,
-        4.86,
-        4.86,
-        3.86,
-        3.86,
-        2.86,
-        2.86,
-        4.11,
-        4.11,
-        5.36,
-        5.36,
-        5.36,
-        5.36,
-        4.36,
+        6.2,
+        6.2,
+        6.2,
+        6.2,
+        6.2,
+        7.61,
+        6.61,
+        5.61,
+        5.61,
         5.61,
         5.61,
         4.61,
-        6.1,
+        4.61,
+        3.61,
+        3.61,
+        2.61,
+        2.61,
+        3.86,
+        3.86,
+        5.11,
+        5.11,
+        5.11,
+        5.11,
+        4.11,
+        5.36,
+        5.36,
+        4.36,
+        5.85,
+        7.12,
+        8.37,
+        8.37,
         7.37,
-        8.62,
-        8.62,
-        7.62,
-        6.62,
-        6.62,
-        7.87
+        6.37,
+        6.37,
+        7.62
       ],
       "anatomy_breakdown": [
         {
           "shape": "D_SHAPED",
           "mode": "POC_PULLBACK",
-          "generation": 3,
-          "sl_points": 674,
+          "generation": 4,
+          "sl_points": 653,
           "tp_points": 750,
-          "tol_points": 220,
-          "trades": 21,
-          "win_rate": 66.7,
-          "r_pf": 2.67,
-          "net_r": 1.67,
-          "fitness": 0.83,
+          "tol_points": 150,
+          "trades": 11,
+          "win_rate": 100.0,
+          "r_pf": 2.84,
+          "net_r": 1.42,
+          "fitness": 0.99,
           "enabled": true
         },
         {
           "shape": "B_SHAPED",
           "mode": "VALLEY_MIGRATION",
           "generation": 2,
-          "sl_points": 654,
+          "sl_points": 672,
           "tp_points": 550,
           "tol_points": 150,
-          "trades": 13,
+          "trades": 12,
           "win_rate": 25.0,
           "r_pf": 0.42,
           "net_r": -1.75,
@@ -378,10 +383,10 @@
           "shape": "P_SHAPED",
           "mode": "POC_PULLBACK",
           "generation": 2,
-          "sl_points": 592,
+          "sl_points": 600,
           "tp_points": 750,
           "tol_points": 220,
-          "trades": 21,
+          "trades": 22,
           "win_rate": 55.6,
           "r_pf": 2.01,
           "net_r": 4.03,
@@ -410,7 +415,7 @@
           "tp_points": 750,
           "tol_points": 220,
           "wick_mode": "OBI>=0.18 (3s)",
-          "trades": 21,
+          "trades": 22,
           "win_rate": 55.6,
           "r_profit_factor": 2.01,
           "oos_r_pf": 1.77,
@@ -432,13 +437,13 @@
           "shape": "D_SHAPED",
           "mode": "POC_PULLBACK",
           "tp_points": 750,
-          "tol_points": 220,
+          "tol_points": 150,
           "wick_mode": "OBI>=0.18 (3s)",
-          "trades": 21,
-          "win_rate": 66.7,
-          "r_profit_factor": 2.67,
-          "oos_r_pf": 2.35,
-          "net_r": 1.67
+          "trades": 11,
+          "win_rate": 100.0,
+          "r_profit_factor": 2.84,
+          "oos_r_pf": 2.5,
+          "net_r": 1.42
         },
         {
           "shape": "B_SHAPED",
@@ -446,7 +451,7 @@
           "tp_points": 550,
           "tol_points": 150,
           "wick_mode": "OBI>=0.18 (3s)",
-          "trades": 13,
+          "trades": 12,
           "win_rate": 25.0,
           "r_profit_factor": 0.42,
           "oos_r_pf": 0.95,
@@ -460,8 +465,8 @@
           "side": "SHORT",
           "entry_time": "30/10 15:00",
           "exit_time": "30/10 15:30",
-          "entry": 3921.55,
-          "exit": 3910.3,
+          "entry": 3920.16,
+          "exit": 3908.91,
           "r": 1.25,
           "pnl": 12.5
         },
@@ -471,8 +476,8 @@
           "side": "SHORT",
           "entry_time": "30/10 10:30",
           "exit_time": "30/10 11:00",
-          "entry": 3993.83,
-          "exit": 3993.83,
+          "entry": 3992.44,
+          "exit": 3992.44,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -482,8 +487,8 @@
           "side": "SHORT",
           "entry_time": "30/10 10:00",
           "exit_time": "30/10 11:15",
-          "entry": 3994.69,
-          "exit": 3985.62,
+          "entry": 3993.3,
+          "exit": 3984.23,
           "r": 1.25,
           "pnl": 12.5
         },
@@ -493,8 +498,8 @@
           "side": "SHORT",
           "entry_time": "30/10 00:30",
           "exit_time": "30/10 00:45",
-          "entry": 4029.32,
-          "exit": 4029.32,
+          "entry": 4027.93,
+          "exit": 4027.93,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -504,8 +509,8 @@
           "side": "LONG",
           "entry_time": "29/10 20:00",
           "exit_time": "29/10 20:30",
-          "entry": 4038.93,
-          "exit": 4038.93,
+          "entry": 4037.54,
+          "exit": 4037.54,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -513,43 +518,10 @@
           "engine": "SCALP",
           "shape": "D_SHAPED (POC_PU)",
           "side": "SHORT",
-          "entry_time": "29/10 15:00",
+          "entry_time": "29/10 14:45",
           "exit_time": "29/10 15:30",
-          "entry": 4038.94,
-          "exit": 4038.94,
-          "r": 0.0,
-          "pnl": 0.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "D_SHAPED (POC_PU)",
-          "side": "SHORT",
-          "entry_time": "29/10 13:45",
-          "exit_time": "29/10 14:00",
-          "entry": 4038.94,
-          "exit": 4038.94,
-          "r": 0.0,
-          "pnl": 0.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "D_SHAPED (POC_PU)",
-          "side": "SHORT",
-          "entry_time": "29/10 13:00",
-          "exit_time": "29/10 13:15",
-          "entry": 4040.32,
-          "exit": 4040.32,
-          "r": 0.0,
-          "pnl": 0.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "D_SHAPED (POC_PU)",
-          "side": "SHORT",
-          "entry_time": "29/10 12:15",
-          "exit_time": "29/10 12:30",
-          "entry": 4040.32,
-          "exit": 4040.32,
+          "entry": 4037.55,
+          "exit": 4037.55,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -559,8 +531,8 @@
           "side": "SHORT",
           "entry_time": "29/10 09:00",
           "exit_time": "29/10 09:30",
-          "entry": 4040.84,
-          "exit": 4040.84,
+          "entry": 4039.45,
+          "exit": 4039.45,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -570,8 +542,8 @@
           "side": "SHORT",
           "entry_time": "29/10 03:30",
           "exit_time": "29/10 03:45",
-          "entry": 4056.99,
-          "exit": 4056.99,
+          "entry": 4055.6,
+          "exit": 4055.6,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -581,8 +553,8 @@
           "side": "SHORT",
           "entry_time": "29/10 02:15",
           "exit_time": "29/10 02:30",
-          "entry": 4059.3,
-          "exit": 4059.3,
+          "entry": 4057.9,
+          "exit": 4057.9,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -592,8 +564,8 @@
           "side": "SHORT",
           "entry_time": "28/10 17:45",
           "exit_time": "28/10 18:00",
-          "entry": 4053.96,
-          "exit": 4053.96,
+          "entry": 4052.57,
+          "exit": 4052.57,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -603,8 +575,8 @@
           "side": "SHORT",
           "entry_time": "28/10 14:00",
           "exit_time": "28/10 14:15",
-          "entry": 4064.67,
-          "exit": 4057.17,
+          "entry": 4063.28,
+          "exit": 4055.78,
           "r": 1.7,
           "pnl": 17.0
         },
@@ -614,8 +586,8 @@
           "side": "LONG",
           "entry_time": "28/10 13:15",
           "exit_time": "28/10 13:30",
-          "entry": 4069.67,
-          "exit": 4065.27,
+          "entry": 4068.28,
+          "exit": 4063.88,
           "r": -1.0,
           "pnl": -10.0
         },
@@ -625,8 +597,41 @@
           "side": "LONG",
           "entry_time": "28/10 11:15",
           "exit_time": "28/10 11:45",
-          "entry": 4061.57,
-          "exit": 4061.57,
+          "entry": 4060.18,
+          "exit": 4060.18,
+          "r": 0.0,
+          "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "DOUBLE_ZONE (POC_PU)",
+          "side": "LONG",
+          "entry_time": "28/10 10:00",
+          "exit_time": "28/10 10:15",
+          "entry": 4061.73,
+          "exit": 4061.73,
+          "r": 0.0,
+          "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "DOUBLE_ZONE (POC_PU)",
+          "side": "SHORT",
+          "entry_time": "28/10 06:45",
+          "exit_time": "28/10 07:00",
+          "entry": 4044.63,
+          "exit": 4044.63,
+          "r": 0.0,
+          "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "D_SHAPED (POC_PU)",
+          "side": "LONG",
+          "entry_time": "28/10 00:45",
+          "exit_time": "28/10 01:00",
+          "entry": 4074.97,
+          "exit": 4074.97,
           "r": 0.0,
           "pnl": 0.0
         }
@@ -637,140 +642,140 @@
     "shape": "DOUBLE_ZONE",
     "title_th": "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)",
     "desc_th": "Session VP 8 ชม. เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — ใช้ OrderFlow ยืนยันจังหวะเด้งหรือทะลุโซน",
-    "poc": 3874.64,
-    "vah": 3899.72,
-    "val": 3611.22,
+    "poc": 3873.25,
+    "vah": 3898.33,
+    "val": 3609.83,
     "poc_pos_pct": 92.2,
-    "lower_peak": 3561.04,
-    "upper_peak": 3862.09,
-    "valley": 3648.85,
+    "lower_peak": 3559.65,
+    "upper_peak": 3860.7,
+    "valley": 3647.46,
     "histogram": [
       {
-        "price": 3510.87,
+        "price": 3509.48,
         "volume": 7002
       },
       {
-        "price": 3523.41,
+        "price": 3522.02,
         "volume": 56559
       },
       {
-        "price": 3535.95,
+        "price": 3534.56,
         "volume": 22914
       },
       {
-        "price": 3548.5,
+        "price": 3547.11,
         "volume": 82190
       },
       {
-        "price": 3561.04,
+        "price": 3559.65,
         "volume": 26926
       },
       {
-        "price": 3573.59,
+        "price": 3572.2,
         "volume": 80522
       },
       {
-        "price": 3586.13,
+        "price": 3584.74,
         "volume": 32225
       },
       {
-        "price": 3598.67,
+        "price": 3597.28,
         "volume": 26403
       },
       {
-        "price": 3611.22,
+        "price": 3609.83,
         "volume": 13847
       },
       {
-        "price": 3623.76,
-        "volume": 11914
+        "price": 3622.37,
+        "volume": 21542
       },
       {
-        "price": 3636.3,
+        "price": 3634.91,
         "volume": 6425
       },
       {
-        "price": 3648.85,
+        "price": 3647.46,
         "volume": 5050
       },
       {
-        "price": 3661.39,
+        "price": 3660.0,
         "volume": 3551
       },
       {
-        "price": 3673.94,
+        "price": 3672.55,
         "volume": 22109
       },
       {
-        "price": 3686.48,
+        "price": 3685.09,
         "volume": 41637
       },
       {
-        "price": 3699.02,
+        "price": 3697.63,
         "volume": 8028
       },
       {
-        "price": 3711.57,
+        "price": 3710.18,
         "volume": 32347
       },
       {
-        "price": 3724.11,
+        "price": 3722.72,
         "volume": 34297
       },
       {
-        "price": 3736.65,
+        "price": 3735.26,
         "volume": 58280
       },
       {
-        "price": 3749.2,
+        "price": 3747.81,
         "volume": 43799
       },
       {
-        "price": 3761.74,
+        "price": 3760.35,
         "volume": 36487
       },
       {
-        "price": 3774.29,
+        "price": 3772.9,
         "volume": 61607
       },
       {
-        "price": 3786.83,
+        "price": 3785.44,
         "volume": 35540
       },
       {
-        "price": 3799.37,
+        "price": 3797.98,
         "volume": 23614
       },
       {
-        "price": 3811.92,
+        "price": 3810.53,
         "volume": 5023
       },
       {
-        "price": 3824.46,
+        "price": 3823.07,
         "volume": 14286
       },
       {
-        "price": 3837.0,
+        "price": 3835.61,
         "volume": 2595
       },
       {
-        "price": 3849.55,
+        "price": 3848.16,
         "volume": 51198
       },
       {
-        "price": 3862.09,
+        "price": 3860.7,
         "volume": 107184
       },
       {
-        "price": 3874.64,
+        "price": 3873.25,
         "volume": 118769
       },
       {
-        "price": 3887.18,
-        "volume": 40993
+        "price": 3885.79,
+        "volume": 39294
       },
       {
-        "price": 3899.72,
+        "price": 3898.33,
         "volume": 4591
       }
     ]
@@ -864,8 +869,8 @@
           "side": "SHORT",
           "entry_time": "20/11 19:30",
           "exit_time": "22/11 23:00",
-          "entry": 3534.3,
-          "exit": 3564.41,
+          "entry": 3532.9,
+          "exit": 3563.01,
           "r": -1.0,
           "pnl": -75.0
         },
@@ -875,8 +880,8 @@
           "side": "SHORT",
           "entry_time": "20/11 11:45",
           "exit_time": "20/11 14:00",
-          "entry": 3577.39,
-          "exit": 3577.39,
+          "entry": 3576.0,
+          "exit": 3576.0,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -886,8 +891,8 @@
           "side": "SHORT",
           "entry_time": "20/11 06:00",
           "exit_time": "20/11 08:15",
-          "entry": 3555.59,
-          "exit": 3590.11,
+          "entry": 3554.2,
+          "exit": 3588.72,
           "r": -1.0,
           "pnl": -75.0
         },
@@ -897,8 +902,8 @@
           "side": "SHORT",
           "entry_time": "19/11 18:15",
           "exit_time": "19/11 21:15",
-          "entry": 3687.69,
-          "exit": 3639.83,
+          "entry": 3686.3,
+          "exit": 3638.44,
           "r": 2.2,
           "pnl": 165.0
         },
@@ -908,8 +913,8 @@
           "side": "SHORT",
           "entry_time": "19/11 04:15",
           "exit_time": "19/11 15:45",
-          "entry": 3728.8,
-          "exit": 3676.58,
+          "entry": 3727.4,
+          "exit": 3675.18,
           "r": 2.2,
           "pnl": 165.0
         },
@@ -919,8 +924,8 @@
           "side": "SHORT",
           "entry_time": "18/11 09:30",
           "exit_time": "18/11 12:45",
-          "entry": 3785.89,
-          "exit": 3749.91,
+          "entry": 3784.5,
+          "exit": 3748.52,
           "r": 2.2,
           "pnl": 165.0
         },
@@ -930,8 +935,8 @@
           "side": "SHORT",
           "entry_time": "17/11 17:30",
           "exit_time": "18/11 00:30",
-          "entry": 3870.3,
-          "exit": 3825.1,
+          "entry": 3868.9,
+          "exit": 3823.7,
           "r": 2.2,
           "pnl": 165.0
         },
@@ -941,8 +946,8 @@
           "side": "SHORT",
           "entry_time": "17/11 12:45",
           "exit_time": "17/11 13:30",
-          "entry": 3865.59,
-          "exit": 3841.32,
+          "entry": 3864.2,
+          "exit": 3839.93,
           "r": 2.2,
           "pnl": 165.0
         },
@@ -952,8 +957,8 @@
           "side": "SHORT",
           "entry_time": "17/11 06:45",
           "exit_time": "17/11 11:45",
-          "entry": 3875.19,
-          "exit": 3875.19,
+          "entry": 3873.8,
+          "exit": 3873.8,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -963,8 +968,8 @@
           "side": "SHORT",
           "entry_time": "16/11 13:45",
           "exit_time": "16/11 14:30",
-          "entry": 3870.59,
-          "exit": 3883.0,
+          "entry": 3869.2,
+          "exit": 3881.61,
           "r": -1.0,
           "pnl": -75.0
         }
@@ -996,7 +1001,7 @@
     "active_trade": null
   },
   "ai_engine_name": "MUE-X Local Quant V14.1",
-  "ai_analysis": "**1. Session Micro-VP 8H & Live OrderFlow (④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)):**\nSpot ปัจจุบัน **$3623.49** เกาะอยู่ในกรอบ Session 8H (VAL **$3519.79** / POC **$3525.51** / VAH **$3605.56**) | L2 OBI **+0.758** | Tick CVD **-150.1** (BID_DOMINANCE)\n\n**2. เงื่อนไขลั่นไก OrderFlow Execution Gate (ใช้งานจริง 3 ชั้น):**\n• **ชั้นที่ 1 (Location):** รอราคาเข้าใกล้จุดยิง Scalp **$3525.51** ในระยะไม่เกิน `±220 จุด`\n• **ชั้นที่ 2 (3s Sustained OBI):** แรงฝั่ง **LONG** ต้องยืนเหนือเกณฑ์ `+0.18` ต่อเนื่อง 3 วินาทีเต็ม (ตัดออเดอร์หลอก)\n• **ชั้นที่ 3 (60s Tape Delta):** แรงเคาะซื้อ/ขายจริง 60 วินาทีต้องสอดคล้องทิศทางจึงเปิดออเดอร์\n\n**3. แผนเข้าเทรด Scalp (LONG):** Entry **$3525.51** | SL **$3516.51** | BE (+450 จุด) **$3530.01** | TP **$3536.76**\n**4. แผน Trend Sniper (SHORT):** Entry **$3588.88** | SL **$3616.96** | TP **$3527.1** (WR 43.2%)",
+  "ai_analysis": "**1. Session Micro-VP 8H & Live OrderFlow (④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)):**\nSpot ปัจจุบัน **$3618.4** เกาะอยู่ในกรอบ Session 8H (VAL **$3518.4** / POC **$3524.12** / VAH **$3609.89**) | L2 OBI **+0.340** | Tick CVD **+91.7** (BID_DOMINANCE)\n\n**2. เงื่อนไขลั่นไก OrderFlow Execution Gate (ใช้งานจริง 3 ชั้น):**\n• **ชั้นที่ 1 (Location):** รอราคาเข้าใกล้จุดยิง Scalp **$3524.12** ในระยะไม่เกิน `±220 จุด`\n• **ชั้นที่ 2 (3s Sustained OBI):** แรงฝั่ง **LONG** ต้องยืนเหนือเกณฑ์ `+0.18` ต่อเนื่อง 3 วินาทีเต็ม (ตัดออเดอร์หลอก)\n• **ชั้นที่ 3 (60s Tape Delta):** แรงเคาะซื้อ/ขายจริง 60 วินาทีต้องสอดคล้องทิศทางจึงเปิดออเดอร์\n\n**3. แผนเข้าเทรด Scalp (LONG):** Entry **$3524.12** | SL **$3515.12** | BE (+450 จุด) **$3528.62** | TP **$3535.37**\n**4. แผน Trend Sniper (SHORT):** Entry **$3592.81** | SL **$3621.11** | TP **$3530.56** (WR 43.2%)",
   "news": [
     {
       "time_th": "23/11 21:45 น.",
@@ -1005,8 +1010,8 @@
       "forecast": "54.5",
       "previous": "56.0",
       "is_upcoming": true,
-      "hours_away": 9.1,
-      "status": "อีก 9.1 ชม."
+      "hours_away": 8.5,
+      "status": "อีก 8.5 ชม."
     },
     {
       "time_th": "23/11 21:45 น.",
@@ -1015,8 +1020,8 @@
       "forecast": "55.6",
       "previous": "57.9",
       "is_upcoming": true,
-      "hours_away": 9.1,
-      "status": "อีก 9.1 ชม."
+      "hours_away": 8.5,
+      "status": "อีก 8.5 ชม."
     },
     {
       "time_th": "24/11 22:00 น.",
@@ -1025,8 +1030,8 @@
       "forecast": "92.1",
       "previous": "91.7",
       "is_upcoming": true,
-      "hours_away": 33.3,
-      "status": "อีก 33.3 ชม."
+      "hours_away": 32.7,
+      "status": "อีก 32.7 ชม."
     },
     {
       "time_th": "25/11 20:30 น.",
@@ -1035,8 +1040,8 @@
       "forecast": "0.3%",
       "previous": "0.3%",
       "is_upcoming": true,
-      "hours_away": 55.8,
-      "status": "อีก 55.8 ชม."
+      "hours_away": 55.2,
+      "status": "อีก 55.2 ชม."
     },
     {
       "time_th": "25/11 20:30 น.",
@@ -1045,8 +1050,8 @@
       "forecast": "3.5%",
       "previous": "3.4%",
       "is_upcoming": true,
-      "hours_away": 55.8,
-      "status": "อีก 55.8 ชม."
+      "hours_away": 55.2,
+      "status": "อีก 55.2 ชม."
     },
     {
       "time_th": "25/11 20:30 น.",
@@ -1055,8 +1060,8 @@
       "forecast": "2.3%",
       "previous": "2.3%",
       "is_upcoming": true,
-      "hours_away": 55.8,
-      "status": "อีก 55.8 ชม."
+      "hours_away": 55.2,
+      "status": "อีก 55.2 ชม."
     },
     {
       "time_th": "25/11 20:30 น.",
@@ -1065,8 +1070,8 @@
       "forecast": "201K",
       "previous": "203K",
       "is_upcoming": true,
-      "hours_away": 55.8,
-      "status": "อีก 55.8 ชม."
+      "hours_away": 55.2,
+      "status": "อีก 55.2 ชม."
     }
   ]
 }

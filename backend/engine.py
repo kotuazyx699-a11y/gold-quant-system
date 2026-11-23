@@ -737,42 +737,97 @@ def generate_live_ai_strategist_brief(spot, vp_session, scalp_setup, trend_setup
     return fallback_brief, "MUE-X Quant V14.1"
 
 
+def _fetch_yahoo_chart_closes(symbol, range_str="30d", interval="1d"):
+    """ดึงราคาปิดรายวันตรงจาก Yahoo Finance Chart API (แนบ User-Agent กัน 403) → pd.Series (index = unix timestamp) หรือ None"""
+    try:
+        r = requests.get(
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
+            params={"range": range_str, "interval": interval},
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=8,
+        )
+        if r.status_code != 200:
+            print(f"[Macro] Yahoo Chart API ตอบ {r.status_code} สำหรับ {symbol}")
+            return None
+        result = (r.json().get("chart") or {}).get("result") or []
+        if not result:
+            return None
+        ts_list = result[0].get("timestamp") or []
+        close_list = ((result[0].get("indicators") or {}).get("quote") or [{}])[0].get("close") or []
+        pairs = [(int(t), float(c)) for t, c in zip(ts_list, close_list) if c is not None]
+        if not pairs:
+            return None
+        return pd.Series(dict(pairs)).sort_index()
+    except Exception as e:
+        print(f"[Macro] Yahoo Chart API ล้มเหลว {symbol}: {e}")
+        return None
+
+
+def _fetch_yfinance_closes(symbol, period="30d", interval="1d"):
+    """ตัวสำรอง: ราคาปิดรายวันจาก yfinance → pd.Series (index = unix timestamp) หรือ None"""
+    try:
+        df_x = yf.download(symbol, period=period, interval=interval, progress=False)
+        if df_x is None or df_x.empty:
+            return None
+        if isinstance(df_x.columns, pd.MultiIndex):
+            df_x.columns = df_x.columns.get_level_values(0)
+        if "Close" not in df_x.columns:
+            return None
+        s = df_x["Close"].dropna()
+        if s.empty:
+            return None
+        s.index = [int(pd.Timestamp(x).timestamp()) for x in s.index]
+        return s.astype(float).sort_index()
+    except Exception as e:
+        print(f"[Macro] yfinance ล้มเหลว {symbol}: {e}")
+        return None
+
+
+def _fetch_macro_series(symbol, period="30d", interval="1d"):
+    """ราคาปิดสำหรับคำนวณ macro: ลอง Yahoo Chart API ตรง ๆ ก่อน (เสถียรกว่า) ไม่สำเร็จค่อยตกไปใช้ yfinance"""
+    s = _fetch_yahoo_chart_closes(symbol, period, interval)
+    if s is not None and not s.empty:
+        return s
+    return _fetch_yfinance_closes(symbol, period, interval)
+
+
 def fetch_macro_and_news():
     # โหลดค่าล่าสุดที่บันทึกไว้เป็น fallback
     cached_macro_path = os.path.join(DATA_DIR, "macro_cache.json")
     cached = load_json_safe(cached_macro_path, {})
-    
+
     dxy_p = cached.get("dxy", 103.85)
     us10y_y = cached.get("us10y", 4.25)
     corr_20 = cached.get("corr", -0.45)
-    
-    try:
-        dxy = yf.download("DX-Y.NYB", period="30d", interval="1d", progress=False)
-        tnx = yf.download("^TNX", period="10d", interval="1d", progress=False)
-        gld = yf.download("GC=F", period="30d", interval="1d", progress=False)
-        for df_x in (dxy, tnx, gld):
-            if isinstance(df_x.columns, pd.MultiIndex):
-                df_x.columns = df_x.columns.get_level_values(0)
-        if not dxy.empty:
-            dxy_p = round(float(dxy["Close"].iloc[-1]), 2)
-        if not tnx.empty:
-            us10y_y = round(float(tnx["Close"].iloc[-1]), 2)
-        if len(dxy) >= 15 and len(gld) >= 15:
-            j = pd.concat([gld["Close"], dxy["Close"]], axis=1).dropna().tail(20)
-            if len(j) >= 10:
-                corr_20 = round(float(j.iloc[:, 0].corr(j.iloc[:, 1])), 2)
-        
-        # บันทึกค่าล่าสุดที่สำเร็จลง cache
-        save_json_safe(cached_macro_path, {
-            "dxy": dxy_p,
-            "us10y": us10y_y,
-            "corr": corr_20,
-            "updated_at": datetime.now(THAI_TZ).isoformat()
-        })
-    except Exception as e:
-        # ใช้ค่า fallback ที่โหลดจาก cache ด้านบน
-        print(f"[Macro Warning] ใช้ค่า cached: DXY={dxy_p}, US10Y={us10y_y} ({e})")
-        pass
+
+    # ดึงตรงจาก Yahoo Finance Chart API เป็นตัวหลัก (yfinance มักดึงไม่ติด) — ล้มเหลวค่อยใช้ yfinance สำรอง
+    dxy_ser = _fetch_macro_series("DX-Y.NYB", "30d", "1d")
+    tnx_ser = _fetch_macro_series("^TNX", "10d", "1d")
+    gld_ser = _fetch_macro_series("GC=F", "30d", "1d")
+
+    # อัปเดตเฉพาะค่าที่ดึงสำเร็จรอบนี้ — รอบที่ล้มเหลวห้ามเขียน null/"-" ทับค่าเดิมใน macro_cache.json
+    updated = {}
+    if dxy_ser is not None and not dxy_ser.empty:
+        dxy_p = round(float(dxy_ser.iloc[-1]), 2)
+        updated["dxy"] = dxy_p
+    if tnx_ser is not None and not tnx_ser.empty:
+        us10y_y = round(float(tnx_ser.iloc[-1]), 2)
+        updated["us10y"] = us10y_y
+    if dxy_ser is not None and gld_ser is not None:
+        j = pd.concat([gld_ser.rename("gold"), dxy_ser.rename("dxy")], axis=1).dropna().tail(20)
+        if len(j) >= 10:
+            corr_20 = round(float(j["gold"].corr(j["dxy"])), 2)
+            updated["corr"] = corr_20
+
+    if updated:
+        merged = dict(cached)
+        merged.update(updated)
+        merged["updated_at"] = datetime.now(THAI_TZ).isoformat()
+        save_json_safe(cached_macro_path, merged)
+        print(f"[Macro] อัปเดตสำเร็จ: DXY={dxy_p}, US10Y={us10y_y}, Corr={corr_20}")
+    else:
+        # ดึงรอบนี้ไม่สำเร็จ → ใช้ค่าเดิมจาก cache ต่อไป โดยไม่แตะไฟล์แม้แต่ไบต์เดียว
+        print(f"[Macro Warning] ดึงรอบนี้ไม่สำเร็จ — ใช้ค่า cached เดิม: DXY={dxy_p}, US10Y={us10y_y}, Corr={corr_20}")
 
     news_list = []
     try:
@@ -1196,6 +1251,7 @@ def run_cycle(send_summary_alert=True):
             "technicals": {"adx14": curr_adx, "rsi14": curr_rsi, "atr14": curr_atr, "ema21": curr_ema21, "h1_ema200": curr_h1_200, "pdh": pdh, "pdl": pdl},
             "setup": trend_setup
         },
+        "macro": {"dxy": dxy_p, "us10y": us10y_y, "gold_dxy_corr": corr_20},
         "scalp": {"anatomy": {**vp_session, "rule_th": active_gene["rule_th"]}, "setup": scalp_setup, "backtest": scalp_bt},
         "volume_profile": vp_5d,
         "backtest": trend_bt,
