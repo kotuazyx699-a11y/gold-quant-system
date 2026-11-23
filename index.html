@@ -590,10 +590,10 @@
               <span id="scalp-rr-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-400">SL / TP</span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono-num text-xs">
-              <div class="bg-gray-800/80 rounded p-2"><span class="block text-[10px] text-gray-400">Near-Spot Entry</span><span id="sc-entry" class="font-bold text-white text-sm">$0.00</span></div>
-              <div class="bg-rose-950/40 border border-rose-900/50 rounded p-2"><span id="sc-sl-label" class="block text-[10px] text-rose-300">Scalp SL</span><span id="sc-sl" class="font-bold text-rose-400 text-sm">$0.00</span></div>
-              <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2"><span id="sc-be-label" class="block text-[10px] text-cyan-300">จุดบังทุน BE</span><span id="sc-be" class="font-bold text-cyan-300 text-sm">$0.00</span></div>
-              <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2"><span id="sc-tp-label" class="block text-[10px] text-emerald-300">Scalp TP</span><span id="sc-tp" class="font-bold text-emerald-400 text-sm">$0.00</span></div>
+              <div class="bg-gray-800/80 rounded p-2 flex flex-col justify-center min-h-[56px]"><span class="block text-[10px] text-gray-400">Near-Spot Entry</span><span id="sc-entry" class="font-bold text-white text-sm leading-tight">$0.00</span></div>
+              <div class="bg-rose-950/40 border border-rose-900/50 rounded p-2 flex flex-col justify-center min-h-[56px]"><span id="sc-sl-label" class="block text-[10px] text-rose-300">Scalp SL</span><span id="sc-sl" class="font-bold text-rose-400 text-sm leading-tight">$0.00</span></div>
+              <div class="bg-cyan-950/40 border border-cyan-900/50 rounded p-2 flex flex-col justify-center min-h-[56px]"><span id="sc-be-label" class="block text-[10px] text-cyan-300">จุดบังทุน BE</span><span id="sc-be" class="font-bold text-cyan-300 text-[11px] leading-tight">ไม่บัง BE</span></div>
+              <div class="bg-emerald-950/40 border border-emerald-900/50 rounded p-2 flex flex-col justify-center min-h-[56px]"><span id="sc-tp-label" class="block text-[10px] text-emerald-300">Scalp TP</span><span id="sc-tp" class="font-bold text-emerald-400 text-sm leading-tight">$0.00</span></div>
             </div>
 
             <div id="sc-anchor-reason" class="text-[11px] font-mono-num text-amber-300 bg-amber-950/20 border border-amber-800/40 rounded px-2.5 py-1.5">
@@ -609,12 +609,21 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-between text-[11px] font-mono-num bg-purple-950/25 border border-purple-800/40 rounded px-2.5 py-1.5" style="height: auto !important; align-self: start !important;">
-            <span class="text-purple-300">V14.1 Backend Scalp:</span>
+          <div class="flex items-center justify-between gap-2 text-[11px] font-mono-num bg-purple-950/25 border border-purple-800/40 rounded px-2.5 py-1.5" style="height: auto !important; align-self: start !important;">
+            <span class="text-purple-300 shrink-0">V14.1 Backend Scalp:</span>
             <span id="v14-backend-scalp-ref" class="text-gray-200 font-bold">กำลังซิงก์...</span>
           </div>
 
           <div id="anatomy-cards-grid" class="grid grid-cols-2 gap-2 font-mono-num text-xs" style="height: auto !important; align-self: start !important;"></div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1 font-mono-num text-xs">
+            <button onclick="placeManualLimitOrder()" class="px-3 py-2 rounded-lg font-bold bg-cyan-500 hover:bg-cyan-400 text-gray-950 transition">
+              🎯 วาง Limit Scalp
+            </button>
+            <button onclick="placeMarketOrderNow()" class="px-3 py-2 rounded-lg font-bold bg-emerald-500 hover:bg-emerald-400 text-gray-950 transition">
+              ⚡ เปิด Scalp Market
+            </button>
+          </div>
         </div>
 
         <!-- Engine B (H1 EMA200 Trend & Swing Sniper) -->
@@ -643,8 +652,8 @@
             ✅ แผน Swing 1:2.2: ควรบังทุน BE เมื่อราคาวิ่งถึง +1.0R
           </div>
 
-          <div class="flex items-center justify-between text-[11px] font-mono-num bg-amber-950/25 border border-amber-800/40 rounded px-2.5 py-1.5">
-            <span class="text-amber-300">V14.1 Backend Trend:</span>
+          <div class="flex items-center justify-between gap-2 text-[11px] font-mono-num bg-amber-950/25 border border-amber-800/40 rounded px-2.5 py-1.5">
+            <span class="text-amber-300 shrink-0">V14.1 Backend Trend:</span>
             <span id="v14-backend-trend-ref" class="text-gray-200 font-bold">กำลังซิงก์...</span>
           </div>
 
@@ -868,6 +877,42 @@
 
     let backendV14State = null;
 
+    const BACKEND_STALE_ENTRY_USD = 25;
+    const BACKEND_STALE_NOTE = "(ข้อมูล Backend รอบเก่า — ยึดแผนสดด้านบนเป็นหลัก)";
+
+    function getLiveSpotReference() {
+      if (Number.isFinite(lastRenderedMid) && lastRenderedMid > 1000) return lastRenderedMid;
+      if (liveModel && Number.isFinite(liveModel.spot) && liveModel.spot > 1000) return liveModel.spot;
+      return null;
+    }
+
+    function renderBackendPlanRefs() {
+      const liveSpot = getLiveSpotReference();
+      const fmt = (v) => Number.isFinite(Number(v)) ? Number(v).toFixed(2) : "-";
+      const paint = (el, setup) => {
+        if (!el) return;
+        const entry = setup ? Number(setup.entry) : NaN;
+        if (!Number.isFinite(entry)) {
+          el.textContent = "รอข้อมูล Backend...";
+          el.className = "text-gray-400 font-bold";
+          el.removeAttribute("title");
+          return;
+        }
+        const dir = setup.direction || setup.dir || "-";
+        if (liveSpot !== null && Math.abs(entry - liveSpot) > BACKEND_STALE_ENTRY_USD) {
+          el.textContent = BACKEND_STALE_NOTE;
+          el.className = "text-amber-300 font-bold text-right leading-tight";
+          el.title = `Backend ${dir} entry $${entry.toFixed(2)} ห่างจาก Spot $${liveSpot.toFixed(2)} เกิน $${BACKEND_STALE_ENTRY_USD} — ซ่อนตัวเลขเก่า`;
+          return;
+        }
+        el.textContent = `${dir} @ $${entry.toFixed(2)} (SL $${fmt(setup.sl)} | TP $${fmt(setup.tp)})`;
+        el.className = "text-gray-200 font-bold text-right leading-tight";
+        el.removeAttribute("title");
+      };
+      paint(document.getElementById('v14-backend-scalp-ref'), backendV14State && backendV14State.scalp && backendV14State.scalp.setup);
+      paint(document.getElementById('v14-backend-trend-ref'), backendV14State && backendV14State.quant && backendV14State.quant.setup);
+    }
+
     async function syncBackendV14State() {
       try {
         const res = await fetch(`data/state.json?t=${Date.now()}`, { cache: "no-store" });
@@ -906,16 +951,7 @@
           riskEl.value = masterConfig.riskPct || rg.risk_pct || 1.0;
         }
 
-        const scRef = document.getElementById('v14-backend-scalp-ref');
-        if (scRef && data.scalp && data.scalp.setup) {
-          const s = data.scalp.setup;
-          scRef.textContent = `${s.direction} @ $${Number(s.entry).toFixed(2)} (SL $${Number(s.sl).toFixed(2)} | TP $${Number(s.tp).toFixed(2)})`;
-        }
-        const trRef = document.getElementById('v14-backend-trend-ref');
-        if (trRef && data.quant && data.quant.setup) {
-          const t = data.quant.setup;
-          trRef.textContent = `${t.direction} @ $${Number(t.entry).toFixed(2)} (SL $${Number(t.sl).toFixed(2)} | TP $${Number(t.tp).toFixed(2)})`;
-        }
+        renderBackendPlanRefs();
         const trSessEl = document.getElementById('tr-session-pill');
         if (trSessEl && data.quant && data.quant.setup) {
           trSessEl.textContent = data.quant.setup.session_name || "READY";
@@ -3599,6 +3635,8 @@
           scalpSetup, trendSetup
         };
 
+        renderBackendPlanRefs();
+
         lastAiUpdateMs = Date.now();
         lastAiTimeStr = getBangkokTimeStr(lastAiUpdateMs);
         document.getElementById('last-updated').textContent = `อัปเดตสด: ${lastAiTimeStr} (0 นาทีที่แล้ว)`;
@@ -3651,9 +3689,9 @@
 
         document.getElementById('anatomy-title').textContent = `${vpMicro.title} — ${scalpSetup.revReason}`;
         document.getElementById('anatomy-desc').textContent = vpMicro.desc;
-        document.getElementById('sc-vah').textContent = `$${vpMicro.vah}`;
-        document.getElementById('sc-poc').textContent = `$${vpMicro.poc}`;
-        document.getElementById('sc-val').textContent = `$${vpMicro.val}`;
+        document.getElementById('sc-vah').textContent = `$${Number(vpMicro.vah).toFixed(2)}`;
+        document.getElementById('sc-poc').textContent = `$${Number(vpMicro.poc).toFixed(2)}`;
+        document.getElementById('sc-val').textContent = `$${Number(vpMicro.val).toFixed(2)}`;
 
         const totalWins = mueRes.results.reduce((a, x) => a + x.wins, 0);
         const totalLosses = mueRes.results.reduce((a, x) => a + x.losses, 0);
@@ -3666,8 +3704,11 @@
         document.getElementById('sc-entry').textContent = `$${scalpSetup.entry.toFixed(2)}`;
         document.getElementById('sc-sl-label').textContent = `Scalp SL (${scalpSetup.slPts} จุด)`;
         document.getElementById('sc-sl').textContent = `$${scalpSetup.sl.toFixed(2)}`;
+        const scBeRefPrice = Number(scalpSetup.beInfo.triggerPrice).toFixed(2);
         document.getElementById('sc-be-label').textContent = scalpSetup.beInfo.shouldBe ? "เป้าบังทุน BE" : "ไม่ควรบัง BE";
-        document.getElementById('sc-be').textContent = scalpSetup.beInfo.shouldBe ? `$${scalpSetup.beInfo.triggerPrice.toFixed(2)}` : `ไม่บัง (อ้างอิง $${scalpSetup.beInfo.triggerPrice.toFixed(2)})`;
+        document.getElementById('sc-be').innerHTML = scalpSetup.beInfo.shouldBe
+          ? `$${scBeRefPrice}<span class="block text-[10px] text-cyan-400/90 font-normal">เป้าเลื่อน SL</span>`
+          : `ไม่บัง BE<span class="block text-[10px] text-cyan-400/90 font-normal">อ้างอิง $${scBeRefPrice}</span>`;
         document.getElementById('sc-tp-label').textContent = `Scalp TP (${scalpSetup.tpPts} จุด)`;
         document.getElementById('sc-tp').textContent = `$${scalpSetup.tp.toFixed(2)}`;
         document.getElementById('sc-anchor-reason').textContent = `📍 เหตุผลจุดเข้า: ${scalpSetup.anchorSourceText}`;
@@ -3691,10 +3732,10 @@
 
         document.getElementById('setup-bias').textContent = trendSetup.label;
         document.getElementById('trend-bt-badge').textContent = `Swing SL: $${trendSetup.slDist} (1:2.2)`;
-        document.getElementById('setup-entry').textContent = `$${trendSetup.entry}`;
-        document.getElementById('setup-sl').textContent = `$${trendSetup.sl}`;
-        document.getElementById('setup-be').textContent = `$${trendSetup.beInfo.triggerPrice.toFixed(2)}`;
-        document.getElementById('setup-tp').textContent = `$${trendSetup.tp}`;
+        document.getElementById('setup-entry').textContent = `$${Number(trendSetup.entry).toFixed(2)}`;
+        document.getElementById('setup-sl').textContent = `$${Number(trendSetup.sl).toFixed(2)}`;
+        document.getElementById('setup-be').textContent = `$${Number(trendSetup.beInfo.triggerPrice).toFixed(2)}`;
+        document.getElementById('setup-tp').textContent = `$${Number(trendSetup.tp).toFixed(2)}`;
         document.getElementById('tr-be-note').textContent = `✅ แผน Swing 1:2.2: ควรบังทุน BE เมื่อราคาถึง $${trendSetup.beInfo.triggerPrice.toFixed(2)} (เลื่อน SL ล็อกกำไรที่ $${trendSetup.beInfo.beNewSl.toFixed(2)})`;
 
         document.getElementById('anatomy-cards-grid').innerHTML = mueRes.results.map(r => `
