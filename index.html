@@ -4034,7 +4034,7 @@
       if (v14Rg && (v14Rg.news_pause || v14Rg.spread_pause)) {
         pill.textContent = `🛑 ${v14Rg.status}`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500 rounded-full";
-        head.textContent = `Backend Risk Guard สั่งเบรกการเข้าออเดอร์อัตโนมัติ (${v14Rg.status}) — รอสภาวะตลาดปกติ`;
+        head.textContent = `Backend Risk Guard แจ้งเตือนสภาวะตลาด (${v14Rg.status}) — รอสภาวะตลาดปกติ`;
         box.className = "card p-4 border-rose-500/60 bg-gradient-to-r from-rose-950/40 via-gray-900 to-gray-900 space-y-3";
         return;
       }
@@ -4186,7 +4186,7 @@
           } else if (txt.includes('WEEKEND_MARKET_CLOSED_UTC_IGNORED') && txt.startsWith('PAUSED:')) {
             el.textContent = '🟢 MARKET OPEN (ACTIVE — BANGKOK UTC+7)';
             el.className = el.className.replace(/rose|red|amber|yellow/g, 'emerald');
-          } else if (txt.includes('Backend Risk Guard สั่งเบรกการเข้าออเดอร์อัตโนมัติ') && txt.includes('WEEKEND_MARKET_CLOSED_UTC_IGNORED')) {
+          } else if (txt.includes('Backend Risk Guard แจ้งเตือนสภาวะตลาด') && txt.includes('WEEKEND_MARKET_CLOSED_UTC_IGNORED')) {
             el.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์และเทรดสดพร้อมทำงาน';
           } else if (txt === '🌙 MARKET CLOSED (เสาร์-อาทิตย์)' || txt === 'MARKET CLOSED (เสาร์-อาทิตย์)') {
             el.textContent = '🟢 MARKET OPEN (ACTIVE)';
@@ -4940,7 +4940,7 @@
         journalCard.style.setProperty('height', '100%', 'important');
         journalCard.style.setProperty('display', 'flex', 'important');
         journalCard.style.setProperty('flex-direction', 'column', 'important');
-        journalCard.style.setProperty('justify-content', 'space-between', 'important');
+        journalCard.style.setProperty('justify-content', 'flex-start', 'important');
       } else if (journalCard.parentElement) {
         journalCard.parentElement.style.setProperty('height', '100%', 'important');
         journalCard.parentElement.style.setProperty('display', 'flex', 'important');
@@ -4977,6 +4977,129 @@
     }, 300);
     setInterval(window.syncOrdersFromNtfy, 5000);
     setInterval(window.matchJournalHeightToEngineA, 1000);
+
+    // =========================================================================
+    // V14.5 ZERO-FLICKER FETCH INTERCEPTOR + CLEAN JOURNAL + CLEAR BLOCK REASON
+    // =========================================================================
+
+    // 1. กรองข้อมูล JSON ตั้งแต่ระดับ network fetch() ก่อนที่สคริปต์หน้าเว็บจะนำไปวาด (หยุดกะพริบ 100%)
+    if (!window._v14FetchPatched && typeof window.fetch === 'function') {
+      window._v14FetchPatched = true;
+      const _origFetch = window.fetch.bind(window);
+      window.fetch = async function(resource, init) {
+        const response = await _origFetch(resource, init);
+        try {
+          const urlStr = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : '');
+          if (urlStr.includes('.json') || urlStr.includes('githubusercontent') || urlStr.includes('gist')) {
+            const clone = response.clone();
+            const text = await clone.text();
+            if (text.includes('ตลาดทองคำเปิดทำการปกติ') || text.includes('WEEKEND_MARKET_CLOSED') || text.includes('วันอาทิตย์ตลาดปิด')) {
+              const cleanedText = text
+                .replace(/ตลาดทองคำเปิดทำการปกติ \(Bangkok UTC\+7\)/g, '')
+                .replace(/ตลาดทองคำเปิดทำการปกติ/g, '')
+                .replace(/WEEKEND_MARKET_CLOSED_UTC_IGNORED/g, '')
+                .replace(/WEEKEND_MARKET_CLOSED/g, '');
+              return new Response(cleanedText, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers
+              });
+            }
+          }
+        } catch (e) {}
+        return response;
+      };
+    }
+
+    // 2. จัดทรงสมุดบันทึกด้านขวาให้หัวตารางอยู่ชิดใต้ปุ่ม (ไม่ห่างโล่ง) และหัวคอลัมน์ไม่ตัดคำแปลกๆ
+    window.polishJournalAndEngineACards = function() {
+      const journalCard = Array.from(document.querySelectorAll('.card')).find(c =>
+        c.textContent && c.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') && !c.textContent.includes('ENGINE A:')
+      );
+      if (journalCard) {
+        journalCard.style.setProperty('justify-content', 'flex-start', 'important');
+        journalCard.style.setProperty('gap', '0.75rem', 'important');
+        const tbl = journalCard.querySelector('table');
+        if (tbl) {
+          tbl.style.setProperty('width', '100%', 'important');
+          tbl.style.setProperty('font-size', '11px', 'important');
+          tbl.querySelectorAll('th').forEach(th => {
+            th.style.setProperty('white-space', 'nowrap', 'important');
+            th.style.setProperty('padding', '6px 5px', 'important');
+          });
+          tbl.querySelectorAll('td').forEach(td => {
+            td.style.setProperty('padding', '8px 5px', 'important');
+          });
+        }
+      }
+
+      // ย่อข้อความช่องที่ 3 ในการ์ด Engine A ("ไม่บัง (อ้างอิง $...)") ให้กระชับไม่ล้น
+      document.querySelectorAll('.card div, .card span').forEach(el => {
+        if (el.children.length === 0) {
+          const t = (el.textContent || '').trim();
+          if (t.startsWith('ไม่บัง (อ้างอิง $')) {
+            el.textContent = t.replace('ไม่บัง (อ้างอิง ', 'อ้างอิง ').replace(')', '');
+          }
+        }
+      });
+    };
+
+    // 3. สรุปเหตุผลที่งดออกออเดอร์อย่างชัดเจนบนกระดาน (เช่น ระยะห่างจุดเข้าเกิน 160 จุด / สเปรดสูง)
+    window.updateClearBlockReasons = function() {
+      const guardCard = Array.from(document.querySelectorAll('.card, section, div')).find(el =>
+        el.textContent &&
+        el.textContent.includes('CONFIDENCE:') &&
+        el.textContent.includes('ระยะห่างจุดเข้า') &&
+        el.className && (el.className.includes('card') || el.className.includes('rounded'))
+      );
+      if (!guardCard) return;
+
+      guardCard.querySelectorAll('span, div, p, h1, h2, h3').forEach(node => {
+        if (node.children.length > 0) return;
+        const txt = (node.textContent || '').trim();
+        if (txt === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)' || txt === 'ตลาดทองคำเปิดทำการปกติ') {
+          node.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
+          node.className = node.className.replace(/rose|red|amber/g, 'emerald');
+        } else if (txt.includes('Backend Risk Guard แจ้งเตือนสภาวะตลาด ()') || (txt.includes('Backend Risk Guard') && txt.includes('รอสภาวะตลาดปกติ') && !txt.includes('HIGH_SPREAD') && !txt.includes('NEWS'))) {
+          node.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP สด';
+        }
+      });
+
+      const cardTxt = guardCard.textContent || '';
+      const distMatch = cardTxt.match(/(\d+)\s*\/\s*(\d+)\s*จุด\s*(✓)?/);
+      let blockReasons = [];
+      if (distMatch && !distMatch[3] && Number(distMatch[1]) > Number(distMatch[2])) {
+        blockReasons.push(`ราคาอยู่ห่างจุดเข้า ${distMatch[1]} จุด (ต้องรอเข้าใกล้ ≤ ${distMatch[2]} จุด)`);
+      }
+      if (cardTxt.includes('HIGH_SPREAD')) {
+        blockReasons.push('สเปรดสูงเกินเพดาน');
+      }
+
+      if (typeof activeOrder === 'undefined' || !activeOrder) {
+        const note = document.getElementById('lob-cooldown-note');
+        const pill = document.getElementById('live-order-status-pill');
+        if (blockReasons.length > 0) {
+          const reasonText = blockReasons.join(' + ');
+          if (pill) {
+            pill.textContent = `⏳ รอเงื่อนไขเข้า (${distMatch ? distMatch[1] + '/' + distMatch[2] + ' จุด' : 'กรองความเสี่ยง'})`;
+            pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500/70 rounded-full';
+          }
+          if (note) {
+            note.textContent = `เหตุผลที่ยังไม่ยิง Limit: ${reasonText}`;
+            note.className = 'text-[11px] text-amber-300 font-bold';
+          }
+        }
+      }
+    };
+
+    setTimeout(() => {
+      window.polishJournalAndEngineACards();
+      window.updateClearBlockReasons();
+    }, 250);
+    setInterval(() => {
+      window.polishJournalAndEngineACards();
+      window.updateClearBlockReasons();
+    }, 1000);
 </script>
 </body>
 </html>
