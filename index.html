@@ -4554,6 +4554,200 @@
       window.runV14LiveBoardTick();
     }, 1000);
     setTimeout(window.runV14LiveBoardTick, 250);
+
+    // =========================================================================
+    // V14.2 BALANCED 2-COLUMN STACK + RISK-GUARD-SYNCED LIMIT OUTPUT
+    // =========================================================================
+
+    // 1. ซ้อนกล่องเล็ก 2 ใบ (บน: Spot L2 Order Book, ล่าง: Engine B) คู่กับกล่องใหญ่ Engine A
+    window.rebalanceEngineGrid = function() {
+      const grids = Array.from(document.querySelectorAll('.grid'));
+      const targetGrid = grids.find(g =>
+        g.textContent &&
+        g.textContent.includes('Spot L2 Order Book') &&
+        g.textContent.includes('ENGINE A:') &&
+        g.textContent.includes('ENGINE B:')
+      );
+      if (!targetGrid || targetGrid.dataset.v14Stacked === '1') return;
+
+      const children = Array.from(targetGrid.children);
+      if (children.length < 3) return;
+
+      const l2Box = children.find(c => c.textContent.includes('Spot L2 Order Book'));
+      const engABox = children.find(c => c.textContent.includes('ENGINE A:'));
+      const engBBox = children.find(c => c.textContent.includes('ENGINE B:'));
+      if (!l2Box || !engABox || !engBBox) return;
+
+      targetGrid.dataset.v14Stacked = '1';
+      targetGrid.className = 'grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch';
+
+      engABox.classList.remove('lg:col-span-1', 'xl:col-span-1', 'col-span-1');
+      engABox.classList.add('lg:col-span-7');
+      engABox.style.setProperty('height', '100%', 'important');
+
+      const rightStack = document.createElement('div');
+      rightStack.className = 'lg:col-span-5 flex flex-col gap-4 justify-between';
+
+      [l2Box, engBBox].forEach(box => {
+        box.classList.remove('lg:col-span-1', 'xl:col-span-1', 'col-span-1');
+        box.style.setProperty('height', 'auto', 'important');
+        box.style.setProperty('width', '100%', 'important');
+      });
+      engBBox.style.setProperty('flex', '1', 'important');
+
+      rightStack.appendChild(l2Box);
+      rightStack.appendChild(engBBox);
+
+      targetGrid.innerHTML = '';
+      targetGrid.appendChild(engABox);
+      targetGrid.appendChild(rightStack);
+    };
+
+    // 2. เชื่อมสถานะกล่อง Risk Guard / Gate กับ LIVE ORDER BOARD (ถ้ากล่องแดง/ติดเงื่อนไข = งดออก Limit)
+    window.syncRiskGuardAndLimits = function() {
+      if (typeof liveModel !== 'undefined' && liveModel) {
+        const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
+        if (pr.includes('ตลาดทองคำเปิดทำการปกติ') || pr.includes('WEEKEND_MARKET_CLOSED')) {
+          liveModel.pauseReason = '';
+          liveModel.pause_reason = '';
+          liveModel.isPaused = false;
+          liveModel.is_paused = false;
+        }
+      }
+
+      const allCards = Array.from(document.querySelectorAll('.card, section, div'));
+      const guardCard = allCards.find(el =>
+        el.textContent &&
+        el.textContent.includes('CONFIDENCE:') &&
+        el.textContent.includes('ระยะห่างจุดเข้า') &&
+        el.className && (el.className.includes('card') || el.className.includes('rounded'))
+      );
+
+      let isGuardRedOrBlocked = false;
+      let guardBlockReason = '';
+
+      if (guardCard) {
+        guardCard.querySelectorAll('span, div, p, h1, h2, h3').forEach(node => {
+          if (node.children.length > 0) return;
+          const t = (node.textContent || '').trim();
+          if (t.includes('Backend Risk Guard สั่งเบรก') && t.includes('ตลาดทองคำเปิดทำการปกติ')) {
+            node.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — วิเคราะห์โครงสร้าง 24H Daily VP + 4H Micro-VP สด';
+          } else if (t === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)') {
+            node.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
+            node.className = node.className.replace(/rose|red|amber/g, 'emerald');
+          }
+        });
+
+        const cardTxt = guardCard.textContent || '';
+        const hasRealPause =
+          cardTxt.includes('PAUSED:') ||
+          cardTxt.includes('สั่งเบรกการเข้าออเดอร์') ||
+          cardTxt.includes('HIGH_SPREAD') ||
+          cardTxt.includes('NEWS_GUARD') ||
+          cardTxt.includes('พักรอจบแท่งเทียน M15');
+
+        if (!hasRealPause && guardCard.className.includes('rose')) {
+          guardCard.className = guardCard.className
+            .replace(/border-rose-\d+(\/\d+)?/g, 'border-gray-800')
+            .replace(/bg-rose-\d+(\/\d+)?/g, '');
+        }
+
+        const isRedStyled = /border-rose|border-red|bg-rose-950/.test(guardCard.className) ||
+          Array.from(guardCard.querySelectorAll('[class*="bg-rose"], [class*="border-rose"]')).some(el =>
+            (el.textContent || '').includes('PAUSED') || (el.textContent || '').includes('เบรก')
+          );
+
+        let distBlocked = false;
+        let distLabel = '';
+        const distMatch = cardTxt.match(/(\d+)\s*\/\s*(\d+)\s*จุด\s*(✓)?/);
+        if (distMatch) {
+          const curPts = Number(distMatch[1]);
+          const maxPts = Number(distMatch[2]);
+          const hasCheck = Boolean(distMatch[3]);
+          if (!hasCheck && curPts > maxPts) {
+            distBlocked = true;
+            distLabel = `ระยะห่างจุดเข้าเกินกำหนด (${curPts}/${maxPts} จุด)`;
+          }
+        }
+
+        if (isRedStyled || hasRealPause) {
+          isGuardRedOrBlocked = true;
+          const pauseMatch = cardTxt.match(/PAUSED:\s*([A-Z0-9_]+(?:\s*\([^)]+\))?)/);
+          guardBlockReason = pauseMatch ? `PAUSED: ${pauseMatch[1]}` : 'Risk Guard สั่งเบรกชั่วคราว';
+        } else if (distBlocked) {
+          isGuardRedOrBlocked = true;
+          guardBlockReason = distLabel;
+        }
+      }
+
+      const engBCard = Array.from(document.querySelectorAll('.card, div')).find(el =>
+        el.textContent && el.textContent.includes('ENGINE B: H1 EMA200') && el.className && el.className.includes('card')
+      );
+      let engBPausedReason = '';
+      if (engBCard) {
+        const mB = (engBCard.textContent || '').match(/PAUSED:\s*([A-Z0-9_]+(?:\s*\([^)]+\))?)/);
+        if (mB) engBPausedReason = `PAUSED: ${mB[1]}`;
+      }
+
+      if (typeof activeOrder === 'undefined' || !activeOrder) {
+        const pill = document.getElementById('live-order-status-pill');
+        const note = document.getElementById('lob-cooldown-note');
+        const pSc = document.getElementById('lob-preview-scalp');
+        const pSw = document.getElementById('lob-preview-swing');
+
+        if (isGuardRedOrBlocked) {
+          if (pill) {
+            pill.textContent = `⛔ งดออกออเดอร์ LIMIT (ติดเงื่อนไขกรอง)`;
+            pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500/70 rounded-full";
+          }
+          if (note) {
+            note.textContent = `⛔ ระบบระงับการวาง Limit อัตโนมัติ: ${guardBlockReason}`;
+            note.className = "text-[11px] text-rose-300 font-bold";
+          }
+          if (pSc) {
+            pSc.textContent = `⛔ งดวาง Limit (${guardBlockReason})`;
+            pSc.className = "text-rose-400 font-bold";
+          }
+          if (pSw) {
+            const swReason = engBPausedReason || guardBlockReason;
+            pSw.textContent = `⛔ งดวาง Limit (${swReason})`;
+            pSw.className = "text-rose-400 font-bold";
+          }
+        } else {
+          if (pill && !pill.textContent.includes('HOLDING') && !pill.textContent.includes('PENDING')) {
+            pill.textContent = "READY / รอเข้า LIMIT";
+            pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60 rounded-full";
+          }
+          if (note) {
+            note.className = "text-[11px] text-cyan-300";
+          }
+          if (pSc && typeof liveModel !== 'undefined' && liveModel && liveModel.scalpSetup && liveModel.scalpSetup.entry) {
+            const s = liveModel.scalpSetup;
+            pSc.textContent = `${s.dir} Limit @ $${Number(s.entry).toFixed(2)} | SL $${Number(s.sl).toFixed(2)} | TP $${Number(s.tp).toFixed(2)}`;
+            pSc.className = "text-white font-bold";
+          }
+          if (pSw) {
+            if (engBPausedReason) {
+              pSw.textContent = `⛔ งดวาง Limit (${engBPausedReason})`;
+              pSw.className = "text-rose-400 font-bold";
+            } else if (typeof liveModel !== 'undefined' && liveModel && liveModel.trendSetup && liveModel.trendSetup.entry) {
+              const t = liveModel.trendSetup;
+              pSw.textContent = `${t.dir} Limit @ $${Number(t.entry).toFixed(2)} | SL $${Number(t.sl).toFixed(2)} | TP $${Number(t.tp).toFixed(2)}`;
+              pSw.className = "text-white font-bold";
+            }
+          }
+        }
+      }
+    };
+
+    setTimeout(() => {
+      window.rebalanceEngineGrid();
+      window.syncRiskGuardAndLimits();
+    }, 200);
+    setInterval(() => {
+      window.rebalanceEngineGrid();
+      window.syncRiskGuardAndLimits();
+    }, 1000);
 </script>
 </body>
 </html>
