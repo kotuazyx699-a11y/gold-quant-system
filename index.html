@@ -3324,36 +3324,18 @@
         }
       } catch (e) {}
 
-      // ตัวหลัก: Swissquote XAU/USD (รองรับ CORS — ใช้ได้บน GitHub Pages โดยตรง)
-      let swissquoteSpotOk = false;
+      // ตัวหลัก: Binance PAXG/USDT bookTicker (รองรับ CORS 100% บน GitHub Pages)
       try {
-        const rSw = await fetch("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD", { cache: "no-store" });
-        if (rSw.ok) {
-          const j = await rSw.json();
-          const sp = Array.isArray(j) ? j[0]?.spreadProfilePrices?.[0] : null;
-          const bid = parseFloat(sp?.bid);
-          const ask = parseFloat(sp?.ask);
+        const rPaxg = await fetch("https://api.binance.com/api/v3/ticker/bookTicker?symbol=PAXGUSDT", { cache: "no-store" });
+        if (rPaxg.ok) {
+          const j = await rPaxg.json();
+          const bid = parseFloat(j?.bidPrice);
+          const ask = parseFloat(j?.askPrice);
           if (bid > 1000 && ask > 1000) {
-            candidates.push({ px: (bid + ask) / 2, name: "Swissquote XAU/USD" });
-            swissquoteSpotOk = true;
+            candidates.push({ px: (bid + ask) / 2, name: "Binance PAXG" });
           }
         }
       } catch (e) {}
-
-      // ตัวสำรอง: Binance PAXG/USDT (ใช้เมื่อ Swissquote ใช้ไม่ได้เท่านั้น)
-      if (!swissquoteSpotOk) {
-        try {
-          const rPaxg = await fetch("https://api.binance.com/api/v3/ticker/bookTicker?symbol=PAXGUSDT", { cache: "no-store" });
-          if (rPaxg.ok) {
-            const j = await rPaxg.json();
-            const bid = parseFloat(j?.bidPrice);
-            const ask = parseFloat(j?.askPrice);
-            if (bid > 1000 && ask > 1000) {
-              candidates.push({ px: (bid + ask) / 2, name: "Binance PAXG Fallback" });
-            }
-          }
-        } catch (e) {}
-      }
 
       if (candidates.length > 0) {
         const avgSpot = candidates.reduce((a, x) => a + x.px, 0) / candidates.length;
