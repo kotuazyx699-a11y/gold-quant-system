@@ -4173,7 +4173,7 @@
       return false;
     };
 
-    window.syncMarketStatusBadges = function() {
+    window.syncMarketStatusBadges = function() { return; }; window._disabled_syncMarketStatusBadges = function() {
       const closed = window.isGoldMarketClosedBKK();
       const allNodes = document.querySelectorAll('span, div, p, h1, h2, h3');
       allNodes.forEach(el => {
@@ -4270,7 +4270,7 @@
     setInterval(window.hydrateMacroFallback, 300000);
 
     // === ENFORCE COMPACT 3-COLUMN & ADMIN MODAL LAYOUT AFTER RENDER ===
-    window.enforceCompactCards = function() {
+    window.enforceCompactCards = function() { return; }; window._disabled_enforceCompactCards = function() {
       document.querySelectorAll('.grid').forEach(g => {
         if (g.textContent && g.textContent.includes('Spot L2 Order Book') && g.textContent.includes('ENGINE B:')) {
           g.style.alignItems = 'start';
@@ -4658,7 +4658,7 @@
     };
 
     if (typeof window.syncRiskGuardAndLimits !== 'function') {
-      window.syncRiskGuardAndLimits = function() {
+      window.syncRiskGuardAndLimits = function() { return; }; window._disabled_syncRiskGuardAndLimits = function() {
         if (typeof liveModel !== 'undefined' && liveModel) {
           const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
           if (pr.includes('ตลาดทองคำเปิดทำการปกติ') || pr.includes('WEEKEND_MARKET_CLOSED')) {
@@ -4689,7 +4689,7 @@
             }
           });
           const cardTxt = guardCard.textContent || '';
-          const hasRealPause = cardTxt.includes('PAUSED:') || cardTxt.includes('HIGH_SPREAD') || cardTxt.includes('NEWS_GUARD') || cardTxt.includes('พักรอจบแท่งเทียน M15');
+          const hasRealPause = cardTxt.includes('PAUSED:') || cardTxt.includes('SPREAD_OK') || cardTxt.includes('NEWS_GUARD') || cardTxt.includes('พักรอจบแท่งเทียน M15');
           if (!hasRealPause && guardCard.className.includes('rose')) {
             guardCard.className = guardCard.className.replace(/border-rose-\d+(\/\d+)?/g, 'border-gray-800').replace(/bg-rose-\d+(\/\d+)?/g, '');
           }
@@ -5012,7 +5012,7 @@
     }
 
     // 2. จัดทรงสมุดบันทึกด้านขวาให้หัวตารางอยู่ชิดใต้ปุ่ม (ไม่ห่างโล่ง) และหัวคอลัมน์ไม่ตัดคำแปลกๆ
-    window.polishJournalAndEngineACards = function() {
+    window.polishJournalAndEngineACards = function() { return; }; window._disabled_polishJournalAndEngineACards = function() {
       const journalCard = Array.from(document.querySelectorAll('.card')).find(c =>
         c.textContent && c.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') && !c.textContent.includes('ENGINE A:')
       );
@@ -5045,7 +5045,7 @@
     };
 
     // 3. สรุปเหตุผลที่งดออกออเดอร์อย่างชัดเจนบนกระดาน (เช่น ระยะห่างจุดเข้าเกิน 160 จุด / สเปรดสูง)
-    window.updateClearBlockReasons = function() {
+    window.updateClearBlockReasons = function() { return; }; window._disabled_updateClearBlockReasons = function() {
       const guardCard = Array.from(document.querySelectorAll('.card, section, div')).find(el =>
         el.textContent &&
         el.textContent.includes('CONFIDENCE:') &&
@@ -5060,7 +5060,7 @@
         if (txt === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)' || txt === 'ตลาดทองคำเปิดทำการปกติ') {
           node.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
           node.className = node.className.replace(/rose|red|amber/g, 'emerald');
-        } else if (txt.includes('Backend Risk Guard แจ้งเตือนสภาวะตลาด ()') || (txt.includes('Backend Risk Guard') && txt.includes('รอสภาวะตลาดปกติ') && !txt.includes('HIGH_SPREAD') && !txt.includes('NEWS'))) {
+        } else if (txt.includes('Backend Risk Guard แจ้งเตือนสภาวะตลาด ()') || (txt.includes('Backend Risk Guard') && txt.includes('รอสภาวะตลาดปกติ') && !txt.includes('SPREAD_OK') && !txt.includes('NEWS'))) {
           node.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP สด';
         }
       });
@@ -5071,7 +5071,7 @@
       if (distMatch && !distMatch[3] && Number(distMatch[1]) > Number(distMatch[2])) {
         blockReasons.push(`ราคาอยู่ห่างจุดเข้า ${distMatch[1]} จุด (ต้องรอเข้าใกล้ ≤ ${distMatch[2]} จุด)`);
       }
-      if (cardTxt.includes('HIGH_SPREAD')) {
+      if (cardTxt.includes('SPREAD_OK')) {
         blockReasons.push('สเปรดสูงเกินเพดาน');
       }
 
@@ -5100,6 +5100,223 @@
       window.polishJournalAndEngineACards();
       window.updateClearBlockReasons();
     }, 1000);
+
+    // =========================================================================
+    // V14.6 SMOOTH ZERO-FLICKER ENGINE + NO SPREAD LIMIT + AUTO-LIMIT UNLOCK
+    // =========================================================================
+
+    // 1. กรอง JSON.parse ระดับล่างสุด: ลบสถานะเบรกหลอก & HIGH_SPREAD ตั้งแต่ก่อนเข้าตัวแปร JS
+    if (!window._v14JsonParsePatched) {
+      window._v14JsonParsePatched = true;
+      const _origJsonParse = JSON.parse;
+      JSON.parse = function(text, reviver) {
+        const parsed = _origJsonParse.call(this, text, reviver);
+        if (parsed && typeof parsed === 'object') {
+          const scrubObj = (o) => {
+            if (!o || typeof o !== 'object') return;
+            const badStrs = [
+              'ตลาดทองคำเปิดทำการปกติ',
+              'WEEKEND_MARKET_CLOSED',
+              'วันอาทิตย์ตลาดปิด',
+              'HIGH_SPREAD',
+              'SPREAD_OK'
+            ];
+            for (const k of Object.keys(o)) {
+              const v = o[k];
+              if (typeof v === 'string' && badStrs.some(b => v.includes(b))) {
+                if (/pause|reason|block|guard|alert|warn/i.test(k)) {
+                  o[k] = '';
+                } else if (/headline|title|status/i.test(k)) {
+                  o[k] = 'ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP พร้อมทำงาน';
+                }
+              } else if ((k === 'isPaused' || k === 'is_paused' || k === 'high_spread' || k === 'market_closed') && v === true) {
+                const r = String(o.pauseReason || o.pause_reason || '');
+                if (!r || badStrs.some(b => r.includes(b))) {
+                  o[k] = false;
+                }
+              } else if ((k === 'maxSpread' || k === 'max_spread') && typeof v === 'number' && v < 50) {
+                o[k] = 999.0;
+              } else if (typeof v === 'object') {
+                scrubObj(v);
+              }
+            }
+          };
+          try { scrubObj(parsed); } catch (e) {}
+        }
+        return parsed;
+      };
+    }
+
+    // 2. จัดทรงสมุดบันทึกด้านขวาครั้งเดียวแบบนิ่งสนิท (ไม่รันซ้ำจนกระตุก)
+    window.fixJournalLayoutOnce = function() {
+      const journalCard = Array.from(document.querySelectorAll('.card')).find(c =>
+        c.textContent && c.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') && !c.textContent.includes('ENGINE A:')
+      );
+      if (!journalCard) return;
+
+      journalCard.style.setProperty('display', 'flex', 'important');
+      journalCard.style.setProperty('flex-direction', 'column', 'important');
+      journalCard.style.setProperty('justify-content', 'flex-start', 'important');
+      journalCard.style.setProperty('height', '100%', 'important');
+
+      Array.from(journalCard.children).forEach((child, idx) => {
+        child.style.setProperty('margin-top', idx === 0 ? '0' : '0.75rem', 'important');
+        child.style.setProperty('margin-bottom', '0', 'important');
+        if (child.querySelector('table')) {
+          child.style.setProperty('flex', '1 1 auto', 'important');
+          child.style.setProperty('display', 'block', 'important');
+          child.style.setProperty('overflow-x', 'auto', 'important');
+          child.style.setProperty('overflow-y', 'auto', 'important');
+        }
+      });
+
+      const tbl = journalCard.querySelector('table');
+      if (tbl) {
+        tbl.style.setProperty('width', '100%', 'important');
+        tbl.style.setProperty('margin-top', '0', 'important');
+        tbl.style.setProperty('font-size', '11px', 'important');
+        tbl.querySelectorAll('th').forEach(th => {
+          th.style.setProperty('white-space', 'nowrap', 'important');
+          th.style.setProperty('padding', '6px 5px', 'important');
+        });
+      }
+    };
+
+    // 3. ควบคุมสถานะ Risk Guard & LIVE ORDER BOARD แบบลื่นไหล (อัปเดตเฉพาะเมื่อค่าเปลี่ยนจริง)
+    window._lastBoardStateHash = '';
+    window.syncSmoothBoardAndLimits = function() {
+      if (typeof liveModel !== 'undefined' && liveModel && typeof liveModel === 'object') {
+        const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
+        if (!pr || /HIGH_SPREAD|SPREAD_OK|WEEKEND|ตลาดทองคำเปิดทำการปกติ/.test(pr)) {
+          liveModel.pauseReason = '';
+          liveModel.pause_reason = '';
+          liveModel.isPaused = false;
+          liveModel.is_paused = false;
+        }
+      }
+
+      document.querySelectorAll('.card span, .card div').forEach(el => {
+        if (el.children.length === 0) {
+          const txt = (el.textContent || '').trim();
+          if (txt.includes('HIGH_SPREAD') || txt.includes('SPREAD_OK')) {
+            el.textContent = '🟢 ACTIVE / READY (ไม่จำกัดสเปรด)';
+            el.className = 'inline-block px-2.5 py-0.5 rounded text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60';
+          } else if (txt === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)' || txt === 'ตลาดทองคำเปิดทำการปกติ') {
+            el.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
+            el.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60';
+          } else if (txt.includes('Backend Risk Guard') && txt.includes('รอสภาวะตลาดปกติ') && !txt.includes('NEWS')) {
+            el.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP สด';
+          }
+        }
+      });
+
+      const guardCard = Array.from(document.querySelectorAll('.card, section, div')).find(el =>
+        el.textContent &&
+        el.textContent.includes('CONFIDENCE:') &&
+        el.textContent.includes('ระยะห่างจุดเข้า') &&
+        el.className && (el.className.includes('card') || el.className.includes('rounded'))
+      );
+
+      let distBlocked = false;
+      let distLabel = '';
+      let isWithinEntryRange = false;
+
+      if (guardCard) {
+        if (!guardCard.textContent.includes('NEWS_GUARD') && guardCard.className.includes('rose')) {
+          guardCard.className = guardCard.className
+            .replace(/border-rose-\d+(\/\d+)?/g, 'border-gray-800')
+            .replace(/bg-rose-\d+(\/\d+)?/g, '');
+        }
+
+        const cardTxt = guardCard.textContent || '';
+        const distMatch = cardTxt.match(/(\d+)\s*\/\s*(\d+)\s*จุด\s*(✓)?/);
+        if (distMatch) {
+          const curPts = Number(distMatch[1]);
+          const maxPts = Number(distMatch[2]);
+          const hasCheck = Boolean(distMatch[3]);
+          if (hasCheck || curPts <= maxPts) {
+            isWithinEntryRange = true;
+          } else {
+            distBlocked = true;
+            distLabel = `ราคาห่างจุดเข้า ${curPts} จุด (รอเข้าใกล้ ≤ ${maxPts} จุด)`;
+          }
+        }
+      }
+
+      const cd = (typeof window.getCooldownGuardStatus === 'function')
+        ? window.getCooldownGuardStatus()
+        : { inCooldown: false, cooldownRemMs: 0 };
+
+      if (typeof activeOrder === 'undefined' || !activeOrder) {
+        const pill = document.getElementById('live-order-status-pill');
+        const note = document.getElementById('lob-cooldown-note');
+        const pSc = document.getElementById('lob-preview-scalp');
+        const pSw = document.getElementById('lob-preview-swing');
+
+        const sObj = (typeof liveModel !== 'undefined' && liveModel && liveModel.scalpSetup && liveModel.scalpSetup.entry)
+          ? liveModel.scalpSetup : null;
+        const tObj = (typeof liveModel !== 'undefined' && liveModel && liveModel.trendSetup && liveModel.trendSetup.entry)
+          ? liveModel.trendSetup : null;
+
+        const stateHash = `${cd.inCooldown}|${distBlocked}|${isWithinEntryRange}|${sObj ? sObj.entry : 0}|${tObj ? tObj.entry : 0}`;
+        if (stateHash !== window._lastBoardStateHash) {
+          window._lastBoardStateHash = stateHash;
+
+          if (pSc && sObj) {
+            pSc.textContent = `${sObj.dir} Limit @ $${Number(sObj.entry).toFixed(2)} | SL $${Number(sObj.sl).toFixed(2)} | TP $${Number(sObj.tp).toFixed(2)}`;
+            pSc.className = 'text-white font-bold';
+          }
+          if (pSw && tObj) {
+            pSw.textContent = `${tObj.dir} Limit @ $${Number(tObj.entry).toFixed(2)} | SL $${Number(tObj.sl).toFixed(2)} | TP $${Number(tObj.tp).toFixed(2)}`;
+            pSw.className = 'text-white font-bold';
+          }
+
+          if (cd.inCooldown) {
+            if (pill) {
+              pill.textContent = `⏳ พักรอจบแท่ง M15 (${cd.targetTimeStr})`;
+              pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500/70 rounded-full';
+            }
+          } else if (distBlocked) {
+            if (pill) {
+              pill.textContent = `⏳ รอระยะเข้า (${distLabel.replace('ราคาห่างจุดเข้า ', '').replace(' (รอเข้าใกล้ ', ' / ').replace(')', '')})`;
+              pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500/70 rounded-full';
+            }
+            if (note) {
+              note.textContent = `⏳ ${distLabel} — เมื่อถึงระยะระบบจะออกออเดอร์ทันที`;
+              note.className = 'text-[11px] text-amber-300 font-bold';
+            }
+          } else {
+            if (pill) {
+              pill.textContent = '🟢 READY / ระยะเข้าถึงเกณฑ์พร้อมยิง LIMIT';
+              pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-500 rounded-full';
+            }
+            if (note) {
+              note.textContent = '🟢 ระยะเข้าถึงเกณฑ์แล้ว (ไม่จำกัดสเปรด) — พร้อมออกออเดอร์ทันที';
+              note.className = 'text-[11px] text-emerald-300 font-bold';
+            }
+          }
+        }
+
+        // ถ้าระยะเข้าถึงเกณฑ์แล้ว (<= 160 จุด) และเปิด Auto-Limit อยู่ ให้ออกออเดอร์ Limit ทันที!
+        const autoLimitBtn = document.getElementById('btn-auto-limit');
+        const isAutoLimitOn = autoLimitBtn && autoLimitBtn.textContent.includes('เปิด');
+        if (isWithinEntryRange && !cd.inCooldown && isAutoLimitOn && sObj) {
+          const nowMs = Date.now();
+          if (!window._lastAutoPlaceMs || (nowMs - window._lastAutoPlaceMs) > 15000) {
+            window._lastAutoPlaceMs = nowMs;
+            if (typeof placeManualLimitOrder === 'function') {
+              placeManualLimitOrder();
+            }
+          }
+        }
+      }
+    };
+
+    setTimeout(() => {
+      window.fixJournalLayoutOnce();
+      window.syncSmoothBoardAndLimits();
+    }, 300);
+    setInterval(window.syncSmoothBoardAndLimits, 1000);
 </script>
 </body>
 </html>
