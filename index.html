@@ -1296,19 +1296,49 @@
       alert("อัปโหลดข้อมูลขึ้น Cloud เรียบร้อย!");
     }
 
+    function clearDeadGhToken(reason) {
+      try {
+        masterConfig.ghToken = "";
+        saveMasterConfigLocal();
+        applyMasterConfigToUI();
+        const tokInput = document.getElementById('admin-gh-token');
+        if (tokInput) tokInput.value = "";
+        const auditEl = document.getElementById('data-audit-line');
+        if (auditEl) auditEl.textContent = `⚠️ ${reason} — ล้าง Token GitHub เก่าให้อัตโนมัติแล้ว (ระบบอ่าน Gist แบบ public แทน)`;
+        console.warn(`[CloudSync] ${reason}: ล้าง ghToken เก่าออกจากเครื่องนี้แล้ว`);
+      } catch (e) { console.warn('[CloudSync] clearDeadGhToken:', e); }
+    }
+
+    // สำรองข้อมูลฝั่ง Backend จาก ./data/state.json ใน repo (ใช้เมื่อ Gist ตอบไม่ปกติ)
+    let lastBackendStateFallbackMs = 0;
+    async function pullBackendStateFallback() {
+      if (Date.now() - lastBackendStateFallbackMs < 30000) return; // กันยิงถี่เกิน 30 วิ
+      lastBackendStateFallbackMs = Date.now();
+      try {
+        if (typeof syncBackendV14State === 'function') await syncBackendV14State();
+      } catch (e) { console.warn('[CloudSync] pullBackendStateFallback:', e); }
+    }
+
     async function pullCloudSyncState() {
       if (!masterConfig.ghGistId) return;
       try {
-        const headers = { "Accept": "application/vnd.github+json" };
+        const url = `https://api.github.com/gists/${encodeURIComponent(masterConfig.ghGistId)}?t=${Date.now()}`;
+        let headers = { "Accept": "application/vnd.github+json" };
         if (masterConfig.ghToken) headers["Authorization"] = `Bearer ${masterConfig.ghToken}`;
-        const res = await fetch(`https://api.github.com/gists/${encodeURIComponent(masterConfig.ghGistId)}?t=${Date.now()}`, {
-          headers,
-          cache: "no-store"
-        });
-        if (!res.ok) return;
+        let res = await fetch(url, { headers, cache: "no-store" });
+
+        // Token เสีย/หมดอายุ (401) → ล้าง token เก่าแล้วยิงอ่าน public Gist ซ้ำแบบไม่แนบ header
+        if (res.status === 401 && masterConfig.ghToken) {
+          clearDeadGhToken("Gist ตอบ 401 Unauthorized (Token หมดอายุ/ถูกเพิกถอน)");
+          headers = { "Accept": "application/vnd.github+json" };
+          res = await fetch(url, { headers, cache: "no-store" });
+        }
+
+        // Gist ตอบไม่ปกติ (เช่นยัง 401/404/429) → ดึงข้อมูลสำรองจาก ./data/state.json
+        if (!res.ok) { await pullBackendStateFallback(); return; }
         const data = await res.json();
         const rawContent = data?.files?.["gold_quant_sync.json"]?.content;
-        if (!rawContent) return;
+        if (!rawContent) { await pullBackendStateFallback(); return; }
         const remote = JSON.parse(rawContent);
         if (remote && remote.revision && remote.revision > lastCloudRevision) {
           lastCloudRevision = remote.revision;
@@ -1336,7 +1366,11 @@
             if (contentEl && latestAiBrief.html) contentEl.innerHTML = latestAiBrief.html;
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        // เครือข่าย/JSON ผิดพลาด → ใช้ข้อมูลสำรองจาก ./data/state.json แทน
+        console.warn('[CloudSync] pullCloudSyncState:', e);
+        await pullBackendStateFallback();
+      }
     }
 
     // Poll Cloud Sync every 3.5 seconds so PC and Phone stay 100% identical
@@ -1923,7 +1957,8 @@
 
     function checkDailyRollover(notify = true) {
       const today = getBangkokDateStr();
-      document.getElementById('live-order-day-badge').textContent = `วันที่ (BKK): ${today}`;
+      const dayBadgeEl = document.getElementById('live-order-day-badge');
+      if (dayBadgeEl) dayBadgeEl.textContent = `วันที่ (BKK): ${today}`;
       if (orderState.currentDate !== today) {
         const oldDate = orderState.currentDate;
         if (orderState.todayClosed && orderState.todayClosed.length > 0) {
@@ -4085,17 +4120,18 @@
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
-      purgeLegacyDataOnce();
-      loadMasterConfig();
-      loadAiBrain();
-      loadOrderState();
-      recalcPropMath();
-      await pullCloudSyncState();
-      await syncBackendV14State();
-      setInterval(syncBackendV14State, 60000);
-      await seedInitial60sTape();
-      connectLiveStreams();
-      runFullLiveQuantAndAI(false);
+      // แยก try/catch ต่อขั้น: ขั้นใดพังต้องไม่ฉุด connectLiveStreams (ลูปดึงราคา) ให้หยุด
+      try { purgeLegacyDataOnce(); } catch (e) { console.warn('[init] purgeLegacyDataOnce:', e); }
+      try { loadMasterConfig(); } catch (e) { console.warn('[init] loadMasterConfig:', e); }
+      try { loadAiBrain(); } catch (e) { console.warn('[init] loadAiBrain:', e); }
+      try { loadOrderState(); } catch (e) { console.warn('[init] loadOrderState:', e); }
+      try { recalcPropMath(); } catch (e) { console.warn('[init] recalcPropMath:', e); }
+      try { await pullCloudSyncState(); } catch (e) { console.warn('[init] pullCloudSyncState:', e); }
+      try { await syncBackendV14State(); } catch (e) { console.warn('[init] syncBackendV14State:', e); }
+      try { setInterval(syncBackendV14State, 60000); } catch (e) { console.warn('[init] syncBackendV14State interval:', e); }
+      try { await seedInitial60sTape(); } catch (e) { console.warn('[init] seedInitial60sTape:', e); }
+      try { connectLiveStreams(); } catch (e) { console.warn('[init] connectLiveStreams:', e); }
+      try { runFullLiveQuantAndAI(false); } catch (e) { console.warn('[init] runFullLiveQuantAndAI:', e); }
     });
   
     // === V14.1 UNIFIED MASTER LOOP (ALL-IN-ONE) ===
@@ -4163,79 +4199,99 @@
     };
 
     // Master Loop: รวมทุกอย่างไว้ชุดเดียว (1000ms)
+    // ทุกส่วนย่อยถูกครอบ try/catch แยกกัน: error ของกล่องใดกล่องหนึ่งจะไม่ทำให้
+    // ลูปหลักตายและไม่กระทบการดึงราคา/กล่องอื่น
     window.masterUnifiedLoop = function() {
       // 1. เช็คและล้างค่าหลอก
-      sanitizeLiveModel();
+      try {
+        sanitizeLiveModel();
+      } catch (e) { console.warn('[masterUnifiedLoop] sanitizeLiveModel:', e); }
 
-      // 2. Countdown รอบวิเคราะห์ถัดไป
+      // เวลากลางของลูปนี้ (ใช้ร่วมกันหลายส่วนด้านล่าง)
       const now = new Date();
       const mins = now.getMinutes(), secs = now.getSeconds();
       const slot = Math.floor(mins / 15);
-      const nextSlot = (slot + 1) * 15;
-      const remMins = (nextSlot - mins - 1 + 60) % 60;
-      const remSecs = 59 - secs;
-      const countdownEl = document.getElementById('next-cycle-countdown');
-      if (countdownEl) {
-        countdownEl.textContent = `รอบวิเคราะห์ + รีเฟรช Limit ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
-      }
+
+      // 2. Countdown รอบวิเคราะห์ถัดไป
+      try {
+        const nextSlot = (slot + 1) * 15;
+        const remMins = (nextSlot - mins - 1 + 60) % 60;
+        const remSecs = 59 - secs;
+        const countdownEl = document.getElementById('next-cycle-countdown');
+        if (countdownEl) {
+          countdownEl.textContent = `รอบวิเคราะห์ + รีเฟรช Limit ในอีก: ${remMins} นาที ${String(remSecs).padStart(2, '0')} วินาที`;
+        }
+      } catch (e) { console.warn('[masterUnifiedLoop] countdown:', e); }
 
       // 3. แสดง "อัปเดตสด" elapsed time
-      if (lastAiUpdateMs > 0) {
-        const elapsedMins = Math.floor((Date.now() - lastAiUpdateMs) / 60000);
-        const lastUpdatedEl = document.getElementById('last-updated');
-        if (lastUpdatedEl) {
-          lastUpdatedEl.textContent = `อัปเดตสด: ${lastAiTimeStr} (${elapsedMins} นาทีที่แล้ว)`;
+      try {
+        if (lastAiUpdateMs > 0) {
+          const elapsedMins = Math.floor((Date.now() - lastAiUpdateMs) / 60000);
+          const lastUpdatedEl = document.getElementById('last-updated');
+          if (lastUpdatedEl) {
+            lastUpdatedEl.textContent = `อัปเดตสด: ${lastAiTimeStr} (${elapsedMins} นาทีที่แล้ว)`;
+          }
         }
-      }
+      } catch (e) { console.warn('[masterUnifiedLoop] elapsed:', e); }
 
       // 4. คูลดาวน์ M15
-      const cd = getCooldownGuardStatus();
-      const cdPill = document.getElementById('lob-cooldown-pill');
-      const cdNote = document.getElementById('lob-cooldown-note');
-      if (cdPill) {
-        if (cd.inCooldown && cd.cooldownRemMs > 0) {
-          const cm = Math.floor(cd.cooldownRemMs / 60000);
-          const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
-          cdPill.classList.remove('hidden');
-          cdPill.textContent = `⏳ รอจบแท่ง M15 (${cd.targetTimeStr} | เหลือ ${cm}:${cs})`;
-          if (cdNote) cdNote.textContent = `⏳ พักรอจบแท่งเทียน M15 รอบ ${cd.targetTimeStr} (เหลือ ${cm}:${cs} นาที)`;
-        } else {
-          cdPill.classList.add('hidden');
-          if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
+      try {
+        const cd = getCooldownGuardStatus();
+        const cdPill = document.getElementById('lob-cooldown-pill');
+        const cdNote = document.getElementById('lob-cooldown-note');
+        if (cdPill) {
+          if (cd.inCooldown && cd.cooldownRemMs > 0) {
+            const cm = Math.floor(cd.cooldownRemMs / 60000);
+            const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
+            cdPill.classList.remove('hidden');
+            cdPill.textContent = `⏳ รอจบแท่ง M15 (${cd.targetTimeStr} | เหลือ ${cm}:${cs})`;
+            if (cdNote) cdNote.textContent = `⏳ พักรอจบแท่งเทียน M15 รอบ ${cd.targetTimeStr} (เหลือ ${cm}:${cs} นาที)`;
+          } else {
+            cdPill.classList.add('hidden');
+            if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
+          }
         }
-      }
+      } catch (e) { console.warn('[masterUnifiedLoop] cooldown:', e); }
 
       // 5. เช็ค daily rollover ทุก 5 วินาที
-      if (secs % 5 === 0 && typeof checkDailyRollover === 'function') {
-        checkDailyRollover(true);
-      }
+      try {
+        if (secs % 5 === 0 && typeof checkDailyRollover === 'function') {
+          checkDailyRollover(true);
+        }
+      } catch (e) { console.warn('[masterUnifiedLoop] dailyRollover:', e); }
 
       // 6. รัน Full Quant ทุก 15 นาที
-      if (typeof lastRanSlot !== 'undefined' && lastRanSlot !== -1 && slot !== lastRanSlot && secs >= 2) {
-        lastRanSlot = slot;
-        if (typeof runFullLiveQuantAndAI === 'function') {
-          runFullLiveQuantAndAI(!isGoldMarketClosedBKK());
+      try {
+        if (typeof lastRanSlot !== 'undefined' && lastRanSlot !== -1 && slot !== lastRanSlot && secs >= 2) {
+          lastRanSlot = slot;
+          if (typeof runFullLiveQuantAndAI === 'function') {
+            runFullLiveQuantAndAI(!isGoldMarketClosedBKK());
+          }
         }
-      }
-      if (typeof lastRanSlot !== 'undefined' && lastRanSlot === -1) lastRanSlot = slot;
+        if (typeof lastRanSlot !== 'undefined' && lastRanSlot === -1) lastRanSlot = slot;
+      } catch (e) { console.warn('[masterUnifiedLoop] fullQuant:', e); }
 
       // 7. จัดทรงการ์ด 3 คอลัมน์ให้พอดีไม่ห่าง
-      const grids = Array.from(document.querySelectorAll('.grid'));
-      grids.forEach(g => {
-        if (g.textContent && g.textContent.includes('Spot L2 Order Book')) {
-          g.style.alignItems = 'start';
-          Array.from(g.children).forEach(col => {
-            col.style.height = 'auto';
-            col.style.alignSelf = 'start';
-          });
-        }
-      });
+      try {
+        const grids = Array.from(document.querySelectorAll('.grid'));
+        grids.forEach(g => {
+          if (g.textContent && g.textContent.includes('Spot L2 Order Book')) {
+            g.style.alignItems = 'start';
+            Array.from(g.children).forEach(col => {
+              col.style.height = 'auto';
+              col.style.alignSelf = 'start';
+            });
+          }
+        });
+      } catch (e) { console.warn('[masterUnifiedLoop] gridLayout:', e); }
     };
 
     // เริ่ม Master Loop ทันทีหลังโหลด
     setTimeout(() => {
-      if (typeof lastRanSlot === 'undefined') window.lastRanSlot = -1;
-      masterUnifiedLoop();
+      try {
+        if (typeof lastRanSlot === 'undefined') window.lastRanSlot = -1;
+        masterUnifiedLoop();
+      } catch (e) { console.warn('[masterUnifiedLoop] init:', e); }
       setInterval(masterUnifiedLoop, 1000);
     }, 300);
 </script>
