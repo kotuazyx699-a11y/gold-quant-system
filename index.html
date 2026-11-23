@@ -13,6 +13,21 @@
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
     .card { background-color: #101726; border: 1px solid #1e293b; border-radius: 0.75rem; }
   </style>
+
+  <style id="v14-compact-layout-fix">
+    .grid:has(#l2-bids-list),
+    .grid:has([id*="l2"]),
+    .grid:has([id*="swing"]) {
+      align-items: start !important;
+    }
+    .grid:has(#l2-bids-list) > .card,
+    .grid:has([id*="l2"]) > .card,
+    .grid:has([id*="swing"]) > .card {
+      height: auto !important;
+      align-self: start !important;
+    }
+  </style>
+
 </head>
 <body class="min-h-screen p-4 md:p-6">
   <div class="max-w-7xl mx-auto space-y-5">
@@ -622,14 +637,14 @@
           </div>
         </div>
 
-        <div id="v14-news-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs items-start">
+        <div id="v14-news-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs items-start" style="align-items: start !important;">
           <div class="bg-gray-900/70 border border-gray-800 rounded p-2 text-gray-400">กำลังโหลดปฏิทินข่าว USD จากหลังบ้าน...</div>
         </div>
       </section>
 
       <!-- LIVE ORDERFLOW & DUAL-ENGINE (ENGINE A + ENGINE B) GRID -->
       <section class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        <div class="card p-4 xl:col-span-4 border-cyan-600/40 space-y-3.5">
+        <div class="card p-4 xl:col-span-4 border-cyan-600/40 space-y-3.5" style="height: auto !important; align-self: start !important;">
           <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
             <h2 class="text-sm font-bold text-cyan-300">Spot L2 Order Book Depth & Walls</h2>
             <span id="of-absorption-badge" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-emerald-950 text-emerald-300">LIVE SPOT L2</span>
@@ -661,7 +676,7 @@
         </div>
 
         <!-- Engine A (Near-Spot Scalp) -->
-        <div class="card p-3 xl:col-span-4 border-purple-600/40 space-y-2.5">
+        <div class="card p-3 xl:col-span-4 border-purple-600/40 space-y-2.5" style="height: auto !important; align-self: start !important;">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
             <div>
               <span class="text-[10px] uppercase tracking-wider text-purple-400 font-bold">ENGINE A: NEAR-SPOT EXECUTION & BREAK-EVEN ADVISOR</span>
@@ -712,7 +727,7 @@
         </div>
 
         <!-- Engine B (H1 EMA200 Trend & Swing Sniper) -->
-        <div class="card p-4 xl:col-span-4 border-amber-500/40 space-y-3.5">
+        <div class="card p-4 xl:col-span-4 border-amber-500/40 space-y-3.5" style="height: auto !important; align-self: start !important;">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
             <div>
               <span class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">ENGINE B: H1 EMA200 TREND & SWING SNIPER</span>
@@ -4253,6 +4268,27 @@
     };
     setTimeout(window.hydrateMacroFallback, 2000);
     setInterval(window.hydrateMacroFallback, 300000);
+
+    // === ENFORCE COMPACT 3-COLUMN & ADMIN MODAL LAYOUT AFTER RENDER ===
+    window.enforceCompactCards = function() {
+      document.querySelectorAll('.grid').forEach(g => {
+        if (g.textContent && g.textContent.includes('Spot L2 Order Book') && g.textContent.includes('ENGINE B:')) {
+          g.style.alignItems = 'start';
+          Array.from(g.children).forEach(col => {
+            col.style.height = 'auto';
+            col.style.alignSelf = 'start';
+          });
+        }
+      });
+      document.querySelectorAll('div').forEach(d => {
+        if (d.children.length <= 4 && d.textContent && d.textContent.includes('โหมดแจ้งเตือน ntfy อย่างเดียวกำลังทำงาน')) {
+          d.style.gridColumn = '1 / -1';
+          d.style.width = '100%';
+        }
+      });
+    };
+    setTimeout(window.enforceCompactCards, 300);
+    setInterval(window.enforceCompactCards, 2000);
 </script>
 </body>
 </html>
