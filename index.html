@@ -4683,7 +4683,7 @@
             const t = (node.textContent || '').trim();
             if (t.includes('Backend Risk Guard สั่งเบรก') && t.includes('ตลาดทองคำเปิดทำการปกติ')) {
               node.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — วิเคราะห์โครงสร้าง 24H Daily VP + 4H Micro-VP สด';
-            } else if (t === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)') {
+            } else if (t === '') {
               node.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
               node.className = node.className.replace(/rose|red|amber/g, 'emerald');
             }
@@ -4728,6 +4728,255 @@
       window.rebalanceEngineGrid();
       window.syncRiskGuardAndLimits();
     }, 1000);
+
+    // =========================================================================
+    // V14.4 MASTER FIX:
+    // 1. หยุดอาการ Risk Guard กะพริบสลับไปมา (ล้างค่าจากต้นทาง liveModel ก่อนวาดจอ)
+    // 2. ซิงก์ออเดอร์สดจาก ntfy (pansakorn888) เข้า LIVE ORDER BOARD อัตโนมัติ
+    //    -> เมื่อ ntfy เข้า LONG/SHORT แล้ว กระดานจะขึ้น HOLDING + บวก/ลบ $ สดทันที
+    // 3. ขยายกล่อง "สมุดบันทึกสถิติพอร์ตจริงข้ามวัน" ให้สูงเท่ากล่องยาว (Engine A) พอดีเป๊ะ
+    // =========================================================================
+
+    // 1. ล้างค่า pauseReason หลอกใน liveModel ทุกๆ 250ms (กันการกะพริบ 100%)
+    window.sanitizeLiveModelPause = function() {
+      if (typeof liveModel !== 'undefined' && liveModel && typeof liveModel === 'object') {
+        const badPhrases = ['ตลาดทองคำเปิดทำการปกติ', 'WEEKEND_MARKET_CLOSED', 'วันอาทิตย์ตลาดปิด'];
+        ['pauseReason', 'pause_reason', 'blockReason', 'block_reason'].forEach(k => {
+          if (typeof liveModel[k] === 'string' && badPhrases.some(p => liveModel[k].includes(p))) {
+            liveModel[k] = '';
+          }
+        });
+        const curReason = String(liveModel.pauseReason || liveModel.pause_reason || '').trim();
+        if (!curReason) {
+          if (liveModel.isPaused === true) liveModel.isPaused = false;
+          if (liveModel.is_paused === true) liveModel.is_paused = false;
+        }
+        if (typeof liveModel.headline === 'string' && liveModel.headline.includes('Backend Risk Guard สั่งเบรก') && !curReason) {
+          liveModel.headline = 'ระบบวิเคราะห์ 24H Daily VP + 4H Micro-VP พร้อมทำงาน (Bangkok UTC+7)';
+        }
+      }
+    };
+    setInterval(window.sanitizeLiveModelPause, 250);
+
+    // 2. ดึงและซิงก์ออเดอร์ล่าสุดจาก ntfy.sh (pansakorn888) เข้า LIVE ORDER BOARD อัตโนมัติ
+    window.syncOrdersFromNtfy = async function() {
+      try {
+        let topic = 'pansakorn888';
+        const topicInput = document.querySelector('input[value*="pansakorn"], #ntfy-topic-input, #creator-ntfy-topic');
+        if (topicInput && topicInput.value && topicInput.value.trim()) {
+          topic = topicInput.value.trim();
+        } else {
+          const badge = Array.from(document.querySelectorAll('span, button, div')).find(el =>
+            el.children.length === 0 && (el.textContent || '').includes('ntfy:')
+          );
+          if (badge) {
+            const m = badge.textContent.match(/ntfy:\s*([a-zA-Z0-9_\-]+)/);
+            if (m && m[1]) topic = m[1].trim();
+          }
+        }
+
+        const url = `https://ntfy.sh/${encodeURIComponent(topic)}/json?poll=1&since=12h`;
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) return;
+        const rawText = await res.text();
+        if (!rawText.trim()) return;
+
+        const lines = rawText.trim().split('\n');
+        const events = [];
+        for (const line of lines) {
+          try {
+            const obj = JSON.parse(line);
+            if (obj && obj.event === 'message' && obj.message) {
+              events.push(obj);
+            }
+          } catch (e) {}
+        }
+        if (!events.length) return;
+
+        let latestTradeSignal = null;
+        let latestCloseSignal = null;
+
+        for (const ev of events) {
+          const fullText = `${ev.title || ''} ${ev.message || ''}`;
+          if (fullText.includes('ทดสอบ') || fullText.includes('Test')) continue;
+
+          const evMs = (Number(ev.time || 0)) * 1000;
+          const isCloseMsg = /(TP\s*HIT|SL\s*HIT|ชน\s*TP|ชน\s*SL|ปิดออเดอร์|CLOSED|ปิดไม้|จบออเดอร์|ตัดขาดทุน|ถึงเป้าหมาย)/i.test(fullText);
+          const sideMatch = fullText.match(/(LONG|SHORT|BUY|SELL)/i);
+          const priceMatches = Array.from(fullText.matchAll(/\$?(2\d{3}\.\d{1,2}|3\d{3}\.\d{1,2}|4\d{3}\.\d{1,2})/g)).map(m => parseFloat(m[1]));
+
+          if (isCloseMsg) {
+            latestCloseSignal = { ev, evMs, fullText, priceMatches };
+          } else if (sideMatch && priceMatches.length >= 1) {
+            const rawSide = sideMatch[1].toUpperCase();
+            const side = (rawSide === 'BUY' || rawSide === 'LONG') ? 'LONG' : 'SHORT';
+
+            let entry = priceMatches[0];
+            let sl = 0;
+            let tp = 0;
+
+            const entryExplicit = fullText.match(/(?:@|Entry|เข้า|ราคาเข้า)[^\d]{0,10}(3\d{3}\.\d{1,2}|2\d{3}\.\d{1,2}|4\d{3}\.\d{1,2})/i);
+            const slExplicit = fullText.match(/(?:SL|Stop)[^\d]{0,10}(3\d{3}\.\d{1,2}|2\d{3}\.\d{1,2}|4\d{3}\.\d{1,2})/i);
+            const tpExplicit = fullText.match(/(?:TP|Target|เป้า)[^\d]{0,10}(3\d{3}\.\d{1,2}|2\d{3}\.\d{1,2}|4\d{3}\.\d{1,2})/i);
+
+            if (entryExplicit) entry = parseFloat(entryExplicit[1]);
+            if (slExplicit) sl = parseFloat(slExplicit[1]);
+            if (tpExplicit) tp = parseFloat(tpExplicit[1]);
+
+            if (!sl || !tp) {
+              for (const p of priceMatches) {
+                if (Math.abs(p - entry) < 0.05) continue;
+                if (side === 'LONG') {
+                  if (p < entry && !sl) sl = p;
+                  if (p > entry && !tp) tp = p;
+                } else {
+                  if (p > entry && !sl) sl = p;
+                  if (p < entry && !tp) tp = p;
+                }
+              }
+            }
+
+            if (entry > 1000) {
+              const bkkDate = new Date(evMs + 7 * 3600 * 1000);
+              const hhmm = `${String(bkkDate.getUTCHours()).padStart(2, '0')}:${String(bkkDate.getUTCMinutes()).padStart(2, '0')}`;
+              latestTradeSignal = {
+                id: 'NTFY_' + ev.id,
+                evMs,
+                side,
+                entry,
+                sl: sl || (side === 'LONG' ? entry - 8.5 : entry + 8.5),
+                tp: tp || (side === 'LONG' ? entry + 17.0 : entry - 17.0),
+                time: hhmm,
+                engine: fullText.includes('Swing') ? 'Swing (ntfy)' : 'Scalp (ntfy)'
+              };
+            }
+          }
+        }
+
+        if (latestTradeSignal && (!latestCloseSignal || latestTradeSignal.evMs > latestCloseSignal.evMs)) {
+          const curAo = (typeof activeOrder !== 'undefined') ? activeOrder : window.activeOrder;
+          const isSameOrder = curAo && Math.abs(Number(curAo.entry) - latestTradeSignal.entry) < 0.2 && curAo.side === latestTradeSignal.side;
+
+          if (!curAo || curAo.status === 'PENDING' || !isSameOrder) {
+            const lotInput = document.querySelector('#lot-size-input, input[step="0.01"]');
+            const lotVal = (lotInput && parseFloat(lotInput.value) > 0) ? parseFloat(lotInput.value) : 0.01;
+
+            const syncedOrder = {
+              id: latestTradeSignal.id,
+              side: latestTradeSignal.side,
+              lot: lotVal,
+              entry: latestTradeSignal.entry,
+              sl: latestTradeSignal.sl,
+              tp: latestTradeSignal.tp,
+              bePrice: 0,
+              status: 'OPEN',
+              engine: latestTradeSignal.engine,
+              time: latestTradeSignal.time
+            };
+
+            if (typeof activeOrder !== 'undefined') {
+              activeOrder = syncedOrder;
+            }
+            window.activeOrder = syncedOrder;
+
+            try { localStorage.removeItem('gq_m15_cooldown_until'); } catch (e) {}
+
+            if (typeof renderOrderAndLedgerUI === 'function') {
+              renderOrderAndLedgerUI();
+            }
+            if (typeof window.runV14LiveBoardTick === 'function') {
+              window.runV14LiveBoardTick();
+            }
+          }
+        } else if (latestCloseSignal && latestTradeSignal && latestCloseSignal.evMs >= latestTradeSignal.evMs) {
+          const curAo = (typeof activeOrder !== 'undefined') ? activeOrder : window.activeOrder;
+          if (curAo && String(curAo.id || '').startsWith('NTFY_')) {
+            const exitP = latestCloseSignal.priceMatches.length ? latestCloseSignal.priceMatches[latestCloseSignal.priceMatches.length - 1] : curAo.entry;
+            const diff = curAo.side === 'LONG' ? (exitP - curAo.entry) : (curAo.entry - exitP);
+            const pnlUsd = diff * (curAo.lot || 0.01) * 100;
+            const slDist = Math.abs(curAo.entry - curAo.sl) || 8.5;
+            const pnlR = diff / slDist;
+
+            if (typeof todayClosed !== 'undefined' && Array.isArray(todayClosed)) {
+              const alreadyLogged = todayClosed.some(t => String(t.id) === String(curAo.id));
+              if (!alreadyLogged) {
+                todayClosed.push({
+                  id: curAo.id,
+                  side: curAo.side,
+                  lot: curAo.lot || 0.01,
+                  entry: curAo.entry,
+                  exit: exitP,
+                  pnlR: Number(pnlR.toFixed(2)),
+                  pnlUsd: Number(pnlUsd.toFixed(2)),
+                  reason: latestCloseSignal.fullText.includes('TP') ? 'TP HIT (ntfy)' : 'SL HIT (ntfy)',
+                  time: new Date(latestCloseSignal.evMs + 7 * 3600 * 1000).toISOString().slice(11, 16)
+                });
+              }
+            }
+            if (typeof activeOrder !== 'undefined') activeOrder = null;
+            window.activeOrder = null;
+            if (typeof window.triggerM15CandleCooldown === 'function') {
+              window.triggerM15CandleCooldown(latestCloseSignal.evMs);
+            }
+            if (typeof renderOrderAndLedgerUI === 'function') {
+              renderOrderAndLedgerUI();
+            }
+          }
+        }
+      } catch (err) {}
+    };
+
+    // 3. ขยายการ์ด "สมุดบันทึกสถิติพอร์ตจริงข้ามวัน" ให้สูงเท่ากล่องยาว (Engine A) พอดีเป๊ะ
+    window.matchJournalHeightToEngineA = function() {
+      const engACard = Array.from(document.querySelectorAll('.card')).find(c =>
+        c.textContent && c.textContent.includes('ENGINE A: NEAR-SPOT') && !c.textContent.includes('Spot L2 Order Book')
+      );
+      const journalCard = Array.from(document.querySelectorAll('.card')).find(c =>
+        c.textContent && c.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') && !c.textContent.includes('ENGINE A:')
+      );
+      if (!engACard || !journalCard) return;
+
+      if (journalCard.parentElement && journalCard.parentElement.classList.contains('grid')) {
+        journalCard.style.setProperty('height', '100%', 'important');
+        journalCard.style.setProperty('display', 'flex', 'important');
+        journalCard.style.setProperty('flex-direction', 'column', 'important');
+        journalCard.style.setProperty('justify-content', 'space-between', 'important');
+      } else if (journalCard.parentElement) {
+        journalCard.parentElement.style.setProperty('height', '100%', 'important');
+        journalCard.parentElement.style.setProperty('display', 'flex', 'important');
+        journalCard.parentElement.style.setProperty('flex-direction', 'column', 'important');
+        journalCard.style.setProperty('flex', '1', 'important');
+        journalCard.style.setProperty('height', '100%', 'important');
+        journalCard.style.setProperty('display', 'flex', 'important');
+        journalCard.style.setProperty('flex-direction', 'column', 'important');
+      }
+
+      const tbl = journalCard.querySelector('table');
+      if (tbl && tbl.parentElement) {
+        tbl.parentElement.style.setProperty('flex', '1 1 auto', 'important');
+        tbl.parentElement.style.setProperty('display', 'flex', 'important');
+        tbl.parentElement.style.setProperty('flex-direction', 'column', 'important');
+        tbl.parentElement.style.setProperty('justify-content', 'flex-start', 'important');
+        tbl.parentElement.style.setProperty('overflow-y', 'auto', 'important');
+      }
+      const emptyNote = Array.from(journalCard.querySelectorAll('div, p, td')).find(el =>
+        (el.textContent || '').includes('คลังข้อมูลว่างพร้อมเริ่มเก็บสถิติใหม่')
+      );
+      if (emptyNote && emptyNote.tagName !== 'TD') {
+        emptyNote.style.setProperty('flex', '1', 'important');
+        emptyNote.style.setProperty('display', 'flex', 'important');
+        emptyNote.style.setProperty('align-items', 'center', 'important');
+        emptyNote.style.setProperty('justify-content', 'center', 'important');
+      }
+    };
+
+    setTimeout(() => {
+      window.sanitizeLiveModelPause();
+      window.syncOrdersFromNtfy();
+      window.matchJournalHeightToEngineA();
+    }, 300);
+    setInterval(window.syncOrdersFromNtfy, 5000);
+    setInterval(window.matchJournalHeightToEngineA, 1000);
 </script>
 </body>
 </html>
