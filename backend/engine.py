@@ -738,7 +738,14 @@ def generate_live_ai_strategist_brief(spot, vp_session, scalp_setup, trend_setup
 
 
 def fetch_macro_and_news():
-    dxy_p, us10y_y, corr_20 = 103.85, 4.25, -0.45
+    # โหลดค่าล่าสุดที่บันทึกไว้เป็น fallback
+    cached_macro_path = os.path.join(DATA_DIR, "macro_cache.json")
+    cached = load_json_safe(cached_macro_path, {})
+    
+    dxy_p = cached.get("dxy", 103.85)
+    us10y_y = cached.get("us10y", 4.25)
+    corr_20 = cached.get("corr", -0.45)
+    
     try:
         dxy = yf.download("DX-Y.NYB", period="30d", interval="1d", progress=False)
         tnx = yf.download("^TNX", period="10d", interval="1d", progress=False)
@@ -754,7 +761,17 @@ def fetch_macro_and_news():
             j = pd.concat([gld["Close"], dxy["Close"]], axis=1).dropna().tail(20)
             if len(j) >= 10:
                 corr_20 = round(float(j.iloc[:, 0].corr(j.iloc[:, 1])), 2)
-    except Exception:
+        
+        # บันทึกค่าล่าสุดที่สำเร็จลง cache
+        save_json_safe(cached_macro_path, {
+            "dxy": dxy_p,
+            "us10y": us10y_y,
+            "corr": corr_20,
+            "updated_at": datetime.now(THAI_TZ).isoformat()
+        })
+    except Exception as e:
+        # ใช้ค่า fallback ที่โหลดจาก cache ด้านบน
+        print(f"[Macro Warning] ใช้ค่า cached: DXY={dxy_p}, US10Y={us10y_y} ({e})")
         pass
 
     news_list = []

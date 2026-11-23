@@ -1,8 +1,12 @@
 {
   "wins": 0,
   "losses": 0,
+  "closed_trades": 0,
+  "open_trades": 0,
+  "net_live_pnl": 0,
+  "live_win_rate": 0.0,
+  "recent_trades": [],
   "total_r": 0.0,
   "win_rate": 0.0,
-  "active_trade": null,
-  "recent_trades": []
+  "active_trade": null
 }

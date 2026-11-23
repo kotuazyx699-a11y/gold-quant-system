@@ -882,7 +882,7 @@
         const badge = document.getElementById('backend-v14-badge');
 
         if (badge) {
-          if (isGoldMarketClosedBkk() || rg.weekend_closed) {
+          if (isGoldMarketClosedBkk()) {
             badge.textContent = `🌙 V${ver} MARKET CLOSED (เสาร์-อาทิตย์ | เปิดจันทร์ 06:00 น.)`;
             badge.className = "flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-slate-800 text-slate-300 border border-slate-600 rounded-full";
           } else if (rg.news_pause || rg.spread_pause) {
@@ -891,7 +891,7 @@
           } else {
             const lotTxt = rg.sc_lot ? `${Number(rg.sc_lot).toFixed(2)} Lot` : "0.01 Lot";
             const slTxt = rg.sc_sl_usd ? `SL $${Number(rg.sc_sl_usd).toFixed(2)}` : "";
-            badge.textContent = `🛡️ V${ver} READY (${lotTxt}${slTxt ? ' | ' + slTxt : ''}) | OBI ${obiStr}`;
+            badge.textContent = `🛡️ V${ver} MARKET OPEN (READY) | ${lotTxt}${slTxt ? ' | ' + slTxt : ''} | OBI ${obiStr}`;
             badge.className = "flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono-num font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/60 rounded-full";
           }
         }
@@ -1725,11 +1725,23 @@
     function getActiveLotSetting() {
       const bal = Math.max(100, parseFloat(document.getElementById('input-balance')?.value) || 5000);
       const riskPct = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct')?.value) || 1.0);
-      const scSlPts = (backendV14State && backendV14State.risk_guard && backendV14State.risk_guard.sc_sl_pts)
-        ? backendV14State.risk_guard.sc_sl_pts
-        : ((liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.slPts : 650);
-      const scTpPts = (liveModel && liveModel.scalpSetup) ? liveModel.scalpSetup.tpPts : 975;
-      const trSlDist = (liveModel && liveModel.trendSetup) ? liveModel.trendSetup.slDist : 25.0;
+      
+      // ดึงระยะ SL จริงจากแผนเทรดปัจจุบัน (Engine A & B) แทนค่า Hardcode
+      let scSlPts = 650; // fallback
+      let scTpPts = 975; // fallback
+      if (liveModel && liveModel.scalpSetup) {
+        scSlPts = liveModel.scalpSetup.slPts || 650;
+        scTpPts = liveModel.scalpSetup.tpPts || 975;
+      } else if (backendV14State && backendV14State.risk_guard && backendV14State.risk_guard.sc_sl_pts) {
+        scSlPts = backendV14State.risk_guard.sc_sl_pts;
+      }
+      
+      let trSlDist = 25.0; // fallback
+      if (liveModel && liveModel.trendSetup && liveModel.trendSetup.slDist) {
+        trSlDist = liveModel.trendSetup.slDist;
+      } else if (liveModel && liveModel.trendSetup && liveModel.trendSetup.entry && liveModel.trendSetup.sl) {
+        trSlDist = Math.abs(liveModel.trendSetup.entry - liveModel.trendSetup.sl);
+      }
       const trSlPts = Math.round(trSlDist * 100);
 
       let scalpLot, swingLot;
@@ -1959,9 +1971,30 @@
       renderOrderAndLedgerUI();
     }
 
+    function toggleAutoLimit() {
+      orderState.autoArm = !orderState.autoArm;
+      saveOrderStateLocal();
+      pushCloudSyncState(false);
+      renderOrderAndLedgerUI();
+    }
+
+    function toggleAutoRefreshLimit() {
+      orderState.autoRefresh15m = !orderState.autoRefresh15m;
+      saveOrderStateLocal();
+      pushCloudSyncState(false);
+      renderOrderAndLedgerUI();
+    }
+
     function toggleAutoRefresh15m() {
       orderState.autoRefresh15m = !orderState.autoRefresh15m;
       saveOrderStateLocal();
+      pushCloudSyncState(false);
+      renderOrderAndLedgerUI();
+    }
+
+    function toggleAutoBe() {
+      masterConfig.autoBeEnabled = !masterConfig.autoBeEnabled;
+      saveMasterConfigLocal();
       pushCloudSyncState(false);
       renderOrderAndLedgerUI();
     }
@@ -1971,6 +2004,18 @@
       saveMasterConfigLocal();
       pushCloudSyncState(false);
       renderOrderAndLedgerUI();
+    }
+
+    function syncActiveOrderEntryToMt5() {
+      syncActiveOrderToMt5Entry();
+    }
+
+    function placeManualLimitOrder() {
+      placeScalpLimitOrder(true, false);
+    }
+
+    function closeActiveOrderManual() {
+      manualCancelOrCloseOrder();
     }
 
     function syncActiveOrderToMt5Entry() {
@@ -3816,7 +3861,7 @@
           <div class="text-xs font-bold text-cyan-300 mb-1">1. เหตุผลเชิงโครงสร้าง Spot ที่ออกแผน ${sc.dir} ที่ $${sc.entry.toFixed(2)} (ความมั่นใจ ${sc.conf.totalScore}% — เกรด ${sc.conf.grade})</div>
           <p class="text-xs text-gray-200 leading-relaxed">
             ราคา Spot XAU/USD ปัจจุบัน <strong class="text-amber-400">$${spot.toFixed(2)}</strong> เทียบกรอบ 24H Daily VP (VAL $${vp24h.val} / POC $${vp24h.poc} / VAH $${vp24h.vah}) 
-            อยู่${isLong ? 'เหนือ' : 'ใต้'} EMA200 ($${last.ema200.toFixed(2)}) ด้วยกำลังเทรนด์ <strong class="text-white">ADX ${last.adx.toFixed(1)} (${regimeTxt})</strong> 
+            อยู่${spot > last.ema200 ? 'เหนือ' : 'ใต้'} EMA200 ($${last.ema200.toFixed(2)}) ด้วยกำลังเทรนด์ <strong class="text-white">ADX ${last.adx.toFixed(1)} (${regimeTxt})</strong> 
             วางจุดเข้า <strong class="text-white">Limit ${sc.dir} ที่ $${sc.entry.toFixed(2)}</strong> (ห่าง Spot ${distPts} จุด) เพราะ${sc.anchorSourceText}
           </p>
         </div>`,
@@ -3907,7 +3952,7 @@
       if (isGoldMarketClosedBkk()) {
         pill.textContent = "🌙 MARKET CLOSED (เสาร์-อาทิตย์)";
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-slate-800 text-slate-300 border border-slate-600 rounded-full";
-        head.textContent = "ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — ระบบวิเคราะห์และส่งสัญญาณสดพร้อมทำงาน";
+        head.textContent = "ตลาดทองคำปิดทำการ (เสาร์ 05:00 น. ถึง จันทร์ 06:00 น. เวลาไทย) — ระบบพักการทำงาน";
         box.className = "card p-4 border-slate-700/70 bg-gradient-to-r from-gray-900 via-slate-900/60 to-gray-900 space-y-3";
         return;
       }
