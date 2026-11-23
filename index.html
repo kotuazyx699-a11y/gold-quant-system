@@ -4555,11 +4555,12 @@
     }, 1000);
     setTimeout(window.runV14LiveBoardTick, 250);
 
+    
+
     // =========================================================================
-    // V14.2 BALANCED 2-COLUMN STACK + RISK-GUARD-SYNCED LIMIT OUTPUT
+    // V14.3 SIDE-BY-SIDE JOURNAL + BALANCED HEIGHT MATCHING WITH TALL ENGINE A
     // =========================================================================
 
-    // 1. ซ้อนกล่องเล็ก 2 ใบ (บน: Spot L2 Order Book, ล่าง: Engine B) คู่กับกล่องใหญ่ Engine A
     window.rebalanceEngineGrid = function() {
       const grids = Array.from(document.querySelectorAll('.grid'));
       const targetGrid = grids.find(g =>
@@ -4568,177 +4569,156 @@
         g.textContent.includes('ENGINE A:') &&
         g.textContent.includes('ENGINE B:')
       );
-      if (!targetGrid || targetGrid.dataset.v14Stacked === '1') return;
+      if (!targetGrid || targetGrid.dataset.v14JournalAligned === '1') return;
 
-      const children = Array.from(targetGrid.children);
-      if (children.length < 3) return;
+      const allCards = Array.from(targetGrid.querySelectorAll('.card'));
+      const l2Box = allCards.find(c => c.textContent.includes('Spot L2 Order Book') && !c.textContent.includes('ENGINE A:'));
+      const engABox = allCards.find(c => c.textContent.includes('ENGINE A:') && !c.textContent.includes('Spot L2 Order Book'));
+      const engBBox = allCards.find(c => c.textContent.includes('ENGINE B:') && !c.textContent.includes('ENGINE A:'));
 
-      const l2Box = children.find(c => c.textContent.includes('Spot L2 Order Book'));
-      const engABox = children.find(c => c.textContent.includes('ENGINE A:'));
-      const engBBox = children.find(c => c.textContent.includes('ENGINE B:'));
+      // ค้นหากล่อง "สมุดบันทึกสถิติพอร์ตจริงข้ามวัน" จากด้านล่าง
+      const journalBox = Array.from(document.querySelectorAll('section.card, div.card, section')).find(el =>
+        el.textContent &&
+        el.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') &&
+        !el.textContent.includes('Chief Quant Strategist') &&
+        !el.textContent.includes('LIVE ORDER BOARD')
+      );
+
       if (!l2Box || !engABox || !engBBox) return;
 
-      targetGrid.dataset.v14Stacked = '1';
-      targetGrid.className = 'grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch';
+      targetGrid.dataset.v14JournalAligned = '1';
 
-      engABox.classList.remove('lg:col-span-1', 'xl:col-span-1', 'col-span-1');
-      engABox.classList.add('lg:col-span-7');
-      engABox.style.setProperty('height', '100%', 'important');
+      if (journalBox) {
+        // แบ่ง 3 คอลัมน์ความสูงเท่ากัน (4 + 4 + 4):
+        // ซ้าย: Spot L2 (บน) + Engine B (ล่าง) | กลาง: Engine A (กล่องยาว) | ขวา: สมุดบันทึกพอร์ตจริง (สูงเท่ากล่องยาว)
+        targetGrid.className = 'grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch';
 
-      const rightStack = document.createElement('div');
-      rightStack.className = 'lg:col-span-5 flex flex-col gap-4 justify-between';
-
-      [l2Box, engBBox].forEach(box => {
-        box.classList.remove('lg:col-span-1', 'xl:col-span-1', 'col-span-1');
-        box.style.setProperty('height', 'auto', 'important');
-        box.style.setProperty('width', '100%', 'important');
-      });
-      engBBox.style.setProperty('flex', '1', 'important');
-
-      rightStack.appendChild(l2Box);
-      rightStack.appendChild(engBBox);
-
-      targetGrid.innerHTML = '';
-      targetGrid.appendChild(engABox);
-      targetGrid.appendChild(rightStack);
-    };
-
-    // 2. เชื่อมสถานะกล่อง Risk Guard / Gate กับ LIVE ORDER BOARD (ถ้ากล่องแดง/ติดเงื่อนไข = งดออก Limit)
-    window.syncRiskGuardAndLimits = function() {
-      if (typeof liveModel !== 'undefined' && liveModel) {
-        const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
-        if (pr.includes('ตลาดทองคำเปิดทำการปกติ') || pr.includes('WEEKEND_MARKET_CLOSED')) {
-          liveModel.pauseReason = '';
-          liveModel.pause_reason = '';
-          liveModel.isPaused = false;
-          liveModel.is_paused = false;
-        }
-      }
-
-      const allCards = Array.from(document.querySelectorAll('.card, section, div'));
-      const guardCard = allCards.find(el =>
-        el.textContent &&
-        el.textContent.includes('CONFIDENCE:') &&
-        el.textContent.includes('ระยะห่างจุดเข้า') &&
-        el.className && (el.className.includes('card') || el.className.includes('rounded'))
-      );
-
-      let isGuardRedOrBlocked = false;
-      let guardBlockReason = '';
-
-      if (guardCard) {
-        guardCard.querySelectorAll('span, div, p, h1, h2, h3').forEach(node => {
-          if (node.children.length > 0) return;
-          const t = (node.textContent || '').trim();
-          if (t.includes('Backend Risk Guard สั่งเบรก') && t.includes('ตลาดทองคำเปิดทำการปกติ')) {
-            node.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — วิเคราะห์โครงสร้าง 24H Daily VP + 4H Micro-VP สด';
-          } else if (t === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)') {
-            node.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
-            node.className = node.className.replace(/rose|red|amber/g, 'emerald');
-          }
+        // คอลัมน์ซ้าย: ซ้อน Spot L2 + Engine B
+        const leftStack = document.createElement('div');
+        leftStack.className = 'lg:col-span-4 flex flex-col gap-4 justify-between';
+        [l2Box, engBBox].forEach(box => {
+          box.classList.remove('lg:col-span-1', 'xl:col-span-1', 'col-span-1');
+          box.style.setProperty('width', '100%', 'important');
+          box.style.setProperty('height', 'auto', 'important');
         });
+        engBBox.style.setProperty('flex', '1', 'important');
+        leftStack.appendChild(l2Box);
+        leftStack.appendChild(engBBox);
 
-        const cardTxt = guardCard.textContent || '';
-        const hasRealPause =
-          cardTxt.includes('PAUSED:') ||
-          cardTxt.includes('สั่งเบรกการเข้าออเดอร์') ||
-          cardTxt.includes('HIGH_SPREAD') ||
-          cardTxt.includes('NEWS_GUARD') ||
-          cardTxt.includes('พักรอจบแท่งเทียน M15');
+        // คอลัมน์กลาง: Engine A (กล่องยาว)
+        engABox.classList.remove('lg:col-span-1', 'xl:col-span-1', 'col-span-1', 'lg:col-span-7');
+        engABox.classList.add('lg:col-span-4');
+        engABox.style.setProperty('height', '100%', 'important');
 
-        if (!hasRealPause && guardCard.className.includes('rose')) {
-          guardCard.className = guardCard.className
-            .replace(/border-rose-\d+(\/\d+)?/g, 'border-gray-800')
-            .replace(/bg-rose-\d+(\/\d+)?/g, '');
+        // คอลัมน์ขวา: สมุดบันทึกสถิติพอร์ตจริงข้ามวัน ย้ายมาวางข้างๆ และยืดให้พอดีกล่องยาว
+        journalBox.classList.remove('mt-4', 'mt-6', 'my-4', 'my-6');
+        journalBox.classList.add('lg:col-span-4', 'flex', 'flex-col');
+        journalBox.style.setProperty('height', '100%', 'important');
+        journalBox.style.setProperty('margin-top', '0', 'important');
+
+        const jHeading = journalBox.querySelector('h2, h3, .text-base, .text-lg');
+        if (jHeading) {
+          jHeading.style.setProperty('font-size', '0.95rem', 'important');
+          jHeading.style.setProperty('line-height', '1.3', 'important');
         }
 
-        const isRedStyled = /border-rose|border-red|bg-rose-950/.test(guardCard.className) ||
-          Array.from(guardCard.querySelectorAll('[class*="bg-rose"], [class*="border-rose"]')).some(el =>
-            (el.textContent || '').includes('PAUSED') || (el.textContent || '').includes('เบรก')
-          );
-
-        let distBlocked = false;
-        let distLabel = '';
-        const distMatch = cardTxt.match(/(\d+)\s*\/\s*(\d+)\s*จุด\s*(✓)?/);
-        if (distMatch) {
-          const curPts = Number(distMatch[1]);
-          const maxPts = Number(distMatch[2]);
-          const hasCheck = Boolean(distMatch[3]);
-          if (!hasCheck && curPts > maxPts) {
-            distBlocked = true;
-            distLabel = `ระยะห่างจุดเข้าเกินกำหนด (${curPts}/${maxPts} จุด)`;
+        const tbl = journalBox.querySelector('table');
+        if (tbl) {
+          tbl.style.setProperty('font-size', '11px', 'important');
+          tbl.querySelectorAll('th, td').forEach(cell => {
+            cell.style.setProperty('padding', '6px 6px', 'important');
+          });
+          const tblWrapper = tbl.parentElement;
+          if (tblWrapper && tblWrapper !== journalBox) {
+            tblWrapper.style.setProperty('flex', '1', 'important');
+            tblWrapper.style.setProperty('overflow-y', 'auto', 'important');
+            tblWrapper.style.setProperty('overflow-x', 'auto', 'important');
+            tblWrapper.style.setProperty('max-height', 'none', 'important');
+            tblWrapper.style.setProperty('min-height', '260px', 'important');
           }
         }
 
-        if (isRedStyled || hasRealPause) {
-          isGuardRedOrBlocked = true;
-          const pauseMatch = cardTxt.match(/PAUSED:\s*([A-Z0-9_]+(?:\s*\([^)]+\))?)/);
-          guardBlockReason = pauseMatch ? `PAUSED: ${pauseMatch[1]}` : 'Risk Guard สั่งเบรกชั่วคราว';
-        } else if (distBlocked) {
-          isGuardRedOrBlocked = true;
-          guardBlockReason = distLabel;
-        }
-      }
-
-      const engBCard = Array.from(document.querySelectorAll('.card, div')).find(el =>
-        el.textContent && el.textContent.includes('ENGINE B: H1 EMA200') && el.className && el.className.includes('card')
-      );
-      let engBPausedReason = '';
-      if (engBCard) {
-        const mB = (engBCard.textContent || '').match(/PAUSED:\s*([A-Z0-9_]+(?:\s*\([^)]+\))?)/);
-        if (mB) engBPausedReason = `PAUSED: ${mB[1]}`;
-      }
-
-      if (typeof activeOrder === 'undefined' || !activeOrder) {
-        const pill = document.getElementById('live-order-status-pill');
-        const note = document.getElementById('lob-cooldown-note');
-        const pSc = document.getElementById('lob-preview-scalp');
-        const pSw = document.getElementById('lob-preview-swing');
-
-        if (isGuardRedOrBlocked) {
-          if (pill) {
-            pill.textContent = `⛔ งดออกออเดอร์ LIMIT (ติดเงื่อนไขกรอง)`;
-            pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500/70 rounded-full";
-          }
-          if (note) {
-            note.textContent = `⛔ ระบบระงับการวาง Limit อัตโนมัติ: ${guardBlockReason}`;
-            note.className = "text-[11px] text-rose-300 font-bold";
-          }
-          if (pSc) {
-            pSc.textContent = `⛔ งดวาง Limit (${guardBlockReason})`;
-            pSc.className = "text-rose-400 font-bold";
-          }
-          if (pSw) {
-            const swReason = engBPausedReason || guardBlockReason;
-            pSw.textContent = `⛔ งดวาง Limit (${swReason})`;
-            pSw.className = "text-rose-400 font-bold";
-          }
-        } else {
-          if (pill && !pill.textContent.includes('HOLDING') && !pill.textContent.includes('PENDING')) {
-            pill.textContent = "READY / รอเข้า LIMIT";
-            pill.className = "px-3 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60 rounded-full";
-          }
-          if (note) {
-            note.className = "text-[11px] text-cyan-300";
-          }
-          if (pSc && typeof liveModel !== 'undefined' && liveModel && liveModel.scalpSetup && liveModel.scalpSetup.entry) {
-            const s = liveModel.scalpSetup;
-            pSc.textContent = `${s.dir} Limit @ $${Number(s.entry).toFixed(2)} | SL $${Number(s.sl).toFixed(2)} | TP $${Number(s.tp).toFixed(2)}`;
-            pSc.className = "text-white font-bold";
-          }
-          if (pSw) {
-            if (engBPausedReason) {
-              pSw.textContent = `⛔ งดวาง Limit (${engBPausedReason})`;
-              pSw.className = "text-rose-400 font-bold";
-            } else if (typeof liveModel !== 'undefined' && liveModel && liveModel.trendSetup && liveModel.trendSetup.entry) {
-              const t = liveModel.trendSetup;
-              pSw.textContent = `${t.dir} Limit @ $${Number(t.entry).toFixed(2)} | SL $${Number(t.sl).toFixed(2)} | TP $${Number(t.tp).toFixed(2)}`;
-              pSw.className = "text-white font-bold";
-            }
-          }
-        }
+        targetGrid.innerHTML = '';
+        targetGrid.appendChild(leftStack);
+        targetGrid.appendChild(engABox);
+        targetGrid.appendChild(journalBox);
+      } else {
+        targetGrid.className = 'grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch';
+        engABox.classList.add('lg:col-span-7');
+        engABox.style.setProperty('height', '100%', 'important');
+        const rightStack = document.createElement('div');
+        rightStack.className = 'lg:col-span-5 flex flex-col gap-4 justify-between';
+        engBBox.style.setProperty('flex', '1', 'important');
+        rightStack.appendChild(l2Box);
+        rightStack.appendChild(engBBox);
+        targetGrid.innerHTML = '';
+        targetGrid.appendChild(engABox);
+        targetGrid.appendChild(rightStack);
       }
     };
+
+    if (typeof window.syncRiskGuardAndLimits !== 'function') {
+      window.syncRiskGuardAndLimits = function() {
+        if (typeof liveModel !== 'undefined' && liveModel) {
+          const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
+          if (pr.includes('ตลาดทองคำเปิดทำการปกติ') || pr.includes('WEEKEND_MARKET_CLOSED')) {
+            liveModel.pauseReason = '';
+            liveModel.pause_reason = '';
+            liveModel.isPaused = false;
+            liveModel.is_paused = false;
+          }
+        }
+        const allCards = Array.from(document.querySelectorAll('.card, section, div'));
+        const guardCard = allCards.find(el =>
+          el.textContent &&
+          el.textContent.includes('CONFIDENCE:') &&
+          el.textContent.includes('ระยะห่างจุดเข้า') &&
+          el.className && (el.className.includes('card') || el.className.includes('rounded'))
+        );
+        let isGuardRedOrBlocked = false;
+        let guardBlockReason = '';
+        if (guardCard) {
+          guardCard.querySelectorAll('span, div, p, h1, h2, h3').forEach(node => {
+            if (node.children.length > 0) return;
+            const t = (node.textContent || '').trim();
+            if (t.includes('Backend Risk Guard สั่งเบรก') && t.includes('ตลาดทองคำเปิดทำการปกติ')) {
+              node.textContent = 'ตลาดทองคำ Spot/MT5 เปิดทำการปกติ — วิเคราะห์โครงสร้าง 24H Daily VP + 4H Micro-VP สด';
+            } else if (t === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)') {
+              node.textContent = '🟢 MARKET OPEN (BANGKOK UTC+7)';
+              node.className = node.className.replace(/rose|red|amber/g, 'emerald');
+            }
+          });
+          const cardTxt = guardCard.textContent || '';
+          const hasRealPause = cardTxt.includes('PAUSED:') || cardTxt.includes('HIGH_SPREAD') || cardTxt.includes('NEWS_GUARD') || cardTxt.includes('พักรอจบแท่งเทียน M15');
+          if (!hasRealPause && guardCard.className.includes('rose')) {
+            guardCard.className = guardCard.className.replace(/border-rose-\d+(\/\d+)?/g, 'border-gray-800').replace(/bg-rose-\d+(\/\d+)?/g, '');
+          }
+          const isRedStyled = /border-rose|border-red|bg-rose-950/.test(guardCard.className);
+          const distMatch = cardTxt.match(/(\d+)\s*\/\s*(\d+)\s*จุด\s*(✓)?/);
+          if (isRedStyled || hasRealPause) {
+            isGuardRedOrBlocked = true;
+            const pm = cardTxt.match(/PAUSED:\s*([A-Z0-9_]+(?:\s*\([^)]+\))?)/);
+            guardBlockReason = pm ? `PAUSED: ${pm[1]}` : 'Risk Guard สั่งเบรกชั่วคราว';
+          } else if (distMatch && !distMatch[3] && Number(distMatch[1]) > Number(distMatch[2])) {
+            isGuardRedOrBlocked = true;
+            guardBlockReason = `ระยะห่างจุดเข้าเกินกำหนด (${distMatch[1]}/${distMatch[2]} จุด)`;
+          }
+        }
+        if (typeof activeOrder === 'undefined' || !activeOrder) {
+          const pill = document.getElementById('live-order-status-pill');
+          const pSc = document.getElementById('lob-preview-scalp');
+          const pSw = document.getElementById('lob-preview-swing');
+          if (isGuardRedOrBlocked) {
+            if (pill) {
+              pill.textContent = '⛔ งดออกออเดอร์ LIMIT (ติดเงื่อนไขกรอง)';
+              pill.className = 'px-3 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500/70 rounded-full';
+            }
+            if (pSc) { pSc.textContent = `⛔ งดวาง Limit (${guardBlockReason})`; pSc.className = 'text-rose-400 font-bold'; }
+            if (pSw) { pSw.textContent = `⛔ งดวาง Limit (${guardBlockReason})`; pSw.className = 'text-rose-400 font-bold'; }
+          }
+        }
+      };
+    }
 
     setTimeout(() => {
       window.rebalanceEngineGrid();
