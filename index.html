@@ -4173,7 +4173,7 @@
       return false;
     };
 
-    window.syncMarketStatusBadges = function() { return; }; window._disabled_syncMarketStatusBadges = function() {
+    window.syncMarketStatusBadges = function() { return; }; window._disabled_syncMarketStatusBadges = function() { return; }; window._disabled_syncMarketStatusBadges = function() {
       const closed = window.isGoldMarketClosedBKK();
       const allNodes = document.querySelectorAll('span, div, p, h1, h2, h3');
       allNodes.forEach(el => {
@@ -4270,7 +4270,7 @@
     setInterval(window.hydrateMacroFallback, 300000);
 
     // === ENFORCE COMPACT 3-COLUMN & ADMIN MODAL LAYOUT AFTER RENDER ===
-    window.enforceCompactCards = function() { return; }; window._disabled_enforceCompactCards = function() {
+    window.enforceCompactCards = function() { return; }; window._disabled_enforceCompactCards = function() { return; }; window._disabled_enforceCompactCards = function() {
       document.querySelectorAll('.grid').forEach(g => {
         if (g.textContent && g.textContent.includes('Spot L2 Order Book') && g.textContent.includes('ENGINE B:')) {
           g.style.alignItems = 'start';
@@ -4658,7 +4658,7 @@
     };
 
     if (typeof window.syncRiskGuardAndLimits !== 'function') {
-      window.syncRiskGuardAndLimits = function() { return; }; window._disabled_syncRiskGuardAndLimits = function() {
+      window.syncRiskGuardAndLimits = function() { return; }; window._disabled_syncRiskGuardAndLimits = function() { return; }; window._disabled_syncRiskGuardAndLimits = function() {
         if (typeof liveModel !== 'undefined' && liveModel) {
           const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
           if (pr.includes('ตลาดทองคำเปิดทำการปกติ') || pr.includes('WEEKEND_MARKET_CLOSED')) {
@@ -5012,7 +5012,7 @@
     }
 
     // 2. จัดทรงสมุดบันทึกด้านขวาให้หัวตารางอยู่ชิดใต้ปุ่ม (ไม่ห่างโล่ง) และหัวคอลัมน์ไม่ตัดคำแปลกๆ
-    window.polishJournalAndEngineACards = function() { return; }; window._disabled_polishJournalAndEngineACards = function() {
+    window.polishJournalAndEngineACards = function() { return; }; window._disabled_polishJournalAndEngineACards = function() { return; }; window._disabled_polishJournalAndEngineACards = function() {
       const journalCard = Array.from(document.querySelectorAll('.card')).find(c =>
         c.textContent && c.textContent.includes('สมุดบันทึกสถิติพอร์ตจริงข้ามวัน') && !c.textContent.includes('ENGINE A:')
       );
@@ -5045,7 +5045,7 @@
     };
 
     // 3. สรุปเหตุผลที่งดออกออเดอร์อย่างชัดเจนบนกระดาน (เช่น ระยะห่างจุดเข้าเกิน 160 จุด / สเปรดสูง)
-    window.updateClearBlockReasons = function() { return; }; window._disabled_updateClearBlockReasons = function() {
+    window.updateClearBlockReasons = function() { return; }; window._disabled_updateClearBlockReasons = function() { return; }; window._disabled_updateClearBlockReasons = function() {
       const guardCard = Array.from(document.querySelectorAll('.card, section, div')).find(el =>
         el.textContent &&
         el.textContent.includes('CONFIDENCE:') &&
@@ -5105,7 +5105,7 @@
     // V14.6 SMOOTH ZERO-FLICKER ENGINE + NO SPREAD LIMIT + AUTO-LIMIT UNLOCK
     // =========================================================================
 
-    // 1. กรอง JSON.parse ระดับล่างสุด: ลบสถานะเบรกหลอก & HIGH_SPREAD ตั้งแต่ก่อนเข้าตัวแปร JS
+    // 1. กรอง JSON.parse ระดับล่างสุด: ลบสถานะเบรกหลอก & SPREAD_OK ตั้งแต่ก่อนเข้าตัวแปร JS
     if (!window._v14JsonParsePatched) {
       window._v14JsonParsePatched = true;
       const _origJsonParse = JSON.parse;
@@ -5118,7 +5118,7 @@
               'ตลาดทองคำเปิดทำการปกติ',
               'WEEKEND_MARKET_CLOSED',
               'วันอาทิตย์ตลาดปิด',
-              'HIGH_SPREAD',
+              'SPREAD_OK',
               'SPREAD_OK'
             ];
             for (const k of Object.keys(o)) {
@@ -5187,7 +5187,7 @@
     window.syncSmoothBoardAndLimits = function() {
       if (typeof liveModel !== 'undefined' && liveModel && typeof liveModel === 'object') {
         const pr = String(liveModel.pauseReason || liveModel.pause_reason || '');
-        if (!pr || /HIGH_SPREAD|SPREAD_OK|WEEKEND|ตลาดทองคำเปิดทำการปกติ/.test(pr)) {
+        if (!pr || /SPREAD_OK|SPREAD_OK|WEEKEND|ตลาดทองคำเปิดทำการปกติ/.test(pr)) {
           liveModel.pauseReason = '';
           liveModel.pause_reason = '';
           liveModel.isPaused = false;
@@ -5198,7 +5198,7 @@
       document.querySelectorAll('.card span, .card div').forEach(el => {
         if (el.children.length === 0) {
           const txt = (el.textContent || '').trim();
-          if (txt.includes('HIGH_SPREAD') || txt.includes('SPREAD_OK')) {
+          if (txt.includes('SPREAD_OK') || txt.includes('SPREAD_OK')) {
             el.textContent = '🟢 ACTIVE / READY (ไม่จำกัดสเปรด)';
             el.className = 'inline-block px-2.5 py-0.5 rounded text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60';
           } else if (txt === 'ตลาดทองคำเปิดทำการปกติ (Bangkok UTC+7)' || txt === 'ตลาดทองคำเปิดทำการปกติ') {
