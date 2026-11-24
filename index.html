@@ -693,8 +693,8 @@
       </section>
 
       <!-- Bottom Grid -->
-      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-7 space-y-6">
+      <section class="space-y-6">
+        <div class="space-y-6">
           <div class="card p-5 border-amber-500/30">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-gray-800 pb-3">
               <div>
@@ -774,9 +774,9 @@
           </div>
         </div>
 
-        <div class="lg:col-span-5 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <!-- 24H DAILY VOLUME PROFILE -->
-          <div class="card p-5 border-blue-500/40">
+          <div class="card p-5 border-blue-500/40 lg:col-span-5">
             <div class="flex items-center justify-between mb-3">
               <div>
                 <h2 class="text-base font-bold text-white">24H Daily Volume Profile (Global Spot)</h2>
@@ -792,7 +792,7 @@
             <div class="h-[230px]"><canvas id="vpChart"></canvas></div>
           </div>
 
-          <div class="card p-5">
+          <div class="card p-5 lg:col-span-7">
             <div class="flex items-center justify-between mb-3">
               <h2 class="text-sm font-bold text-white">ตัวอย่างสัญญาณ Backtest ล่าสุด (ไม่ปนเข้าพอร์ตจริง)</h2>
               <span class="text-xs text-emerald-400">Read-Only Reference</span>
@@ -2736,11 +2736,11 @@
       if (arch.length > 0) {
         if (ledgerBodyEl) ledgerBodyEl.innerHTML = arch.slice(0, 15).map(x => `
           <tr>
-            <td class="py-1.5 pr-2 text-gray-400">${x.dateStr}</td>
+            <td class="py-1.5 pr-2 text-gray-400 whitespace-nowrap">${x.dateStr}</td>
             <td class="py-1.5 pr-2 text-purple-300">${x.shape}</td>
-            <td class="py-1.5 pr-2 font-bold ${x.dir === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${x.dir} (${(x.lot || 0.01).toFixed(2)})</td>
-            <td class="py-1.5 pr-2 text-right text-white">$${x.entry} → $${x.exit}</td>
-            <td class="py-1.5 pr-2 text-right font-bold ${x.pnlUsd >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${x.pnlUsd >= 0 ? '+' : ''}$${x.pnlUsd.toFixed(2)} (${x.pnlR}R)</td>
+            <td class="py-1.5 pr-2 font-bold whitespace-nowrap ${x.dir === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}">${x.dir} (${(x.lot || 0.01).toFixed(2)})</td>
+            <td class="py-1.5 pr-2 text-right text-white whitespace-nowrap">$${x.entry} → $${x.exit}</td>
+            <td class="py-1.5 pr-2 text-right font-bold whitespace-nowrap ${x.pnlUsd >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${x.pnlUsd >= 0 ? '+' : ''}$${x.pnlUsd.toFixed(2)} (${x.pnlR}R)</td>
             <td class="py-1.5 text-gray-300">${x.lesson}</td>
           </tr>`).join('');
       } else {
@@ -3748,9 +3748,9 @@
           const passed = r.oosWr >= 50 && r.netR > 0 && r.oosNetR > 0;
           return `
           <tr class="hover:bg-gray-800/40 text-gray-300">
-            <td class="py-1.5 pr-2 font-bold ${passed ? 'text-emerald-300' : 'text-amber-300'}">${r.revMode} ${passed ? '✅' : '🔒'}</td>
-            <td class="py-1.5 pr-2 text-gray-400">${r.filterMode}</td>
-            <td class="py-1.5 pr-2">${r.slMult}x / 1:${r.rr} / ${r.beRule}</td>
+            <td class="py-1.5 pr-2 font-bold whitespace-nowrap ${passed ? 'text-emerald-300' : 'text-amber-300'}">${r.revMode} ${passed ? '✅' : '🔒'}</td>
+            <td class="py-1.5 pr-2 text-gray-400 whitespace-nowrap">${r.filterMode}</td>
+            <td class="py-1.5 pr-2 whitespace-nowrap">${r.slMult}x / 1:${r.rr} / ${r.beRule}</td>
             <td class="py-1.5 pr-2 text-right">${r.trades}</td>
             <td class="py-1.5 pr-2 text-right text-cyan-400 font-bold">${r.wr}%</td>
             <td class="py-1.5 pr-2 text-right ${r.oosWr >= 50 ? 'text-emerald-400' : 'text-rose-400'} font-bold">${r.oosWr}%</td>
@@ -3769,9 +3769,9 @@
 
         const vaPosLabel = spotMid > vp24h.vah ? "ราคาอยู่เหนือ 24H VAH (โซนบน)" : (spotMid < vp24h.val ? "ราคาอยู่ใต้ 24H VAL (โซนล่าง)" : "ราคาวิ่งในกรอบ 24H Value Area");
         document.getElementById('vp24-status-sub').textContent = `กรอบ 24 ชม. ล่าสุด — ${vaPosLabel}`;
-        document.getElementById('vp-vah').textContent = `$${vp24h.vah}`;
-        document.getElementById('vp-poc').textContent = `$${vp24h.poc}`;
-        document.getElementById('vp-val').textContent = `$${vp24h.val}`;
+        document.getElementById('vp-vah').textContent = `$${Number(vp24h.vah).toFixed(2)}`;
+        document.getElementById('vp-poc').textContent = `$${Number(vp24h.poc).toFixed(2)}`;
+        document.getElementById('vp-val').textContent = `$${Number(vp24h.val).toFixed(2)}`;
         if (!liteAlertMode) renderVolumeProfileChart(vp24h);
         recalcPropMath();
 
