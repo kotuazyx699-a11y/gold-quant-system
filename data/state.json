@@ -1,27 +1,17 @@
 {
   "version": "14.1",
-  "updated_at": "2026-11-24T10:31:36.362142+07:00",
+  "updated_at": "2026-11-24T22:45:19.876670+07:00",
   "order_flow": {
     "source": "Binance XAUUSDT Perp L2",
-    "mid_price": 3638.41,
-    "obi_25bps": 0.185,
-    "bid_liq_total": 66.66,
-    "ask_liq_total": 45.82,
-    "bid_walls": [
-      {
-        "price": 3638.41,
-        "size": 45.37
-      }
-    ],
-    "ask_walls": [
-      {
-        "price": 3638.42,
-        "size": 21.18
-      }
-    ],
-    "tick_cvd": -57.43,
-    "absorption_flag": "BID_DOMINANCE",
-    "open_interest": 102103.08,
+    "mid_price": 3585.44,
+    "obi_25bps": 0.0,
+    "bid_liq_total": 0.0,
+    "ask_liq_total": 0.0,
+    "bid_walls": [],
+    "ask_walls": [],
+    "tick_cvd": 0.0,
+    "absorption_flag": "NEUTRAL_FLOW",
+    "open_interest": 0.0,
     "funding_rate_pct": 0.0,
     "of_regime": "TWO_WAY_ROTATION"
   },
@@ -37,7 +27,7 @@
     "sc_tp_pts": 1125,
     "sc_lot": 0.01,
     "tr_lot": 0.01,
-    "spread_usd": 0.67,
+    "spread_usd": 0.66,
     "weekend_closed": false,
     "daily_net_r": 0.0,
     "daily_loss_pause": false,
@@ -46,215 +36,215 @@
     "news_pause": false,
     "spread_pause": false,
     "can_scalp": true,
-    "can_trend": false,
+    "can_trend": true,
     "status": "ACTIVE_READY"
   },
   "mue_evolution": {
-    "generation": 7,
-    "last_evolved_at": "2026-11-24 10:32:17",
+    "generation": 8,
+    "last_evolved_at": "2026-11-24 22:45:36",
     "genes": {
       "D_SHAPED": {
         "mode": "POC_PULLBACK",
-        "sl_points": 648,
-        "tp_points": 750,
-        "tol_points": 150,
-        "obi_min": 0.18,
-        "generation": 4,
-        "fitness": 0.99,
-        "rule_th": "MUE-X Gen#4: POC_PULLBACK | Dynamic ATR SL (~648 จุด) / TP >= 750 จุด (±150 จุด + OBI >= 0.18)"
-      },
-      "B_SHAPED": {
-        "mode": "VALLEY_MIGRATION",
-        "sl_points": 654,
-        "tp_points": 550,
-        "tol_points": 150,
-        "obi_min": 0.18,
-        "generation": 2,
-        "fitness": 0.21,
-        "rule_th": "MUE-X Gen#2: VALLEY_MIGRATION | Dynamic ATR SL (~654 จุด) / TP >= 550 จุด (±150 จุด + OBI >= 0.18)"
-      },
-      "P_SHAPED": {
-        "mode": "POC_PULLBACK",
-        "sl_points": 611,
+        "sl_points": 691,
         "tp_points": 750,
         "tol_points": 220,
         "obi_min": 0.18,
-        "generation": 2,
-        "fitness": 0.47,
-        "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~611 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
+        "generation": 5,
+        "fitness": 0.54,
+        "rule_th": "MUE-X Gen#5: POC_PULLBACK | Dynamic ATR SL (~691 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
       },
-      "DOUBLE_ZONE": {
+      "B_SHAPED": {
         "mode": "POC_PULLBACK",
-        "sl_points": 673,
+        "sl_points": 686,
+        "tp_points": 550,
+        "tol_points": 150,
+        "obi_min": 0.18,
+        "generation": 3,
+        "fitness": 0.2,
+        "rule_th": "MUE-X Gen#3: POC_PULLBACK | Dynamic ATR SL (~686 จุด) / TP >= 550 จุด (±150 จุด + OBI >= 0.18)"
+      },
+      "P_SHAPED": {
+        "mode": "POC_PULLBACK",
+        "sl_points": 668,
         "tp_points": 750,
         "tol_points": 220,
         "obi_min": 0.18,
         "generation": 2,
         "fitness": 0.55,
-        "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~673 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
+        "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~668 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
+      },
+      "DOUBLE_ZONE": {
+        "mode": "POC_PULLBACK",
+        "sl_points": 690,
+        "tp_points": 750,
+        "tol_points": 220,
+        "obi_min": 0.18,
+        "generation": 2,
+        "fitness": 0.43,
+        "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~690 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
       }
     }
   },
   "quant": {
-    "spot_price": 3631.74,
-    "bid": 3631.41,
-    "ask": 3632.08,
+    "spot_price": 3585.44,
+    "bid": 3585.11,
+    "ask": 3585.77,
     "feed_source": "Swissquote XAU/USD Spot",
-    "dxy_price": 104.26,
-    "us10y_yield": 4.92,
-    "corr_gold_dxy_20d": -0.84,
+    "dxy_price": 103.83,
+    "us10y_yield": 4.9,
+    "corr_gold_dxy_20d": -0.85,
     "data_audit": {
-      "total_bars": 4783,
-      "vault_days": 49.8
+      "total_bars": 4832,
+      "vault_days": 50.3
     },
     "technicals": {
-      "adx14": 25.4,
-      "rsi14": 51.2,
-      "atr14": 13.81,
-      "ema21": 3644.31,
-      "h1_ema200": 3764.02,
-      "pdh": 3627.55,
-      "pdl": 3500.84
+      "adx14": 17.6,
+      "rsi14": 35.5,
+      "atr14": 12.86,
+      "ema21": 3609.96,
+      "h1_ema200": 3742.62,
+      "pdh": 3684.04,
+      "pdl": 3495.94
     },
     "setup": {
       "active_factor": "EMA21_RETEST",
-      "regime": "BEARISH TREND (ADX 25.4 | RSI 51.2)",
+      "regime": "BEARISH TREND (ADX 17.6 | RSI 35.5)",
       "direction": "SHORT",
-      "bias": "ANTI-CHASE RETEST SHORT (รอเด้งชน $3644.31)",
-      "entry": 3644.31,
-      "sl": 3669.17,
-      "be_target": 3619.45,
-      "tp": 3589.62,
-      "sl_dist": 24.86,
-      "tp_dist": 54.69,
+      "bias": "ANTI-CHASE RETEST SHORT (รอเด้งชน $3609.96)",
+      "entry": 3609.96,
+      "sl": 3633.11,
+      "be_target": 3586.81,
+      "tp": 3559.03,
+      "sl_dist": 23.15,
+      "tp_dist": 50.93,
       "rr": 2.2,
       "has_edge": true,
-      "in_killzone": false,
-      "session_name": "NO TRADE ZONE (รอ 13:00 น.)",
+      "in_killzone": true,
+      "session_name": "ACTIVE SESSION",
       "lot_size": 0.01,
       "risk_usd": 10.0
     }
   },
   "macro": {
-    "dxy": 104.26,
-    "us10y": 4.92,
-    "gold_dxy_corr": -0.84
+    "dxy": 103.83,
+    "us10y": 4.9,
+    "gold_dxy_corr": -0.85
   },
   "scalp": {
     "anatomy": {
-      "shape": "DOUBLE_ZONE",
-      "title_th": "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)",
-      "desc_th": "Session VP 8 ชม. เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — ใช้ OrderFlow ยืนยันจังหวะเด้งหรือทะลุโซน",
-      "poc": 3638.93,
-      "vah": 3662.74,
-      "val": 3638.93,
-      "poc_pos_pct": 38.6,
-      "lower_peak": 3636.29,
-      "upper_peak": 3649.51,
-      "valley": 3644.22,
+      "shape": "D_SHAPED",
+      "title_th": "① D-SHAPED (สมดุลตัว D / Balanced Auction)",
+      "desc_th": "โวลุ่มสมดุลกลางกรอบ Session ปัจจุบัน (POC Pos 36–64%) ดักเด้งขอบ VAH/VAL เมื่อ OBI ยืนยัน",
+      "poc": 3614.34,
+      "vah": 3623.85,
+      "val": 3608.01,
+      "poc_pos_pct": 56.8,
+      "lower_peak": 3608.01,
+      "upper_peak": 3623.85,
+      "valley": null,
       "histogram": [
         {
-          "price": 3617.77,
+          "price": 3576.32,
           "volume": 0
         },
         {
-          "price": 3620.41,
+          "price": 3579.49,
           "volume": 0
         },
         {
-          "price": 3623.06,
+          "price": 3582.66,
           "volume": 0
         },
         {
-          "price": 3625.7,
-          "volume": 1066
+          "price": 3585.83,
+          "volume": 10323
         },
         {
-          "price": 3628.35,
-          "volume": 840
-        },
-        {
-          "price": 3630.99,
-          "volume": 6764
-        },
-        {
-          "price": 3633.64,
-          "volume": 4166
-        },
-        {
-          "price": 3636.29,
+          "price": 3589.0,
           "volume": 0
         },
         {
-          "price": 3638.93,
-          "volume": 9355
-        },
-        {
-          "price": 3641.58,
-          "volume": 2147
-        },
-        {
-          "price": 3644.22,
+          "price": 3592.17,
           "volume": 0
         },
         {
-          "price": 3646.87,
-          "volume": 4063
-        },
-        {
-          "price": 3649.51,
-          "volume": 7175
-        },
-        {
-          "price": 3652.16,
-          "volume": 5217
-        },
-        {
-          "price": 3654.8,
+          "price": 3595.33,
           "volume": 0
         },
         {
-          "price": 3657.45,
-          "volume": 2800
-        },
-        {
-          "price": 3660.09,
-          "volume": 2334
-        },
-        {
-          "price": 3662.74,
-          "volume": 3618
-        },
-        {
-          "price": 3665.39,
+          "price": 3598.5,
           "volume": 0
         },
         {
-          "price": 3668.03,
-          "volume": 2079
+          "price": 3601.67,
+          "volume": 5887
         },
         {
-          "price": 3670.68,
+          "price": 3604.84,
+          "volume": 2412
+        },
+        {
+          "price": 3608.01,
+          "volume": 8941
+        },
+        {
+          "price": 3611.17,
+          "volume": 10565
+        },
+        {
+          "price": 3614.34,
+          "volume": 18159
+        },
+        {
+          "price": 3617.51,
+          "volume": 17069
+        },
+        {
+          "price": 3620.68,
+          "volume": 10973
+        },
+        {
+          "price": 3623.85,
+          "volume": 11377
+        },
+        {
+          "price": 3627.02,
+          "volume": 1387
+        },
+        {
+          "price": 3630.18,
+          "volume": 3190
+        },
+        {
+          "price": 3633.35,
           "volume": 0
         },
         {
-          "price": 3673.32,
+          "price": 3636.52,
+          "volume": 4666
+        },
+        {
+          "price": 3639.69,
+          "volume": 0
+        },
+        {
+          "price": 3642.86,
           "volume": 0
         }
       ],
-      "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~673 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
+      "rule_th": "MUE-X Gen#5: POC_PULLBACK | Dynamic ATR SL (~691 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
     },
     "setup": {
-      "shape": "DOUBLE_ZONE",
+      "shape": "D_SHAPED",
       "mode": "POC_PULLBACK",
-      "generation": 2,
+      "generation": 5,
       "shape_active": true,
       "direction": "SHORT",
-      "bias": "DOUBLE_ZONE POC PULLBACK SELL (รอเด้งชน Session POC $3638.93 + OBI)",
-      "entry": 3638.93,
-      "sl": 3647.93,
-      "be_target": 3634.43,
-      "tp": 3627.68,
+      "bias": "D_SHAPED POC PULLBACK SELL (รอเด้งชน Session POC $3614.34 + OBI)",
+      "entry": 3614.34,
+      "sl": 3623.34,
+      "be_target": 3609.84,
+      "tp": 3603.09,
       "sl_points": 900,
       "be_points": 450,
       "tp_points": 1125,
@@ -262,192 +252,192 @@
       "sl_usd": 9.0,
       "tp_usd": 11.25,
       "rr": 1.25,
-      "dist_usd": 7.19,
-      "dist_points": 719,
+      "dist_usd": 28.9,
+      "dist_points": 2890,
       "lot_size": 0.01,
       "risk_usd": 10.0,
-      "obi": 0.185,
+      "obi": 0.0,
       "obi_req": 0.18
     },
     "backtest": {
-      "trades": 89,
-      "win_rate": 48.4,
-      "net_r": 4.74,
-      "expectancy_r": 0.05,
-      "max_dd_r": 5.0,
-      "sharpe": 0.58,
-      "sortino": 0.81,
-      "oos_trades": 30,
-      "oos_win_rate": 43.8,
-      "oos_r_pf": 1.0,
+      "trades": 94,
+      "win_rate": 42.4,
+      "net_r": -0.44,
+      "expectancy_r": -0.0,
+      "max_dd_r": 5.83,
+      "sharpe": -0.05,
+      "sortino": -0.07,
+      "oos_trades": 32,
+      "oos_win_rate": 37.5,
+      "oos_r_pf": 0.75,
       "equity_curve_r": [
-        1.51,
-        1.51,
-        1.51,
-        1.51,
-        1.51,
-        1.51,
-        0.51,
-        1.82,
-        1.82,
-        1.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        0.82,
-        2.07,
-        2.07,
-        3.32,
-        3.32,
-        3.32,
-        3.32,
-        3.32,
-        4.73,
-        3.73,
-        2.73,
-        2.73,
-        2.73,
-        2.73,
-        1.73,
-        1.73,
-        0.73,
-        0.73,
-        -0.27,
-        -0.27,
-        0.98,
-        0.98,
-        2.23,
-        2.23,
-        2.23,
-        2.23,
-        1.23,
-        2.48,
-        2.48,
-        1.48,
-        2.97,
-        4.24,
-        5.49,
-        5.49,
-        4.49,
-        3.49,
-        3.49,
-        4.74,
-        4.74
+        -1.88,
+        -0.18,
+        -0.18,
+        -1.18,
+        -1.18,
+        -1.18,
+        -1.18,
+        -1.18,
+        -1.18,
+        0.13,
+        0.13,
+        0.13,
+        -0.87,
+        -0.87,
+        -1.87,
+        -1.87,
+        -1.87,
+        -1.87,
+        -1.87,
+        -1.87,
+        -0.62,
+        -0.62,
+        0.63,
+        0.63,
+        0.63,
+        0.63,
+        0.63,
+        2.04,
+        1.04,
+        0.04,
+        0.04,
+        0.04,
+        0.04,
+        -0.96,
+        -0.96,
+        -1.96,
+        -1.96,
+        -2.96,
+        -2.96,
+        -1.71,
+        -1.71,
+        -0.46,
+        -0.46,
+        -0.46,
+        -0.46,
+        -1.46,
+        -0.21,
+        -0.21,
+        -1.21,
+        -1.21,
+        -1.21,
+        0.06,
+        1.31,
+        1.31,
+        0.31,
+        -0.69,
+        -0.69,
+        0.56,
+        0.56,
+        -0.44
       ],
       "anatomy_breakdown": [
         {
           "shape": "D_SHAPED",
           "mode": "POC_PULLBACK",
-          "generation": 4,
-          "sl_points": 648,
+          "generation": 5,
+          "sl_points": 691,
           "tp_points": 750,
-          "tol_points": 150,
-          "trades": 10,
-          "win_rate": 100.0,
-          "r_pf": 2.84,
-          "net_r": 1.42,
-          "fitness": 0.99,
+          "tol_points": 220,
+          "trades": 20,
+          "win_rate": 50.0,
+          "r_pf": 1.44,
+          "net_r": 0.87,
+          "fitness": 0.54,
           "enabled": true
         },
         {
           "shape": "B_SHAPED",
-          "mode": "VALLEY_MIGRATION",
-          "generation": 2,
-          "sl_points": 654,
+          "mode": "POC_PULLBACK",
+          "generation": 3,
+          "sl_points": 686,
           "tp_points": 550,
           "tol_points": 150,
-          "trades": 13,
-          "win_rate": 25.0,
-          "r_pf": 0.42,
-          "net_r": -1.75,
-          "fitness": 0.21,
+          "trades": 15,
+          "win_rate": 20.0,
+          "r_pf": 0.31,
+          "net_r": -2.75,
+          "fitness": 0.2,
           "enabled": true
         },
         {
           "shape": "P_SHAPED",
           "mode": "POC_PULLBACK",
           "generation": 2,
-          "sl_points": 611,
+          "sl_points": 668,
           "tp_points": 750,
           "tol_points": 220,
-          "trades": 18,
-          "win_rate": 42.9,
-          "r_pf": 1.29,
-          "net_r": 1.15,
-          "fitness": 0.47,
+          "trades": 13,
+          "win_rate": 50.0,
+          "r_pf": 1.5,
+          "net_r": 1.01,
+          "fitness": 0.55,
           "enabled": true
         },
         {
           "shape": "DOUBLE_ZONE",
           "mode": "POC_PULLBACK",
           "generation": 2,
-          "sl_points": 673,
+          "sl_points": 690,
           "tp_points": 750,
           "tol_points": 220,
-          "trades": 48,
-          "win_rate": 52.6,
-          "r_pf": 1.44,
-          "net_r": 3.92,
-          "fitness": 0.55,
+          "trades": 46,
+          "win_rate": 45.0,
+          "r_pf": 1.04,
+          "net_r": 0.43,
+          "fitness": 0.43,
           "enabled": true
         }
       ],
       "top_5": [
         {
-          "shape": "DOUBLE_ZONE",
-          "mode": "POC_PULLBACK",
-          "tp_points": 750,
-          "tol_points": 220,
-          "wick_mode": "OBI>=0.18 (3s)",
-          "trades": 48,
-          "win_rate": 52.6,
-          "r_profit_factor": 1.44,
-          "oos_r_pf": 1.27,
-          "net_r": 3.92
-        },
-        {
-          "shape": "D_SHAPED",
-          "mode": "POC_PULLBACK",
-          "tp_points": 750,
-          "tol_points": 150,
-          "wick_mode": "OBI>=0.18 (3s)",
-          "trades": 10,
-          "win_rate": 100.0,
-          "r_profit_factor": 2.84,
-          "oos_r_pf": 2.5,
-          "net_r": 1.42
-        },
-        {
           "shape": "P_SHAPED",
           "mode": "POC_PULLBACK",
           "tp_points": 750,
           "tol_points": 220,
           "wick_mode": "OBI>=0.18 (3s)",
-          "trades": 18,
-          "win_rate": 42.9,
-          "r_profit_factor": 1.29,
-          "oos_r_pf": 1.14,
-          "net_r": 1.15
+          "trades": 13,
+          "win_rate": 50.0,
+          "r_profit_factor": 1.5,
+          "oos_r_pf": 1.32,
+          "net_r": 1.01
+        },
+        {
+          "shape": "D_SHAPED",
+          "mode": "POC_PULLBACK",
+          "tp_points": 750,
+          "tol_points": 220,
+          "wick_mode": "OBI>=0.18 (3s)",
+          "trades": 20,
+          "win_rate": 50.0,
+          "r_profit_factor": 1.44,
+          "oos_r_pf": 1.27,
+          "net_r": 0.87
+        },
+        {
+          "shape": "DOUBLE_ZONE",
+          "mode": "POC_PULLBACK",
+          "tp_points": 750,
+          "tol_points": 220,
+          "wick_mode": "OBI>=0.18 (3s)",
+          "trades": 46,
+          "win_rate": 45.0,
+          "r_profit_factor": 1.04,
+          "oos_r_pf": 0.95,
+          "net_r": 0.43
         },
         {
           "shape": "B_SHAPED",
-          "mode": "VALLEY_MIGRATION",
+          "mode": "POC_PULLBACK",
           "tp_points": 550,
           "tol_points": 150,
           "wick_mode": "OBI>=0.18 (3s)",
-          "trades": 13,
-          "win_rate": 25.0,
-          "r_profit_factor": 0.42,
+          "trades": 15,
+          "win_rate": 20.0,
+          "r_profit_factor": 0.31,
           "oos_r_pf": 0.95,
-          "net_r": -1.75
+          "net_r": -2.75
         }
       ],
       "recent_sim_trades": [
@@ -457,8 +447,8 @@
           "side": "SHORT",
           "entry_time": "30/10 15:00",
           "exit_time": "30/10 15:30",
-          "entry": 3917.8,
-          "exit": 3906.55,
+          "entry": 3912.89,
+          "exit": 3901.64,
           "r": 1.25,
           "pnl": 12.5
         },
@@ -466,21 +456,43 @@
           "engine": "SCALP",
           "shape": "DOUBLE_ZONE (POC_PU)",
           "side": "SHORT",
-          "entry_time": "30/10 10:30",
+          "entry_time": "30/10 10:45",
           "exit_time": "30/10 11:00",
-          "entry": 3990.08,
-          "exit": 3990.08,
+          "entry": 3985.18,
+          "exit": 3985.18,
           "r": 0.0,
           "pnl": 0.0
         },
         {
           "engine": "SCALP",
-          "shape": "B_SHAPED (VALLEY)",
+          "shape": "B_SHAPED (POC_PU)",
           "side": "SHORT",
-          "entry_time": "30/10 10:00",
-          "exit_time": "30/10 11:15",
-          "entry": 3990.94,
-          "exit": 3981.87,
+          "entry_time": "30/10 10:15",
+          "exit_time": "30/10 11:00",
+          "entry": 3983.99,
+          "exit": 3983.99,
+          "r": 0.0,
+          "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "B_SHAPED (POC_PU)",
+          "side": "SHORT",
+          "entry_time": "30/10 05:30",
+          "exit_time": "30/10 05:45",
+          "entry": 4004.15,
+          "exit": 4004.15,
+          "r": 0.0,
+          "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "B_SHAPED (POC_PU)",
+          "side": "SHORT",
+          "entry_time": "30/10 03:15",
+          "exit_time": "30/10 03:45",
+          "entry": 4005.26,
+          "exit": 3994.6,
           "r": 1.25,
           "pnl": 12.5
         },
@@ -490,8 +502,8 @@
           "side": "SHORT",
           "entry_time": "30/10 00:30",
           "exit_time": "30/10 00:45",
-          "entry": 4025.57,
-          "exit": 4025.57,
+          "entry": 4020.67,
+          "exit": 4020.67,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -501,8 +513,8 @@
           "side": "LONG",
           "entry_time": "29/10 20:00",
           "exit_time": "29/10 20:30",
-          "entry": 4035.18,
-          "exit": 4035.18,
+          "entry": 4030.28,
+          "exit": 4030.28,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -510,12 +522,56 @@
           "engine": "SCALP",
           "shape": "D_SHAPED (POC_PU)",
           "side": "SHORT",
-          "entry_time": "29/10 14:45",
+          "entry_time": "29/10 15:00",
           "exit_time": "29/10 15:30",
-          "entry": 4035.19,
-          "exit": 4035.19,
+          "entry": 4030.28,
+          "exit": 4030.28,
           "r": 0.0,
           "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "D_SHAPED (POC_PU)",
+          "side": "SHORT",
+          "entry_time": "29/10 13:45",
+          "exit_time": "29/10 14:00",
+          "entry": 4030.28,
+          "exit": 4030.28,
+          "r": 0.0,
+          "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "D_SHAPED (POC_PU)",
+          "side": "SHORT",
+          "entry_time": "29/10 13:00",
+          "exit_time": "29/10 13:15",
+          "entry": 4031.67,
+          "exit": 4031.67,
+          "r": 0.0,
+          "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "D_SHAPED (POC_PU)",
+          "side": "SHORT",
+          "entry_time": "29/10 12:15",
+          "exit_time": "29/10 12:30",
+          "entry": 4031.67,
+          "exit": 4031.67,
+          "r": 0.0,
+          "pnl": 0.0
+        },
+        {
+          "engine": "SCALP",
+          "shape": "B_SHAPED (POC_PU)",
+          "side": "SHORT",
+          "entry_time": "29/10 10:30",
+          "exit_time": "29/10 11:00",
+          "entry": 4031.45,
+          "exit": 4038.51,
+          "r": -1.0,
+          "pnl": -10.0
         },
         {
           "engine": "SCALP",
@@ -523,30 +579,30 @@
           "side": "SHORT",
           "entry_time": "29/10 09:00",
           "exit_time": "29/10 09:30",
-          "entry": 4037.09,
-          "exit": 4037.09,
+          "entry": 4032.19,
+          "exit": 4032.19,
           "r": 0.0,
           "pnl": 0.0
         },
         {
           "engine": "SCALP",
-          "shape": "B_SHAPED (VALLEY)",
+          "shape": "B_SHAPED (POC_PU)",
           "side": "SHORT",
           "entry_time": "29/10 03:30",
-          "exit_time": "29/10 03:45",
-          "entry": 4053.24,
-          "exit": 4053.24,
+          "exit_time": "29/10 05:00",
+          "entry": 4049.54,
+          "exit": 4049.54,
           "r": 0.0,
           "pnl": 0.0
         },
         {
           "engine": "SCALP",
-          "shape": "B_SHAPED (VALLEY)",
+          "shape": "B_SHAPED (POC_PU)",
           "side": "SHORT",
           "entry_time": "29/10 02:15",
           "exit_time": "29/10 02:30",
-          "entry": 4055.55,
-          "exit": 4055.55,
+          "entry": 4049.54,
+          "exit": 4049.54,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -556,74 +612,8 @@
           "side": "SHORT",
           "entry_time": "28/10 17:45",
           "exit_time": "28/10 18:00",
-          "entry": 4050.21,
-          "exit": 4050.21,
-          "r": 0.0,
-          "pnl": 0.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "P_SHAPED (POC_PU)",
-          "side": "SHORT",
-          "entry_time": "28/10 14:00",
-          "exit_time": "28/10 14:15",
-          "entry": 4060.92,
-          "exit": 4053.42,
-          "r": 1.7,
-          "pnl": 17.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "P_SHAPED (POC_PU)",
-          "side": "LONG",
-          "entry_time": "28/10 13:15",
-          "exit_time": "28/10 13:30",
-          "entry": 4065.92,
-          "exit": 4061.52,
-          "r": -1.0,
-          "pnl": -10.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "DOUBLE_ZONE (POC_PU)",
-          "side": "LONG",
-          "entry_time": "28/10 11:15",
-          "exit_time": "28/10 11:45",
-          "entry": 4057.82,
-          "exit": 4057.82,
-          "r": 0.0,
-          "pnl": 0.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "DOUBLE_ZONE (POC_PU)",
-          "side": "LONG",
-          "entry_time": "28/10 10:00",
-          "exit_time": "28/10 10:15",
-          "entry": 4059.37,
-          "exit": 4059.37,
-          "r": 0.0,
-          "pnl": 0.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "DOUBLE_ZONE (POC_PU)",
-          "side": "SHORT",
-          "entry_time": "28/10 06:45",
-          "exit_time": "28/10 07:00",
-          "entry": 4042.27,
-          "exit": 4042.27,
-          "r": 0.0,
-          "pnl": 0.0
-        },
-        {
-          "engine": "SCALP",
-          "shape": "B_SHAPED (VALLEY)",
-          "side": "SHORT",
-          "entry_time": "28/10 01:15",
-          "exit_time": "28/10 01:30",
-          "entry": 4070.55,
-          "exit": 4070.55,
+          "entry": 4045.31,
+          "exit": 4045.31,
           "r": 0.0,
           "pnl": 0.0
         }
@@ -634,141 +624,141 @@
     "shape": "DOUBLE_ZONE",
     "title_th": "④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)",
     "desc_th": "Session VP 8 ชม. เกิด 2 ยอดโวลุ่มคั่นด้วย Valley — ใช้ OrderFlow ยืนยันจังหวะเด้งหรือทะลุโซน",
-    "poc": 3665.84,
-    "vah": 3751.39,
-    "val": 3519.18,
-    "poc_pos_pct": 42.2,
-    "lower_peak": 3555.84,
-    "upper_peak": 3665.84,
-    "valley": 3592.51,
+    "poc": 3612.05,
+    "vah": 3722.04,
+    "val": 3514.27,
+    "poc_pos_pct": 29.7,
+    "lower_peak": 3550.94,
+    "upper_peak": 3612.05,
+    "valley": 3587.6,
     "histogram": [
       {
-        "price": 3506.96,
-        "volume": 7002
+        "price": 3502.05,
+        "volume": 7006
       },
       {
-        "price": 3519.18,
-        "volume": 56559
+        "price": 3514.27,
+        "volume": 56556
       },
       {
-        "price": 3531.4,
-        "volume": 22914
+        "price": 3526.49,
+        "volume": 22913
       },
       {
-        "price": 3543.62,
-        "volume": 65123
+        "price": 3538.72,
+        "volume": 65128
       },
       {
-        "price": 3555.84,
-        "volume": 43993
+        "price": 3550.94,
+        "volume": 43991
       },
       {
-        "price": 3568.07,
-        "volume": 71664
+        "price": 3563.16,
+        "volume": 71655
       },
       {
-        "price": 3580.29,
-        "volume": 37170
+        "price": 3575.38,
+        "volume": 37178
       },
       {
-        "price": 3592.51,
-        "volume": 22309
+        "price": 3587.6,
+        "volume": 32631
       },
       {
-        "price": 3604.73,
-        "volume": 37115
+        "price": 3599.83,
+        "volume": 43126
       },
       {
-        "price": 3616.95,
-        "volume": 63094
+        "price": 3612.05,
+        "volume": 125615
       },
       {
-        "price": 3629.17,
-        "volume": 29608
+        "price": 3624.27,
+        "volume": 74809
       },
       {
-        "price": 3641.4,
-        "volume": 32779
+        "price": 3636.49,
+        "volume": 37456
       },
       {
-        "price": 3653.62,
-        "volume": 44173
+        "price": 3648.71,
+        "volume": 44166
       },
       {
-        "price": 3665.84,
-        "volume": 84543
+        "price": 3660.94,
+        "volume": 84538
       },
       {
-        "price": 3678.06,
-        "volume": 48799
+        "price": 3673.16,
+        "volume": 48720
       },
       {
-        "price": 3690.28,
-        "volume": 24694
+        "price": 3685.38,
+        "volume": 24776
       },
       {
-        "price": 3702.51,
-        "volume": 20293
+        "price": 3697.6,
+        "volume": 20290
       },
       {
-        "price": 3714.73,
-        "volume": 33117
+        "price": 3709.82,
+        "volume": 33119
       },
       {
-        "price": 3726.95,
-        "volume": 38359
+        "price": 3722.04,
+        "volume": 38362
       },
       {
-        "price": 3739.17,
-        "volume": 59133
+        "price": 3734.27,
+        "volume": 59130
       },
       {
-        "price": 3751.39,
-        "volume": 40557
+        "price": 3746.49,
+        "volume": 40556
       },
       {
-        "price": 3763.62,
-        "volume": 43750
+        "price": 3758.71,
+        "volume": 43747
       },
       {
-        "price": 3775.84,
-        "volume": 53695
+        "price": 3770.93,
+        "volume": 53683
       },
       {
-        "price": 3788.06,
-        "volume": 22440
+        "price": 3783.15,
+        "volume": 22457
       },
       {
-        "price": 3800.28,
-        "volume": 14627
+        "price": 3795.38,
+        "volume": 14626
       },
       {
-        "price": 3812.5,
-        "volume": 9892
+        "price": 3807.6,
+        "volume": 9899
       },
       {
-        "price": 3824.72,
-        "volume": 9417
+        "price": 3819.82,
+        "volume": 9410
       },
       {
-        "price": 3836.95,
+        "price": 3832.04,
         "volume": 3835
       },
       {
-        "price": 3849.17,
-        "volume": 30461
+        "price": 3844.26,
+        "volume": 26889
       },
       {
-        "price": 3861.39,
-        "volume": 82805
+        "price": 3856.49,
+        "volume": 56325
       },
       {
-        "price": 3873.61,
-        "volume": 30119
+        "price": 3868.71,
+        "volume": 14178
       },
       {
-        "price": 3885.83,
-        "volume": 18868
+        "price": 3880.93,
+        "volume": 15736
       }
     ]
   },
@@ -777,92 +767,90 @@
       "atr_sl_mult": 1.8,
       "rr_mult": 2.2,
       "adx_thresh": 24,
-      "trades": 66,
-      "win_rate": 44.2,
-      "r_profit_factor": 1.74,
-      "sharpe": 1.39,
-      "sortino": 1.88,
-      "calmar": 3.18,
-      "net_r": 17.8,
-      "max_dd_r": 5.6,
+      "trades": 64,
+      "win_rate": 45.5,
+      "r_profit_factor": 1.83,
+      "sharpe": 1.57,
+      "sortino": 2.12,
+      "calmar": 5.0,
+      "net_r": 20.0,
+      "max_dd_r": 4.0,
       "equity_curve_r": [
         0.0,
-        0.0,
-        -1.0,
+        2.2,
+        1.2,
+        1.2,
+        1.2,
         1.2,
         0.2,
-        0.2,
-        0.2,
-        0.2,
-        -0.8,
-        1.4,
-        3.6,
-        5.8,
-        5.8,
-        4.8,
-        7.0,
-        7.0,
-        6.0,
-        8.2,
-        8.2,
-        7.2,
-        9.4,
-        8.4,
-        7.4,
-        7.4,
-        7.4,
-        7.4,
-        7.4,
-        7.4,
-        7.4,
-        6.4,
-        5.4,
-        5.4,
-        7.6,
-        6.6,
-        5.6,
+        2.4,
         4.6,
         6.8,
+        6.8,
         5.8,
-        4.8,
-        3.8,
-        3.8,
-        6.0,
+        8.0,
+        8.0,
+        7.0,
+        9.2,
+        9.2,
         8.2,
-        8.2,
-        7.2,
+        10.4,
         9.4,
+        8.4,
+        8.4,
+        8.4,
+        8.4,
         8.4,
         10.6,
         12.8,
         11.8,
-        11.8,
-        11.8,
-        11.8,
         10.8,
-        9.8,
-        9.8,
+        10.8,
+        13.0,
         12.0,
-        14.2,
-        16.4,
-        18.6,
-        20.8,
-        19.8,
-        19.8,
-        18.8,
-        17.8,
-        17.8,
-        17.8
+        11.0,
+        10.0,
+        12.2,
+        11.2,
+        10.2,
+        9.2,
+        9.2,
+        11.4,
+        13.6,
+        13.6,
+        12.6,
+        14.8,
+        13.8,
+        16.0,
+        18.2,
+        17.2,
+        17.2,
+        17.2,
+        17.2,
+        16.2,
+        15.2,
+        15.2,
+        17.4,
+        19.6,
+        21.8,
+        24.0,
+        23.0,
+        23.0,
+        22.0,
+        21.0,
+        20.0,
+        20.0,
+        20.0
       ],
       "recent_sim_trades": [
         {
           "engine": "TREND",
           "factor": "EMA21_PULLBACK",
           "side": "SHORT",
-          "entry_time": "23/11 17:15",
-          "exit_time": "24/11 00:45",
-          "entry": 3659.24,
-          "exit": 3659.24,
+          "entry_time": "24/11 02:15",
+          "exit_time": "24/11 12:45",
+          "entry": 3642.44,
+          "exit": 3642.44,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -870,21 +858,32 @@
           "engine": "TREND",
           "factor": "EMA21_PULLBACK",
           "side": "SHORT",
-          "entry_time": "23/11 07:45",
-          "exit_time": "23/11 09:00",
-          "entry": 3615.24,
-          "exit": 3615.24,
+          "entry_time": "23/11 17:15",
+          "exit_time": "24/11 00:45",
+          "entry": 3654.34,
+          "exit": 3654.34,
           "r": 0.0,
           "pnl": 0.0
+        },
+        {
+          "engine": "TREND",
+          "factor": "EMA21_PULLBACK",
+          "side": "SHORT",
+          "entry_time": "23/11 08:30",
+          "exit_time": "23/11 13:15",
+          "entry": 3603.84,
+          "exit": 3622.37,
+          "r": -1.0,
+          "pnl": -75.0
         },
         {
           "engine": "TREND",
           "factor": "EMA21_PULLBACK",
           "side": "SHORT",
           "entry_time": "23/11 02:30",
-          "exit_time": "23/11 04:45",
-          "entry": 3580.34,
-          "exit": 3609.58,
+          "exit_time": "23/11 04:30",
+          "entry": 3575.44,
+          "exit": 3603.89,
           "r": -1.0,
           "pnl": -75.0
         },
@@ -894,8 +893,8 @@
           "side": "SHORT",
           "entry_time": "20/11 19:30",
           "exit_time": "22/11 23:00",
-          "entry": 3530.55,
-          "exit": 3560.66,
+          "entry": 3525.74,
+          "exit": 3555.85,
           "r": -1.0,
           "pnl": -75.0
         },
@@ -905,8 +904,8 @@
           "side": "SHORT",
           "entry_time": "20/11 11:45",
           "exit_time": "20/11 14:00",
-          "entry": 3573.64,
-          "exit": 3573.64,
+          "entry": 3568.74,
+          "exit": 3568.74,
           "r": 0.0,
           "pnl": 0.0
         },
@@ -916,8 +915,8 @@
           "side": "SHORT",
           "entry_time": "20/11 06:00",
           "exit_time": "20/11 08:15",
-          "entry": 3551.84,
-          "exit": 3586.36,
+          "entry": 3546.94,
+          "exit": 3581.46,
           "r": -1.0,
           "pnl": -75.0
         },
@@ -927,8 +926,8 @@
           "side": "SHORT",
           "entry_time": "19/11 18:15",
           "exit_time": "19/11 21:15",
-          "entry": 3683.94,
-          "exit": 3636.08,
+          "entry": 3679.04,
+          "exit": 3631.24,
           "r": 2.2,
           "pnl": 165.0
         },
@@ -938,8 +937,8 @@
           "side": "SHORT",
           "entry_time": "19/11 04:15",
           "exit_time": "19/11 15:45",
-          "entry": 3725.05,
-          "exit": 3672.83,
+          "entry": 3720.14,
+          "exit": 3667.92,
           "r": 2.2,
           "pnl": 165.0
         },
@@ -949,19 +948,8 @@
           "side": "SHORT",
           "entry_time": "18/11 09:30",
           "exit_time": "18/11 12:45",
-          "entry": 3782.14,
-          "exit": 3746.16,
-          "r": 2.2,
-          "pnl": 165.0
-        },
-        {
-          "engine": "TREND",
-          "factor": "EMA21_PULLBACK",
-          "side": "SHORT",
-          "entry_time": "17/11 17:30",
-          "exit_time": "18/11 00:30",
-          "entry": 3866.55,
-          "exit": 3821.35,
+          "entry": 3777.24,
+          "exit": 3741.26,
           "r": 2.2,
           "pnl": 165.0
         }
@@ -971,7 +959,7 @@
   "session_stable_profiles": {
     "engine": "VECTOR_GRID_BOOTSTRAP_MC_V1",
     "status": "OK",
-    "generated_at": "2026-11-24 10:31:36",
+    "generated_at": "2026-11-24 22:45:19",
     "methodology": {
       "sessions_bkk": [
         {
@@ -1045,9 +1033,9 @@
       "ASIA": {
         "session": "ASIA",
         "window_bkk": "06:00-13:59",
-        "bars_in_vault": 1662,
-        "volatility_factor": 0.953,
-        "avg_atr_usd": 7.24,
+        "bars_in_vault": 1676,
+        "volatility_factor": 0.956,
+        "avg_atr_usd": 7.27,
         "friction_usd": {
           "spread": 0.191,
           "slippage": 0.191,
@@ -1055,172 +1043,200 @@
         },
         "grid_combos": 1344,
         "candidates_evaluated": 1344,
-        "candidates_qualified": 30,
+        "candidates_qualified": 48,
         "filter_level_used": 1,
-        "candidates_mc_tested": 30,
+        "candidates_mc_tested": 48,
         "mc_iterations_used": 250000,
         "winner": {
-          "formula": "DOUBLE_BOTTOM_TOP",
-          "sl_atr_mult": 0.65,
-          "rr": 2.4,
+          "formula": "HYBRID_REGIME",
+          "sl_atr_mult": 0.55,
+          "rr": 2.2,
           "be_rule": "NO_BE",
-          "trades": 41,
-          "longs": 28,
-          "shorts": 13,
-          "win_rate": 0.3659,
-          "win_rate_pct": 36.6,
-          "net_r": 6.791,
-          "expectancy_r": 0.1656,
-          "profit_factor": 1.242,
-          "raw_max_dd_r": 4.383,
-          "median_r": 6.795,
-          "p05_worst_r": -10.212,
-          "max_dd_95": 16.201,
-          "stability_score": -0.2306,
-          "mc_iterations": 8334,
-          "sigma_spread_r": 0.0287,
-          "sl_median_usd": 4.652
+          "trades": 173,
+          "longs": 65,
+          "shorts": 108,
+          "win_rate": 0.3526,
+          "win_rate_pct": 35.3,
+          "net_r": 6.178,
+          "expectancy_r": 0.0357,
+          "profit_factor": 1.05,
+          "raw_max_dd_r": 11.375,
+          "median_r": 6.01,
+          "p05_worst_r": -26.439,
+          "max_dd_95": 38.847,
+          "stability_score": -0.24,
+          "mc_iterations": 5209,
+          "sigma_spread_r": 0.0337,
+          "sl_median_usd": 3.964
         },
         "top_stable_candidates": [
           {
-            "formula": "DOUBLE_BOTTOM_TOP",
-            "sl_atr_mult": 0.65,
-            "rr": 2.4,
+            "formula": "HYBRID_REGIME",
+            "sl_atr_mult": 0.55,
+            "rr": 2.2,
             "be_rule": "NO_BE",
-            "trades": 41,
-            "win_rate_pct": 36.6,
-            "net_r": 6.791,
-            "median_r": 6.795,
-            "p05_worst_r": -10.212,
-            "max_dd_95": 16.201,
-            "stability_score": -0.2306,
-            "mc_iterations": 8334
+            "trades": 173,
+            "win_rate_pct": 35.3,
+            "net_r": 6.178,
+            "median_r": 6.01,
+            "p05_worst_r": -26.439,
+            "max_dd_95": 38.847,
+            "stability_score": -0.24,
+            "mc_iterations": 5209
           },
           {
-            "formula": "DOUBLE_BOTTOM_TOP",
-            "sl_atr_mult": 0.75,
-            "rr": 2.4,
-            "be_rule": "NO_BE",
-            "trades": 40,
-            "win_rate_pct": 35.0,
-            "net_r": 4.779,
-            "median_r": 4.758,
-            "p05_worst_r": -12.219,
-            "max_dd_95": 17.346,
-            "stability_score": -0.2465,
-            "mc_iterations": 8334
-          },
-          {
-            "formula": "DOUBLE_BOTTOM_TOP",
+            "formula": "VALLEY_SNIPER",
             "sl_atr_mult": 0.75,
             "rr": 2.2,
             "be_rule": "NO_BE",
-            "trades": 40,
-            "win_rate_pct": 37.5,
-            "net_r": 5.179,
-            "median_r": 5.178,
-            "p05_worst_r": -10.822,
-            "max_dd_95": 16.098,
-            "stability_score": -0.2521,
-            "mc_iterations": 8334
+            "trades": 105,
+            "win_rate_pct": 35.2,
+            "net_r": 5.544,
+            "median_r": 5.414,
+            "p05_worst_r": -20.108,
+            "max_dd_95": 29.348,
+            "stability_score": -0.2414,
+            "mc_iterations": 5208
           },
           {
-            "formula": "DOUBLE_BOTTOM_TOP",
-            "sl_atr_mult": 0.65,
-            "rr": 2.4,
-            "be_rule": "TIME_EXIT_12B",
-            "trades": 41,
-            "win_rate_pct": 36.6,
-            "net_r": 4.788,
-            "median_r": 4.558,
-            "p05_worst_r": -11.76,
-            "max_dd_95": 17.065,
-            "stability_score": -0.2522,
-            "mc_iterations": 8334
-          },
-          {
-            "formula": "DOUBLE_BOTTOM_TOP",
+            "formula": "VALLEY_SNIPER",
             "sl_atr_mult": 0.75,
-            "rr": 2.4,
+            "rr": 2.2,
             "be_rule": "TIME_EXIT_12B",
-            "trades": 40,
-            "win_rate_pct": 35.0,
-            "net_r": 2.767,
-            "median_r": 2.665,
-            "p05_worst_r": -12.998,
-            "max_dd_95": 17.932,
-            "stability_score": -0.2537,
-            "mc_iterations": 8334
+            "trades": 105,
+            "win_rate_pct": 35.2,
+            "net_r": 4.649,
+            "median_r": 4.586,
+            "p05_worst_r": -20.313,
+            "max_dd_95": 29.346,
+            "stability_score": -0.2439,
+            "mc_iterations": 5208
+          },
+          {
+            "formula": "HYBRID_REGIME",
+            "sl_atr_mult": 0.55,
+            "rr": 2.2,
+            "be_rule": "TIME_EXIT_12B",
+            "trades": 173,
+            "win_rate_pct": 35.3,
+            "net_r": 6.178,
+            "median_r": 6.047,
+            "p05_worst_r": -26.329,
+            "max_dd_95": 37.98,
+            "stability_score": -0.2444,
+            "mc_iterations": 5209
+          },
+          {
+            "formula": "VALLEY_SNIPER",
+            "sl_atr_mult": 0.65,
+            "rr": 2.2,
+            "be_rule": "TIME_EXIT_12B",
+            "trades": 105,
+            "win_rate_pct": 35.2,
+            "net_r": 4.694,
+            "median_r": 4.565,
+            "p05_worst_r": -20.953,
+            "max_dd_95": 29.708,
+            "stability_score": -0.2485,
+            "mc_iterations": 5208
           }
         ],
-        "runtime_sec": 1.21
+        "runtime_sec": 1.03
       },
       "LONDON": {
         "session": "LONDON",
         "window_bkk": "14:00-18:59",
-        "bars_in_vault": 1040,
-        "volatility_factor": 0.957,
-        "avg_atr_usd": 7.26,
+        "bars_in_vault": 1060,
+        "volatility_factor": 0.949,
+        "avg_atr_usd": 7.21,
         "friction_usd": {
-          "spread": 0.191,
-          "slippage": 0.191,
-          "total": 0.382
+          "spread": 0.19,
+          "slippage": 0.19,
+          "total": 0.38
         },
         "grid_combos": 1344,
         "candidates_evaluated": 1344,
-        "candidates_qualified": 171,
+        "candidates_qualified": 180,
         "filter_level_used": 1,
         "candidates_mc_tested": 125,
         "mc_iterations_used": 250000,
         "winner": {
           "formula": "LIQUIDITY_SWEEP",
           "sl_atr_mult": 0.75,
-          "rr": 2.0,
+          "rr": 1.6,
           "be_rule": "NO_BE",
-          "trades": 36,
-          "longs": 23,
-          "shorts": 13,
-          "win_rate": 0.5556,
-          "win_rate_pct": 55.6,
-          "net_r": 21.449,
-          "expectancy_r": 0.5958,
-          "profit_factor": 2.249,
-          "raw_max_dd_r": 5.337,
-          "median_r": 21.437,
-          "p05_worst_r": 6.41,
-          "max_dd_95": 7.764,
-          "stability_score": 0.4587,
+          "trades": 38,
+          "longs": 24,
+          "shorts": 14,
+          "win_rate": 0.5789,
+          "win_rate_pct": 57.9,
+          "net_r": 16.448,
+          "expectancy_r": 0.4328,
+          "profit_factor": 1.958,
+          "raw_max_dd_r": 4.265,
+          "median_r": 16.465,
+          "p05_worst_r": 3.544,
+          "max_dd_95": 7.87,
+          "stability_score": 0.2607,
           "mc_iterations": 2000,
-          "sigma_spread_r": 0.0238,
-          "sl_median_usd": 5.612
+          "sigma_spread_r": 0.0244,
+          "sl_median_usd": 5.446
         },
         "top_stable_candidates": [
           {
             "formula": "LIQUIDITY_SWEEP",
             "sl_atr_mult": 0.75,
-            "rr": 2.0,
+            "rr": 1.6,
             "be_rule": "NO_BE",
-            "trades": 36,
-            "win_rate_pct": 55.6,
-            "net_r": 21.449,
-            "median_r": 21.437,
-            "p05_worst_r": 6.41,
-            "max_dd_95": 7.764,
-            "stability_score": 0.4587,
+            "trades": 38,
+            "win_rate_pct": 57.9,
+            "net_r": 16.448,
+            "median_r": 16.465,
+            "p05_worst_r": 3.544,
+            "max_dd_95": 7.87,
+            "stability_score": 0.2607,
             "mc_iterations": 2000
           },
           {
             "formula": "LIQUIDITY_SWEEP",
             "sl_atr_mult": 0.75,
             "rr": 1.6,
+            "be_rule": "TIME_EXIT_12B",
+            "trades": 38,
+            "win_rate_pct": 55.3,
+            "net_r": 14.668,
+            "median_r": 14.63,
+            "p05_worst_r": 3.157,
+            "max_dd_95": 8.332,
+            "stability_score": 0.2094,
+            "mc_iterations": 2000
+          },
+          {
+            "formula": "LIQUIDITY_SWEEP",
+            "sl_atr_mult": 0.75,
+            "rr": 2.0,
             "be_rule": "NO_BE",
-            "trades": 37,
-            "win_rate_pct": 59.5,
-            "net_r": 17.565,
-            "median_r": 17.561,
-            "p05_worst_r": 4.609,
-            "max_dd_95": 7.698,
-            "stability_score": 0.356,
+            "trades": 36,
+            "win_rate_pct": 52.8,
+            "net_r": 18.421,
+            "median_r": 18.362,
+            "p05_worst_r": 3.407,
+            "max_dd_95": 8.895,
+            "stability_score": 0.2022,
+            "mc_iterations": 2000
+          },
+          {
+            "formula": "LIQUIDITY_SWEEP",
+            "sl_atr_mult": 0.65,
+            "rr": 1.8,
+            "be_rule": "NO_BE",
+            "trades": 39,
+            "win_rate_pct": 53.8,
+            "net_r": 16.551,
+            "median_r": 16.536,
+            "p05_worst_r": 2.425,
+            "max_dd_95": 9.295,
+            "stability_score": 0.1405,
             "mc_iterations": 2000
           },
           {
@@ -1229,50 +1245,22 @@
             "rr": 2.2,
             "be_rule": "NO_BE",
             "trades": 36,
-            "win_rate_pct": 52.8,
-            "net_r": 21.465,
-            "median_r": 21.441,
-            "p05_worst_r": 5.566,
-            "max_dd_95": 8.813,
-            "stability_score": 0.3333,
-            "mc_iterations": 2000
-          },
-          {
-            "formula": "LIQUIDITY_SWEEP",
-            "sl_atr_mult": 0.75,
-            "rr": 2.0,
-            "be_rule": "TIME_EXIT_12B",
-            "trades": 37,
-            "win_rate_pct": 51.3,
-            "net_r": 19.04,
-            "median_r": 18.967,
-            "p05_worst_r": 4.868,
-            "max_dd_95": 8.488,
-            "stability_score": 0.2945,
-            "mc_iterations": 2000
-          },
-          {
-            "formula": "LIQUIDITY_SWEEP",
-            "sl_atr_mult": 0.75,
-            "rr": 1.6,
-            "be_rule": "TIME_EXIT_12B",
-            "trades": 37,
-            "win_rate_pct": 56.8,
-            "net_r": 15.785,
-            "median_r": 15.814,
-            "p05_worst_r": 3.558,
-            "max_dd_95": 7.619,
-            "stability_score": 0.2651,
+            "win_rate_pct": 50.0,
+            "net_r": 18.237,
+            "median_r": 18.162,
+            "p05_worst_r": 2.641,
+            "max_dd_95": 9.604,
+            "stability_score": 0.1375,
             "mc_iterations": 2000
           }
         ],
-        "runtime_sec": 0.82
+        "runtime_sec": 0.41
       },
       "NY_OVERLAP": {
         "session": "NY_OVERLAP",
         "window_bkk": "19:00-22:59",
-        "bars_in_vault": 832,
-        "volatility_factor": 1.242,
+        "bars_in_vault": 847,
+        "volatility_factor": 1.241,
         "avg_atr_usd": 9.43,
         "friction_usd": {
           "spread": 0.248,
@@ -1281,200 +1269,158 @@
         },
         "grid_combos": 1344,
         "candidates_evaluated": 1344,
-        "candidates_qualified": 64,
+        "candidates_qualified": 126,
         "filter_level_used": 1,
-        "candidates_mc_tested": 64,
+        "candidates_mc_tested": 125,
         "mc_iterations_used": 250000,
         "winner": {
           "formula": "HYBRID_REGIME",
-          "sl_atr_mult": 0.45,
-          "rr": 2.0,
+          "sl_atr_mult": 0.65,
+          "rr": 1.4,
           "be_rule": "TIME_EXIT_12B",
-          "trades": 94,
+          "trades": 91,
           "longs": 30,
-          "shorts": 64,
-          "win_rate": 0.3936,
-          "win_rate_pct": 39.4,
-          "net_r": 5.777,
-          "expectancy_r": 0.0615,
-          "profit_factor": 1.09,
-          "raw_max_dd_r": 9.527,
-          "median_r": 5.733,
-          "p05_worst_r": -15.71,
-          "max_dd_95": 25.879,
-          "stability_score": -0.2389,
-          "mc_iterations": 3907,
-          "sigma_spread_r": 0.0416,
-          "sl_median_usd": 4.174
+          "shorts": 61,
+          "win_rate": 0.5275,
+          "win_rate_pct": 52.8,
+          "net_r": 16.023,
+          "expectancy_r": 0.1761,
+          "profit_factor": 1.342,
+          "raw_max_dd_r": 9.31,
+          "median_r": 16.027,
+          "p05_worst_r": -2.524,
+          "max_dd_95": 14.389,
+          "stability_score": -0.0925,
+          "mc_iterations": 2000,
+          "sigma_spread_r": 0.0285,
+          "sl_median_usd": 6.087
         },
         "top_stable_candidates": [
           {
             "formula": "HYBRID_REGIME",
-            "sl_atr_mult": 0.45,
-            "rr": 2.0,
+            "sl_atr_mult": 0.65,
+            "rr": 1.4,
             "be_rule": "TIME_EXIT_12B",
-            "trades": 94,
-            "win_rate_pct": 39.4,
-            "net_r": 5.777,
-            "median_r": 5.733,
-            "p05_worst_r": -15.71,
-            "max_dd_95": 25.879,
-            "stability_score": -0.2389,
-            "mc_iterations": 3907
+            "trades": 91,
+            "win_rate_pct": 52.8,
+            "net_r": 16.023,
+            "median_r": 16.027,
+            "p05_worst_r": -2.524,
+            "max_dd_95": 14.389,
+            "stability_score": -0.0925,
+            "mc_iterations": 2000
           },
           {
-            "formula": "TREND_PULLBACK",
+            "formula": "HYBRID_REGIME",
             "sl_atr_mult": 0.65,
+            "rr": 1.4,
+            "be_rule": "NO_BE",
+            "trades": 91,
+            "win_rate_pct": 52.8,
+            "net_r": 16.023,
+            "median_r": 16.023,
+            "p05_worst_r": -3.041,
+            "max_dd_95": 14.843,
+            "stability_score": -0.1081,
+            "mc_iterations": 2000
+          },
+          {
+            "formula": "HYBRID_REGIME",
+            "sl_atr_mult": 0.55,
             "rr": 1.8,
             "be_rule": "NO_BE",
-            "trades": 69,
-            "win_rate_pct": 42.0,
-            "net_r": 6.937,
-            "median_r": 6.914,
-            "p05_worst_r": -10.975,
-            "max_dd_95": 18.953,
-            "stability_score": -0.2434,
-            "mc_iterations": 3906
-          },
-          {
-            "formula": "HYBRID_REGIME",
-            "sl_atr_mult": 0.75,
-            "rr": 2.2,
-            "be_rule": "TIME_EXIT_12B",
-            "trades": 81,
-            "win_rate_pct": 35.8,
-            "net_r": 5.457,
-            "median_r": 5.957,
-            "p05_worst_r": -16.582,
-            "max_dd_95": 24.335,
-            "stability_score": -0.2439,
-            "mc_iterations": 3906
-          },
-          {
-            "formula": "HYBRID_REGIME",
-            "sl_atr_mult": 0.75,
-            "rr": 2.2,
-            "be_rule": "NO_BE",
-            "trades": 81,
-            "win_rate_pct": 37.0,
-            "net_r": 6.926,
-            "median_r": 6.583,
-            "p05_worst_r": -15.109,
-            "max_dd_95": 22.927,
-            "stability_score": -0.2441,
-            "mc_iterations": 3906
+            "trades": 89,
+            "win_rate_pct": 46.1,
+            "net_r": 16.64,
+            "median_r": 16.476,
+            "p05_worst_r": -4.864,
+            "max_dd_95": 17.779,
+            "stability_score": -0.126,
+            "mc_iterations": 2000
           },
           {
             "formula": "HYBRID_REGIME",
             "sl_atr_mult": 0.55,
             "rr": 1.8,
             "be_rule": "TIME_EXIT_12B",
-            "trades": 90,
-            "win_rate_pct": 43.3,
-            "net_r": 9.9,
-            "median_r": 9.962,
-            "p05_worst_r": -12.239,
-            "max_dd_95": 21.529,
-            "stability_score": -0.2463,
-            "mc_iterations": 3907
+            "trades": 89,
+            "win_rate_pct": 46.1,
+            "net_r": 16.64,
+            "median_r": 16.511,
+            "p05_worst_r": -5.592,
+            "max_dd_95": 17.511,
+            "stability_score": -0.1471,
+            "mc_iterations": 2000
+          },
+          {
+            "formula": "RSI_ENGULFING",
+            "sl_atr_mult": 0.75,
+            "rr": 2.4,
+            "be_rule": "NO_BE",
+            "trades": 22,
+            "win_rate_pct": 45.5,
+            "net_r": 8.933,
+            "median_r": 9.047,
+            "p05_worst_r": -3.352,
+            "max_dd_95": 9.452,
+            "stability_score": -0.1612,
+            "mc_iterations": 2000
           }
         ],
-        "runtime_sec": 1.09
+        "runtime_sec": 0.47
       },
       "LATE_NY": {
         "session": "LATE_NY",
         "window_bkk": "23:00-05:59",
         "bars_in_vault": 1249,
-        "volatility_factor": 0.971,
-        "avg_atr_usd": 7.37,
+        "volatility_factor": 0.974,
+        "avg_atr_usd": 7.4,
         "friction_usd": {
-          "spread": 0.194,
-          "slippage": 0.194,
-          "total": 0.388
+          "spread": 0.195,
+          "slippage": 0.195,
+          "total": 0.39
         },
         "grid_combos": 1344,
         "candidates_evaluated": 1344,
-        "candidates_qualified": 193,
+        "candidates_qualified": 214,
         "filter_level_used": 1,
         "candidates_mc_tested": 125,
         "mc_iterations_used": 250000,
         "winner": {
-          "formula": "VP_EDGE_FADE",
-          "sl_atr_mult": 0.55,
-          "rr": 1.2,
-          "be_rule": "TIME_EXIT_12B",
-          "trades": 25,
-          "longs": 12,
-          "shorts": 13,
-          "win_rate": 0.64,
-          "win_rate_pct": 64.0,
-          "net_r": 7.859,
-          "expectancy_r": 0.3144,
-          "profit_factor": 1.797,
-          "raw_max_dd_r": 3.241,
-          "median_r": 7.913,
-          "p05_worst_r": -0.964,
-          "max_dd_95": 6.583,
-          "stability_score": -0.0937,
+          "formula": "TREND_PULLBACK",
+          "sl_atr_mult": 0.25,
+          "rr": 2.4,
+          "be_rule": "NO_BE",
+          "trades": 83,
+          "longs": 27,
+          "shorts": 56,
+          "win_rate": 0.3855,
+          "win_rate_pct": 38.6,
+          "net_r": 16.647,
+          "expectancy_r": 0.2006,
+          "profit_factor": 1.294,
+          "raw_max_dd_r": 8.694,
+          "median_r": 16.678,
+          "p05_worst_r": -7.382,
+          "max_dd_95": 20.761,
+          "stability_score": -0.1371,
           "mc_iterations": 2000,
-          "sigma_spread_r": 0.0364,
-          "sl_median_usd": 3.728
+          "sigma_spread_r": 0.039,
+          "sl_median_usd": 3.5
         },
         "top_stable_candidates": [
           {
-            "formula": "VP_EDGE_FADE",
-            "sl_atr_mult": 0.55,
-            "rr": 1.2,
-            "be_rule": "TIME_EXIT_12B",
-            "trades": 25,
-            "win_rate_pct": 64.0,
-            "net_r": 7.859,
-            "median_r": 7.913,
-            "p05_worst_r": -0.964,
-            "max_dd_95": 6.583,
-            "stability_score": -0.0937,
-            "mc_iterations": 2000
-          },
-          {
-            "formula": "VP_EDGE_FADE",
-            "sl_atr_mult": 0.55,
-            "rr": 1.2,
+            "formula": "TREND_PULLBACK",
+            "sl_atr_mult": 0.25,
+            "rr": 2.4,
             "be_rule": "NO_BE",
-            "trades": 25,
-            "win_rate_pct": 64.0,
-            "net_r": 7.859,
-            "median_r": 7.838,
-            "p05_worst_r": -0.981,
-            "max_dd_95": 6.578,
-            "stability_score": -0.0954,
-            "mc_iterations": 2000
-          },
-          {
-            "formula": "VP_EDGE_FADE",
-            "sl_atr_mult": 0.45,
-            "rr": 1.2,
-            "be_rule": "NO_BE",
-            "trades": 25,
-            "win_rate_pct": 64.0,
-            "net_r": 7.677,
-            "median_r": 7.697,
-            "p05_worst_r": -1.163,
-            "max_dd_95": 6.682,
-            "stability_score": -0.1114,
-            "mc_iterations": 2000
-          },
-          {
-            "formula": "VP_EDGE_FADE",
-            "sl_atr_mult": 0.45,
-            "rr": 1.2,
-            "be_rule": "TIME_EXIT_12B",
-            "trades": 25,
-            "win_rate_pct": 64.0,
-            "net_r": 7.677,
-            "median_r": 7.718,
-            "p05_worst_r": -1.206,
-            "max_dd_95": 6.717,
-            "stability_score": -0.1149,
+            "trades": 83,
+            "win_rate_pct": 38.6,
+            "net_r": 16.647,
+            "median_r": 16.678,
+            "p05_worst_r": -7.382,
+            "max_dd_95": 20.761,
+            "stability_score": -0.1371,
             "mc_iterations": 2000
           },
           {
@@ -1484,20 +1430,62 @@
             "be_rule": "TIME_EXIT_12B",
             "trades": 83,
             "win_rate_pct": 38.6,
-            "net_r": 16.694,
-            "median_r": 16.691,
-            "p05_worst_r": -7.123,
-            "max_dd_95": 21.057,
-            "stability_score": -0.1304,
+            "net_r": 16.647,
+            "median_r": 16.662,
+            "p05_worst_r": -7.447,
+            "max_dd_95": 20.801,
+            "stability_score": -0.138,
+            "mc_iterations": 2000
+          },
+          {
+            "formula": "TREND_PULLBACK",
+            "sl_atr_mult": 0.25,
+            "rr": 2.2,
+            "be_rule": "TIME_EXIT_12B",
+            "trades": 85,
+            "win_rate_pct": 40.0,
+            "net_r": 14.424,
+            "median_r": 14.223,
+            "p05_worst_r": -8.56,
+            "max_dd_95": 21.103,
+            "stability_score": -0.1623,
+            "mc_iterations": 2000
+          },
+          {
+            "formula": "TREND_PULLBACK",
+            "sl_atr_mult": 0.25,
+            "rr": 2.2,
+            "be_rule": "NO_BE",
+            "trades": 85,
+            "win_rate_pct": 40.0,
+            "net_r": 14.424,
+            "median_r": 14.489,
+            "p05_worst_r": -8.404,
+            "max_dd_95": 20.606,
+            "stability_score": -0.1631,
+            "mc_iterations": 2000
+          },
+          {
+            "formula": "TREND_PULLBACK",
+            "sl_atr_mult": 0.55,
+            "rr": 2.2,
+            "be_rule": "TIME_EXIT_12B",
+            "trades": 80,
+            "win_rate_pct": 41.2,
+            "net_r": 14.495,
+            "median_r": 14.653,
+            "p05_worst_r": -8.375,
+            "max_dd_95": 19.573,
+            "stability_score": -0.1765,
             "mc_iterations": 2000
           }
         ],
-        "runtime_sec": 0.82
+        "runtime_sec": 0.42
       }
     },
-    "runtime_sec": 4.23,
-    "vault_bars": 4783,
-    "vault_last_bar_utc": "2026-11-24 03:15"
+    "runtime_sec": 2.45,
+    "vault_bars": 4832,
+    "vault_last_bar_utc": "2026-11-24 15:30"
   },
   "scalp_journal": {
     "wins": 0,
@@ -1524,7 +1512,7 @@
     "active_trade": null
   },
   "ai_engine_name": "MUE-X Local Quant V14.1",
-  "ai_analysis": "**1. Session Micro-VP 8H & Live OrderFlow (④ DOUBLE ZONE (ทรง 2 โซน / 2 ยอดโวลุ่ม)):**\nSpot ปัจจุบัน **$3631.74** เกาะอยู่ในกรอบ Session 8H (VAL **$3638.93** / POC **$3638.93** / VAH **$3662.74**) | L2 OBI **+0.185** | Tick CVD **-57.4** (BID_DOMINANCE)\n\n**2. เงื่อนไขลั่นไก OrderFlow Execution Gate (ใช้งานจริง 3 ชั้น):**\n• **ชั้นที่ 1 (Location):** รอราคาเข้าใกล้จุดยิง Scalp **$3638.93** ในระยะไม่เกิน `±220 จุด`\n• **ชั้นที่ 2 (3s Sustained OBI):** แรงฝั่ง **SHORT** ต้องยืนเหนือเกณฑ์ `-0.18` ต่อเนื่อง 3 วินาทีเต็ม (ตัดออเดอร์หลอก)\n• **ชั้นที่ 3 (60s Tape Delta):** แรงเคาะซื้อ/ขายจริง 60 วินาทีต้องสอดคล้องทิศทางจึงเปิดออเดอร์\n\n**3. แผนเข้าเทรด Scalp (SHORT):** Entry **$3638.93** | SL **$3647.93** | BE (+450 จุด) **$3634.43** | TP **$3627.68**\n**4. แผน Trend Sniper (SHORT):** Entry **$3644.31** | SL **$3669.17** | TP **$3589.62** (WR 44.2%)",
+  "ai_analysis": "**1. Session Micro-VP 8H & Live OrderFlow (① D-SHAPED (สมดุลตัว D / Balanced Auction)):**\nSpot ปัจจุบัน **$3585.44** เกาะอยู่ในกรอบ Session 8H (VAL **$3608.01** / POC **$3614.34** / VAH **$3623.85**) | L2 OBI **+0.000** | Tick CVD **+0.0** (NEUTRAL_FLOW)\n\n**2. เงื่อนไขลั่นไก OrderFlow Execution Gate (ใช้งานจริง 3 ชั้น):**\n• **ชั้นที่ 1 (Location):** รอราคาเข้าใกล้จุดยิง Scalp **$3614.34** ในระยะไม่เกิน `±220 จุด`\n• **ชั้นที่ 2 (3s Sustained OBI):** แรงฝั่ง **SHORT** ต้องยืนเหนือเกณฑ์ `-0.18` ต่อเนื่อง 3 วินาทีเต็ม (ตัดออเดอร์หลอก)\n• **ชั้นที่ 3 (60s Tape Delta):** แรงเคาะซื้อ/ขายจริง 60 วินาทีต้องสอดคล้องทิศทางจึงเปิดออเดอร์\n\n**3. แผนเข้าเทรด Scalp (SHORT):** Entry **$3614.34** | SL **$3623.34** | BE (+450 จุด) **$3609.84** | TP **$3603.09**\n**4. แผน Trend Sniper (SHORT):** Entry **$3609.96** | SL **$3633.11** | TP **$3559.03** (WR 45.5%)",
   "news": [
     {
       "time_th": "23/11 21:45 น.",
@@ -1533,7 +1521,7 @@
       "forecast": "54.5",
       "previous": "56.0",
       "is_upcoming": false,
-      "hours_away": 12.8,
+      "hours_away": 25.0,
       "status": "ออกแล้ว"
     },
     {
@@ -1543,7 +1531,7 @@
       "forecast": "55.6",
       "previous": "57.9",
       "is_upcoming": false,
-      "hours_away": 12.8,
+      "hours_away": 25.0,
       "status": "ออกแล้ว"
     },
     {
@@ -1552,9 +1540,9 @@
       "impact": "Medium",
       "forecast": "92.4",
       "previous": "91.7",
-      "is_upcoming": true,
-      "hours_away": 11.5,
-      "status": "อีก 11.5 ชม."
+      "is_upcoming": false,
+      "hours_away": 0.8,
+      "status": "ออกแล้ว"
     },
     {
       "time_th": "25/11 20:30 น.",
@@ -1563,8 +1551,8 @@
       "forecast": "0.3%",
       "previous": "0.3%",
       "is_upcoming": true,
-      "hours_away": 34.0,
-      "status": "อีก 34.0 ชม."
+      "hours_away": 21.7,
+      "status": "อีก 21.7 ชม."
     },
     {
       "time_th": "25/11 20:30 น.",
@@ -1573,8 +1561,8 @@
       "forecast": "3.5%",
       "previous": "3.4%",
       "is_upcoming": true,
-      "hours_away": 34.0,
-      "status": "อีก 34.0 ชม."
+      "hours_away": 21.7,
+      "status": "อีก 21.7 ชม."
     },
     {
       "time_th": "25/11 20:30 น.",
@@ -1583,8 +1571,8 @@
       "forecast": "2.3%",
       "previous": "2.3%",
       "is_upcoming": true,
-      "hours_away": 34.0,
-      "status": "อีก 34.0 ชม."
+      "hours_away": 21.7,
+      "status": "อีก 21.7 ชม."
     }
   ]
 }
