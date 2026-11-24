@@ -278,15 +278,16 @@
             <span class="px-2.5 py-0.5 text-xs font-mono-num font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60 rounded-full">LIVE ORDER BOARD</span>
             <span id="live-order-status-pill" class="px-3 py-0.5 text-xs font-mono-num font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60 rounded-full">READY / รอเข้า LIMIT</span>
             <span id="lob-cooldown-pill" class="hidden px-2.5 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500 rounded-full">⏳ คูลดาวน์หลังปิดไม้: เหลือ 15:00 นาที</span>
+            <button id="btn-cooldown-emergency" onclick="emergencyUnlockCooldown()" class="hidden px-2.5 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500 rounded-full hover:bg-rose-900 transition">🔓 ปลดล็อกฉุกเฉิน</button>
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5 font-mono-num text-xs">
             <button id="btn-auto-limit" onclick="toggleAutoLimit()" class="px-2.5 py-1 rounded font-bold bg-purple-950 text-purple-300 border border-purple-600/60 hover:bg-purple-900 transition">Auto-Limit: เปิด</button>
             <button id="btn-refresh-limit" onclick="toggleAutoRefreshLimit()" class="px-2.5 py-1 rounded font-bold bg-indigo-950 text-indigo-300 border border-indigo-600/60 hover:bg-indigo-900 transition">รีเฟรช Limit 15m: เปิด</button>
             <button id="btn-auto-be" onclick="toggleAutoBe()" class="px-2.5 py-1 rounded font-bold bg-cyan-950 text-cyan-300 border border-cyan-600/60 hover:bg-cyan-900 transition">Auto-BE: เปิด</button>
-            <button onclick="placeManualLimitOrder()" class="px-2.5 py-1 rounded font-bold bg-cyan-500 hover:bg-cyan-400 text-gray-950 transition">🎯 วาง Limit Scalp</button>
-            <button onclick="placeSwingLimitOrder(true)" class="px-2.5 py-1 rounded font-bold bg-amber-500 hover:bg-amber-400 text-gray-950 transition">🎯 วาง Limit Swing/Rev</button>
-            <button onclick="placeMarketOrderNow()" class="px-2.5 py-1 rounded font-bold bg-emerald-500 hover:bg-emerald-400 text-gray-950 transition">⚡ เปิด Market ทันที</button>
+            <button id="btn-lob-place-scalp" onclick="placeManualLimitOrder()" class="px-2.5 py-1 rounded font-bold bg-cyan-500 hover:bg-cyan-400 text-gray-950 transition">🎯 วาง Limit Scalp</button>
+            <button id="btn-lob-place-swing-rev" onclick="placeSwingLimitOrder(true)" class="px-2.5 py-1 rounded font-bold bg-amber-500 hover:bg-amber-400 text-gray-950 transition">🎯 วาง Limit Swing/Rev</button>
+            <button id="btn-lob-market-now" onclick="placeMarketOrderNow()" class="px-2.5 py-1 rounded font-bold bg-emerald-500 hover:bg-emerald-400 text-gray-950 transition">⚡ เปิด Market ทันที</button>
             <button id="btn-sync-mt5-entry" onclick="syncActiveOrderEntryToMt5()" class="hidden px-2.5 py-1 rounded font-bold bg-sky-600 hover:bg-sky-500 text-white transition">🔄 ซิงก์ราคาเข้า MT5</button>
             <button id="btn-close-order" onclick="closeActiveOrderManual()" class="hidden px-2.5 py-1 rounded font-bold bg-rose-600 hover:bg-rose-500 text-white transition">💰 ปิดมือ (Close)</button>
           </div>
@@ -617,10 +618,10 @@
           <div id="anatomy-cards-grid" class="grid grid-cols-2 gap-2 font-mono-num text-xs" style="height: auto !important; align-self: start !important;"></div>
 
           <div class="grid grid-cols-2 gap-2 pt-1 font-mono-num text-xs">
-            <button onclick="placeManualLimitOrder()" class="px-3 py-2 rounded-lg font-bold bg-cyan-500 hover:bg-cyan-400 text-gray-950 transition">
+            <button id="btn-ea-place-scalp" onclick="placeManualLimitOrder()" class="px-3 py-2 rounded-lg font-bold bg-cyan-500 hover:bg-cyan-400 text-gray-950 transition">
               🎯 วาง Limit Scalp
             </button>
-            <button onclick="placeMarketOrderNow()" class="px-3 py-2 rounded-lg font-bold bg-emerald-500 hover:bg-emerald-400 text-gray-950 transition">
+            <button id="btn-ea-scalp-market" onclick="placeMarketOrderNow()" class="px-3 py-2 rounded-lg font-bold bg-emerald-500 hover:bg-emerald-400 text-gray-950 transition">
               ⚡ เปิด Scalp Market
             </button>
           </div>
@@ -658,10 +659,10 @@
           </div>
 
           <div class="grid grid-cols-2 gap-2 pt-1 font-mono-num text-xs">
-            <button onclick="placeSwingLimitOrder(true)" class="px-3 py-2 rounded-lg font-bold bg-amber-500 hover:bg-amber-400 text-gray-950 transition">
+            <button id="btn-eb-place-swing" onclick="placeSwingLimitOrder(true)" class="px-3 py-2 rounded-lg font-bold bg-amber-500 hover:bg-amber-400 text-gray-950 transition">
               🎯 วาง Limit Swing
             </button>
-            <button onclick="placeSwingMarketOrderNow()" class="px-3 py-2 rounded-lg font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950 transition">
+            <button id="btn-eb-swing-market" onclick="placeSwingMarketOrderNow()" class="px-3 py-2 rounded-lg font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950 transition">
               ⚡ เปิด Swing Market
             </button>
           </div>
@@ -1406,6 +1407,7 @@
             orderState = Object.assign(orderState, remote.orderState);
             if (orderState.sessionStart) sessionStartTimestamp = orderState.sessionStart;
             saveOrderStateLocal();
+            mirrorM15CooldownToLocalStorage();
             renderOrderAndLedgerUI();
           }
           if (remote.aiBrain) {
@@ -1474,6 +1476,7 @@
       localStorage.removeItem(BRAIN_KEY);
       sessionStartTimestamp = Date.now();
       slBreachStartMs = null;
+      clearM15CooldownStorage();
 
       aiBrain = {
         sessionStart: sessionStartTimestamp,
@@ -1496,7 +1499,9 @@
         autoRefresh15m: true,
         activeOrder: null,
         todayClosed: [],
-        learningArchive: []
+        learningArchive: [],
+        cooldownUnlockAt: 0,
+        cooldownReason: ""
       };
 
       saveAiBrainLocal();
@@ -1987,7 +1992,9 @@
       autoRefresh15m: true,
       activeOrder: null,
       todayClosed: [],
-      learningArchive: []
+      learningArchive: [],
+      cooldownUnlockAt: 0,
+      cooldownReason: ""
     };
 
     function loadOrderState() {
@@ -1998,6 +2005,17 @@
           if (orderState.sessionStart) sessionStartTimestamp = orderState.sessionStart;
         }
       } catch (e) {}
+
+      // ระบบล็อกพัก M15: จัดฟิลด์ cooldownUnlockAt/cooldownReason ให้ครบ + ยกค่าล็อกที่ค้างใน localStorage (ข้อมูลเก่า) เข้า orderState
+      if (!Number(orderState.cooldownUnlockAt || 0)) {
+        const legacyUntil = Number(localStorage.getItem(M15_COOLDOWN_LS_UNTIL_KEY) || 0);
+        if (legacyUntil > Date.now()) {
+          orderState.cooldownUnlockAt = legacyUntil;
+          if (!orderState.cooldownReason) orderState.cooldownReason = String(localStorage.getItem(M15_COOLDOWN_LS_REASON_KEY) || "");
+        }
+      }
+      if (typeof orderState.cooldownUnlockAt !== "number" || !isFinite(orderState.cooldownUnlockAt)) orderState.cooldownUnlockAt = 0;
+      if (typeof orderState.cooldownReason !== "string") orderState.cooldownReason = "";
 
       if (orderState.activeOrder && orderState.activeOrder.mode === "LIMIT" && masterConfig.lotMode === "FIXED") {
         orderState.activeOrder.lot = masterConfig.fixedLotSize;
@@ -2140,6 +2158,7 @@
     }
 
     function placeScalpLimitOrder(manual = false, isAutoRefresh = false) {
+      if (guardOrderPlacementBlocked(manual)) return; // ดักชั้นที่ 2: ล็อกพักหลังปิดไม้ตามรอบแท่ง M15
       if (!manual && isGoldMarketClosedBkk()) return;
       if (!liveModel || !liveModel.scalpSetup) return;
       const sc = liveModel.scalpSetup;
@@ -2195,6 +2214,7 @@
     }
 
     function placeSwingLimitOrder(manual = false) {
+      if (guardOrderPlacementBlocked(manual)) return; // ดักชั้นที่ 2: ล็อกพักหลังปิดไม้ตามรอบแท่ง M15
       if (!liveModel || !liveModel.trendSetup) return;
       if (orderState.activeOrder) {
         if (manual) alert("มีออเดอร์ค้างหรือถืออยู่แล้ว กรุณายกเลิก Limit เดิมก่อนวางแผน Swing/Reversal ครับ");
@@ -2247,6 +2267,7 @@
     }
 
     function placeMarketOrderNow() {
+      if (guardOrderPlacementBlocked(true)) return; // ดักชั้นที่ 2: ล็อกพักหลังปิดไม้ตามรอบแท่ง M15
       if (isGoldMarketClosedBkk()) return;
       if (!liveModel || !liveModel.scalpSetup || !lastRenderedMid) return;
       if (Date.now() < sessionStartTimestamp) return;
@@ -2357,6 +2378,9 @@
       const nowCloseTs = Date.now();
       orderState.lastCloseTs = nowCloseTs;
       localStorage.setItem('gq_last_close_ts', String(nowCloseTs));
+      // ล็อกพักออกออเดอร์ตามรอบแท่ง M15 (Candle-Aligned Post-Trade Cooldown):
+      // ชนะ (netPnl > 0) พักเศษแท่งปัจจุบัน + 1 แท่งเต็ม | แพ้/เท่าทุน (netPnl <= 0) พักเศษแท่งปัจจุบัน + 2 แท่งเต็ม
+      setPostTradeM15Cooldown(pnlUsd, nowCloseTs);
       saveOrderStateLocal();
       updateBrainFromClosedTrade(closedRec);
       pushCloudSyncState(false);
@@ -2373,17 +2397,9 @@
       );
     }
 
-    function getCooldownGuardStatus() {
-      const lastCloseTs = Math.max(
-        parseInt(localStorage.getItem('gq_last_close_ts') || "0", 10),
-        Number(orderState.lastCloseTs || 0)
-      );
-      const cooldownMs = 15 * 60 * 1000;
-      const remMs = lastCloseTs > 0 ? Math.max(0, cooldownMs - (Date.now() - lastCloseTs)) : 0;
-      return { cooldownRemMs: remMs };
-    }
 
     function placeSwingMarketOrderNow() {
+      if (guardOrderPlacementBlocked(true)) return; // ดักชั้นที่ 2: ล็อกพักหลังปิดไม้ตามรอบแท่ง M15
       if (isGoldMarketClosedBkk()) return alert("ตลาดทองคำปิดทำการช่วงเสาร์–อาทิตย์ครับ");
       if (!liveModel || !liveModel.trendSetup || !lastRenderedMid) return;
       if (orderState.activeOrder && orderState.activeOrder.mode === "OPEN") {
@@ -2532,10 +2548,13 @@
         activeOrder: null,
         todayClosed: [],
         learningArchive: [],
-        lastCloseTs: 0
+        lastCloseTs: 0,
+        cooldownUnlockAt: 0,
+        cooldownReason: ""
       };
       slBreachStartMs = null;
       localStorage.removeItem('gq_last_close_ts');
+      clearM15CooldownStorage();
       saveOrderStateLocal();
       renderOrderAndLedgerUI();
       await pushCloudSyncState(true);
@@ -2783,23 +2802,9 @@
         setElProps('last-updated', { textContent: `อัปเดตสด: ${lastAiTimeStr} (${elapsedMins} นาทีที่แล้ว)` });
       }
 
-      if (typeof getCooldownGuardStatus === 'function') {
-        const cd = getCooldownGuardStatus();
-        const cdPill = document.getElementById('lob-cooldown-pill');
-        const cdNote = document.getElementById('lob-cooldown-note');
-        if (cdPill) {
-          if (cd.cooldownRemMs > 0) {
-            const cm = Math.floor(cd.cooldownRemMs / 60000);
-            const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
-            cdPill.classList.remove('hidden');
-            cdPill.textContent = `⏳ คูลดาวน์หลังปิดไม้: เหลือ ${cm}:${cs} นาที`;
-            if (cdNote) cdNote.textContent = `⏳ กำลังนับถอยหลังคูลดาวน์ 15 นาที (เหลืออีก ${cm}:${cs} นาที) ก่อนเปิดไม้ถัดไป`;
-          } else {
-            cdPill.classList.add('hidden');
-            if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
-          }
-        }
-      }
+      try {
+        updateCooldownUIBadge();
+      } catch (e) { console.warn('[cooldown-ui]', e); }
 
       if (secs % 5 === 0) checkDailyRollover(true);
 
@@ -3776,7 +3781,8 @@
         recalcPropMath();
 
         if (!isMirrorClientPassive()) {
-          if (orderState.autoArm) {
+          // ล็อกพัก M15: หยุด Auto-Limit / Auto-Entry ชั่วคราวระหว่างคูลดาวน์หลังปิดไม้
+          if (orderState.autoArm && !getCooldownGuardStatus().inCooldown) {
             if (!orderState.activeOrder) {
               placeScalpLimitOrder(false, false);
             } else if (orderState.activeOrder.mode === "LIMIT" && orderState.autoRefresh15m) {
@@ -4066,11 +4072,9 @@
 
       const cdGuard = getCooldownGuardStatus();
       if (cdGuard.cooldownRemMs > 0) {
-        const m = Math.floor(cdGuard.cooldownRemMs / 60000);
-        const s = Math.floor((cdGuard.cooldownRemMs % 60000) / 1000).toString().padStart(2, '0');
-        pill.textContent = `⏳ COOLDOWN (${m}:${s} นาที)`;
+        pill.textContent = `🔒 COOLDOWN (${cdGuard.remStr})`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-amber-950 text-amber-300 border border-amber-500 rounded-full";
-        head.textContent = `พักหลังปิดออเดอร์ 15 นาที (เหลืออีก ${m}:${s} นาที) เพื่อป้องกันการเข้าไม้ซ้ำช่วงผันผวน`;
+        head.textContent = `${getCooldownReasonLabel(cdGuard.reason)} — เหลือ ${cdGuard.remStr} (ปลดล็อกเวลา ${cdGuard.targetTimeStr}) ระบบหยุดวาง Limit/เปิดไม้ใหม่อัตโนมัติชั่วคราว`;
         box.className = "card p-4 border-amber-500/50 bg-gradient-to-r from-amber-950/30 via-gray-900 to-gray-900 space-y-3";
         return;
       }
@@ -4088,7 +4092,7 @@
         head.textContent = `ยืนยันครบ 3 ชั้น (ความมั่นใจ ${sc.conf.totalScore}%)! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)}`;
         box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40 space-y-3";
 
-        if (!isMirrorClientPassive() && (!orderState.activeOrder || orderState.activeOrder.mode === "LIMIT") && Date.now() - lastAutoFireTs > 300000) {
+        if (!isMirrorClientPassive() && !getCooldownGuardStatus().inCooldown && (!orderState.activeOrder || orderState.activeOrder.mode === "LIMIT") && Date.now() - lastAutoFireTs > 300000) {
           lastAutoFireTs = Date.now();
           placeMarketOrderNow();
         }
@@ -4221,37 +4225,176 @@
       return false;
     };
 
-    // ฟังก์ชันคูลดาวน์อิงเวลาปิดแท่ง M15
-    window.getNextM15CandleCloseMs = function(fromMs) {
-      const M15_MS = 15 * 60 * 1000;
-      let nextClose = Math.ceil(fromMs / M15_MS) * M15_MS;
-      if (nextClose - fromMs < 45 * 1000) nextClose += M15_MS;
-      return nextClose;
-    };
+    // === ระบบล็อกพักออกออเดอร์ตามรอบแท่งเทียน M15 (Candle-Aligned Post-Trade Cooldown) ===
+    // กติกา: ปิดชนะ (netPnl > 0) = พักเศษแท่งปัจจุบัน + 1 แท่งเต็ม (15 นาที)
+    //        ปิดแพ้/เท่าทุน (netPnl <= 0) = พักเศษแท่งปัจจุบัน + 2 แท่งเต็ม (30 นาที)
+    // เก็บสถานะไว้ใน orderState (ซิงก์ผ่าน GitHub Gist ตัวเดียวกับ CloudSync) + localStorage ให้คอมและมือถือล็อก/ปลดล็อกพร้อมกัน
+    const M15_MS = 15 * 60 * 1000;
+    const M15_COOLDOWN_LS_UNTIL_KEY = "gq_m15_cooldown_until";
+    const M15_COOLDOWN_LS_REASON_KEY = "gq_m15_cooldown_reason";
+    const COOLDOWN_LOCKED_BUTTON_IDS = [
+      "btn-lob-place-scalp", "btn-lob-place-swing-rev", "btn-lob-market-now",
+      "btn-ea-place-scalp", "btn-ea-scalp-market",
+      "btn-eb-place-swing", "btn-eb-swing-market"
+    ];
 
-    window.getCooldownGuardStatus = function() {
-      const now = Date.now();
-      let untilMs = 0;
+    function clearM15CooldownStorage() {
       try {
-        untilMs = Number(localStorage.getItem('gq_m15_cooldown_until') || 0);
+        localStorage.removeItem(M15_COOLDOWN_LS_UNTIL_KEY);
+        localStorage.removeItem(M15_COOLDOWN_LS_REASON_KEY);
+      } catch (e) {}
+    }
+
+    // สูตรปลดล็อก: จบแท่ง M15 ปัจจุบัน + 1 แท่ง (WIN) หรือ + 2 แท่ง (LOSS)
+    function computeM15CooldownUnlockAt(closeTimeMs, isWin) {
+      const currentBarEndMs = Math.floor(closeTimeMs / M15_MS) * M15_MS + M15_MS;
+      return currentBarEndMs + (isWin ? 1 : 2) * M15_MS;
+    }
+
+    // เรียกทันทีที่ออเดอร์ปิด (ชน TP / ชน SL / BE STOP / ปิดมือ — ทุกทางผ่าน finalizeClosedOrder)
+    function setPostTradeM15Cooldown(netPnlUsd, closeTimeMs = Date.now()) {
+      const isWin = Number(netPnlUsd) > 0;
+      const cooldownUnlockAt = computeM15CooldownUnlockAt(closeTimeMs, isWin);
+      const cooldownReason = isWin ? "WIN" : "LOSS";
+      try {
+        if (typeof orderState !== "undefined" && orderState) {
+          orderState.cooldownUnlockAt = cooldownUnlockAt;
+          orderState.cooldownReason = cooldownReason;
+        }
+        localStorage.setItem(M15_COOLDOWN_LS_UNTIL_KEY, String(cooldownUnlockAt));
+        localStorage.setItem(M15_COOLDOWN_LS_REASON_KEY, cooldownReason);
+      } catch (e) { console.warn("[cooldown] set:", e); }
+      return { cooldownUnlockAt, cooldownReason };
+    }
+
+    // orderState (ตัวที่ซิงก์ผ่าน Gist) เป็นตัวคุมล็อก — กระจายค่าลง localStorage ให้ตรงกันทุกเครื่อง
+    function mirrorM15CooldownToLocalStorage() {
+      try {
+        const untilMs = (typeof orderState !== "undefined" && orderState) ? Number(orderState.cooldownUnlockAt || 0) : 0;
+        if (untilMs > 0) {
+          localStorage.setItem(M15_COOLDOWN_LS_UNTIL_KEY, String(untilMs));
+          localStorage.setItem(M15_COOLDOWN_LS_REASON_KEY, String(orderState.cooldownReason || ""));
+        } else {
+          clearM15CooldownStorage();
+        }
+      } catch (e) {}
+    }
+
+    function formatCooldownRemain(remMs) {
+      const safe = Math.max(0, remMs);
+      return `${String(Math.floor(safe / 60000)).padStart(2, "0")}:${String(Math.floor((safe % 60000) / 1000)).padStart(2, "0")}`;
+    }
+
+    function formatCooldownBkkHhMm(untilMs) {
+      const bkk = new Date(untilMs + 7 * 3600 * 1000);
+      return `${String(bkk.getUTCHours()).padStart(2, "0")}:${String(bkk.getUTCMinutes()).padStart(2, "0")}`;
+    }
+
+    function getCooldownReasonLabel(reason) {
+      if (reason === "WIN") return "ล็อกพักหลังชนะ (1 รอบ M15)";
+      if (reason === "LOSS") return "ล็อกพักหลังแพ้ (2 รอบ M15)";
+      return "ล็อกพักหลังปิดไม้ (รอจบรอบ M15)";
+    }
+
+    // สถานะล็อกปัจจุบัน: อ่าน orderState ก่อน (ตัวที่ซิงก์กับอีกเครื่อง) แล้ว fallback เป็น localStorage
+    function getCooldownGuardStatus() {
+      const now = Date.now();
+      let untilMs = 0, reason = "";
+      try {
+        if (typeof orderState !== "undefined" && orderState && Number(orderState.cooldownUnlockAt) > 0) {
+          untilMs = Number(orderState.cooldownUnlockAt);
+          reason = String(orderState.cooldownReason || "");
+        } else {
+          untilMs = Number(localStorage.getItem(M15_COOLDOWN_LS_UNTIL_KEY) || 0);
+          reason = String(localStorage.getItem(M15_COOLDOWN_LS_REASON_KEY) || "");
+        }
       } catch (e) {}
       if (!untilMs || now >= untilMs) {
         if (untilMs && now >= untilMs) {
-          try { localStorage.removeItem('gq_m15_cooldown_until'); } catch (e) {}
+          // ครบเวลาแล้ว → ปลดล็อกและเคลียร์ค่าทั้ง orderState และ localStorage
+          try {
+            if (typeof orderState !== "undefined" && orderState && Number(orderState.cooldownUnlockAt)) {
+              orderState.cooldownUnlockAt = 0;
+              orderState.cooldownReason = "";
+              saveOrderStateLocal();
+            }
+          } catch (e) {}
+          clearM15CooldownStorage();
         }
-        return { inCooldown: false, cooldownRemMs: 0, targetTimeStr: '', reason: '' };
+        return { inCooldown: false, cooldownRemMs: 0, remStr: "00:00", targetTimeStr: "", reason: "", cooldownUnlockAt: 0 };
       }
       const remMs = Math.max(0, untilMs - now);
-      const bkk = new Date(untilMs + 7 * 3600 * 1000);
-      const hh = String(bkk.getUTCHours()).padStart(2, '0');
-      const mm = String(bkk.getUTCMinutes()).padStart(2, '0');
       return {
-        inCooldown: remMs > 0,
+        inCooldown: true,
         cooldownRemMs: remMs,
-        targetTimeStr: `${hh}:${mm} น.`,
-        reason: `พักรอจบแท่งเทียน M15 (ปิดแท่ง ${hh}:${mm} น.)`
+        remStr: formatCooldownRemain(remMs),
+        targetTimeStr: formatCooldownBkkHhMm(untilMs),
+        reason,
+        cooldownUnlockAt: untilMs
       };
-    };
+    }
+
+    // ดักเช็กในฟังก์ชันสั่งออเดอร์อีกชั้น (manual = โชว์คำเตือนเฉพาะเมื่อผู้ใช้กดเอง)
+    function guardOrderPlacementBlocked(isManual) {
+      try {
+        const cd = getCooldownGuardStatus();
+        if (cd.inCooldown && cd.cooldownRemMs > 0) {
+          if (isManual) {
+            alert(`🔒 ติดล็อกพักหลังปิดไม้ตามรอบแท่ง M15\nเหลืออีก ${cd.remStr} (ปลดล็อกเวลา ${cd.targetTimeStr})\n\nหากจำเป็นเร่งด่วน ใช้ปุ่ม "ปลดล็อกฉุกเฉิน" ที่แถบ LIVE ORDER BOARD`);
+          }
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    // ล็อก/ปลดล็อกปุ่มออกออเดอร์ทุกปุ่ม (disabled + opacity-50)
+    function applyCooldownButtonLocks(inCooldown) {
+      COOLDOWN_LOCKED_BUTTON_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.disabled = !!inCooldown;
+        el.classList.toggle("opacity-50", !!inCooldown);
+        el.classList.toggle("cursor-not-allowed", !!inCooldown);
+      });
+    }
+
+    // อัปเดตแถบ LIVE ORDER BOARD ทุกวินาที: ป้ายนับถอยหลัง + สถานะปุ่ม + ปุ่มปลดล็อกฉุกเฉิน
+    function updateCooldownUIBadge() {
+      let cd;
+      try { cd = getCooldownGuardStatus(); } catch (e) { cd = { inCooldown: false, cooldownRemMs: 0 }; }
+      const active = !!(cd.inCooldown && cd.cooldownRemMs > 0);
+      applyCooldownButtonLocks(active);
+      const cdPill = document.getElementById("lob-cooldown-pill");
+      const cdNote = document.getElementById("lob-cooldown-note");
+      const cdBtn = document.getElementById("btn-cooldown-emergency");
+      if (active) {
+        const msg = `🔒 ${getCooldownReasonLabel(cd.reason)}: เหลือ ${cd.remStr} (ปลดล็อกเวลา ${cd.targetTimeStr})`;
+        if (cdPill) { cdPill.classList.remove("hidden"); cdPill.textContent = msg; }
+        if (cdNote) cdNote.textContent = `${msg} — พักวาง Limit/เปิดไม้ใหม่ชั่วคราว`;
+        if (cdBtn) cdBtn.classList.remove("hidden");
+      } else {
+        if (cdPill) cdPill.classList.add("hidden");
+        if (cdBtn) cdBtn.classList.add("hidden");
+        if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
+      }
+    }
+
+    // ปุ่มปลดล็อกฉุกเฉิน: ยกเลิกล็อกทันทีทุกเครื่อง (เคลียร์ orderState + localStorage แล้ว push CloudSync)
+    function emergencyUnlockCooldown() {
+      if (!confirm("⚠️ ปลดล็อกฉุกเฉิน: ยืนยันยกเลิกล็อกพักหลังปิดไม้ทันทีใช่หรือไม่?")) return;
+      try {
+        if (typeof orderState !== "undefined" && orderState) {
+          orderState.cooldownUnlockAt = 0;
+          orderState.cooldownReason = "";
+        }
+        clearM15CooldownStorage();
+        saveOrderStateLocal();
+      } catch (e) {}
+      try { pushCloudSyncState(false); } catch (e) {}
+      updateCooldownUIBadge();
+      try { renderOrderAndLedgerUI(); } catch (e) {}
+    }
 
     // ฟังก์ชันกรองค่า WEEKEND/SPREAD จาก liveModel และทำความสะอาด DOM
     window.sanitizeLiveModel = function() {
@@ -4306,23 +4449,9 @@
         }
       } catch (e) { console.warn('[masterUnifiedLoop] elapsed:', e); }
 
-      // 4. คูลดาวน์ M15
+      // 4. ล็อกพักหลังปิดไม้ตามรอบแท่ง M15 (นับถอยหลังทุกวินาที + ล็อกปุ่ม + ปุ่มปลดล็อกฉุกเฉิน)
       try {
-        const cd = getCooldownGuardStatus();
-        const cdPill = document.getElementById('lob-cooldown-pill');
-        const cdNote = document.getElementById('lob-cooldown-note');
-        if (cdPill) {
-          if (cd.inCooldown && cd.cooldownRemMs > 0) {
-            const cm = Math.floor(cd.cooldownRemMs / 60000);
-            const cs = String(Math.floor((cd.cooldownRemMs % 60000) / 1000)).padStart(2, '0');
-            cdPill.classList.remove('hidden');
-            cdPill.textContent = `⏳ รอจบแท่ง M15 (${cd.targetTimeStr} | เหลือ ${cm}:${cs})`;
-            if (cdNote) cdNote.textContent = `⏳ พักรอจบแท่งเทียน M15 รอบ ${cd.targetTimeStr} (เหลือ ${cm}:${cs} นาที)`;
-          } else {
-            cdPill.classList.add('hidden');
-            if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
-          }
-        }
+        updateCooldownUIBadge();
       } catch (e) { console.warn('[masterUnifiedLoop] cooldown:', e); }
 
       // 5. เช็ค daily rollover ทุก 5 วินาที
