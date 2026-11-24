@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="gld" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="45%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="104" fill="#0b0f19"/>
+  <circle cx="256" cy="256" r="170" fill="url(#gld)"/>
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#78350f" stroke-width="10" opacity="0.55"/>
+  <circle cx="256" cy="256" r="132" fill="none" stroke="#78350f" stroke-width="6" opacity="0.35"/>
+  <path d="M186 258 L238 206 L282 240 L332 178" stroke="#3b2405" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+  <text x="256" y="360" font-family="Arial, Helvetica, sans-serif" font-size="118" font-weight="bold" fill="#3b2405" text-anchor="middle">Au</text>
+</svg>

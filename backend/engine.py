@@ -1731,8 +1731,725 @@ def evaluate_risk_guard(spot, bid, ask, curr_atr, tp_pts, tr_sl_dist, news_items
     }
 
 
+# =========================================================================================
+# CANONICAL GIST SYNC + HEADLESS CLOUD EXECUTOR
+# ทำงานแทนหน้าเว็บ 100% เมื่อผู้ใช้ปิดหน้าเว็บ/ปิดคอมพิวเตอร์ (Heartbeat Handover)
+# - อ่าน/เขียน Canonical Snapshot ตัวเดียวกับ index.html (ห้ามเขียน Token/API Key ลง Gist เด็ดขาด)
+# - browserLastSeenMs สด (< 180 วิ) = ผู้ใช้เปิดเว็บอยู่ -> ข้ามการเปิด/ปิดออเดอร์ กันชนกับหน้าเว็บ
+# - เมื่อผู้ใช้ปิดเว็บ: จัดการออเดอร์ครบวงจร (TP / SL+buffer / TIME_EXIT_12B / Auto-BE / เปิดไม้ใหม่ตามสูตรผู้ชนะ)
+# - สรุปปิดวัน + AI Post-Mortem เวลา 04:45-05:25 น. (BKK) ส่ง ntfy ครั้งเดียวต่อวัน
+# =========================================================================================
+
+GIST_ID = os.environ.get("GIST_ID", "278b204024c1edbc8ed0de38797ad968").strip()
+GIST_TOKEN = os.environ.get("GIST_TOKEN", "").strip()
+GIST_OWNER = os.environ.get("GIST_OWNER", "kotuazyx699-a11y").strip()
+GIST_FILENAME = "gold_quant_sync.json"
+GIST_API_URL = f"https://api.github.com/gists/{GIST_ID}"
+GIST_RAW_URL = f"https://gist.githubusercontent.com/{GIST_OWNER}/{GIST_ID}/raw/{GIST_FILENAME}"
+BROWSER_STALE_SECS = int(os.environ.get("HEADLESS_BROWSER_STALE_SECS", "180"))       # heartbeat เก่ากว่านี้ = ผู้ใช้ปิดเว็บ
+HEADLESS_MIN_STABILITY = float(os.environ.get("HEADLESS_MIN_STABILITY", "0.0"))       # คะแนนขั้นต่ำของสูตรผู้ชนะ (ต้องมากกว่า)
+HEADLESS_TIME_EXIT_HOURS = float(os.environ.get("HEADLESS_TIME_EXIT_HOURS", "3.0"))   # TIME_EXIT_12B = 12 แท่ง M15 = 3 ชม.
+HEADLESS_MAX_PRICE_DELTA = float(os.environ.get("HEADLESS_MAX_PRICE_DELTA", "5.0"))   # เพดานค่า align ราคา (กันข้อมูลเพี้ยน)
+M15_MS = 15 * 60 * 1000
+DEFAULT_MT5_OFFSET = 7.51
+DEFAULT_SPREAD_BUFFER_PTS = 47
+DEFAULT_MAX_SPREAD_PTS = 65.0
+EOD_WINDOW_START_MIN = 4 * 60 + 45   # 04:45 น. BKK
+EOD_WINDOW_END_MIN = 5 * 60 + 25     # 05:25 น. BKK
+
+
+def _to_float(v, default=None):
+    """แปลงเป็น float แบบปลอดภัย (คืน default เมื่อค่าว่าง/ไม่ใช่ตัวเลข/NaN)"""
+    try:
+        if v is None or v == "":
+            return default
+        f = float(v)
+        return f if math.isfinite(f) else default
+    except Exception:
+        return default
+
+
+def pull_canonical_snapshot():
+    """ดึง Canonical Snapshot ล่าสุดจาก Gist — API ก่อน (ใช้ GIST_TOKEN ถ้ามี) ล้มเหลวค่อย fallback raw public"""
+    try:
+        headers = {"Accept": "application/vnd.github+json", "User-Agent": "gold-quant-engine"}
+        if GIST_TOKEN:
+            headers["Authorization"] = f"Bearer {GIST_TOKEN}"
+        r = requests.get(f"{GIST_API_URL}?t={int(time.time() * 1000)}", headers=headers, timeout=12)
+        if r.status_code == 200:
+            content = ((r.json().get("files") or {}).get(GIST_FILENAME) or {}).get("content")
+            if content:
+                snap = json.loads(content)
+                if isinstance(snap, dict):
+                    snap["_source"] = "api"
+                    return snap
+            print("[Gist] API 200 แต่ไม่พบไฟล์ snapshot")
+        else:
+            print(f"[Gist] API ตอบ {r.status_code} — fallback ไปอ่าน raw public")
+    except Exception as e:
+        print(f"[Gist] API Error: {e} — fallback ไปอ่าน raw public")
+    try:
+        r2 = requests.get(GIST_RAW_URL, params={"t": int(time.time() * 1000)},
+                          headers={"User-Agent": "gold-quant-engine"}, timeout=12)
+        if r2.status_code == 200:
+            snap = json.loads(r2.text)
+            if isinstance(snap, dict):
+                snap["_source"] = "raw"
+                return snap
+        print(f"[Gist] raw ตอบ {r2.status_code}")
+    except Exception as e:
+        print(f"[Gist] raw Error: {e}")
+    return None
+
+
+def push_canonical_snapshot(snapshot):
+    """บันทึก Canonical Snapshot กลับขึ้น Gist (ตัด ghToken/thaillmApiKey ออกเสมอ). คืน True เมื่อสำเร็จ"""
+    if not isinstance(snapshot, dict):
+        return False
+    if not GIST_TOKEN:
+        print("[Gist] ไม่มี GIST_TOKEN — ข้ามการบันทึก snapshot (โหมดอ่านอย่างเดียว)")
+        return False
+    try:
+        snap = json.loads(json.dumps(snapshot, ensure_ascii=False))  # deep copy
+        snap.pop("_source", None)
+        mc = snap.get("masterConfig")
+        if isinstance(mc, dict):
+            mc["ghToken"] = ""        # ห้ามเขียนรหัสลับลง Gist เด็ดขาด
+            mc["thaillmApiKey"] = ""
+        snap["revision"] = int(time.time() * 1000)
+        snap["schema"] = snap.get("schema", 2)
+        snap["savedAt"] = datetime.now(THAI_TZ).isoformat()
+        snap["cloudExecutor"] = {
+            "lastRunTh": datetime.now(THAI_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "mode": "HEADLESS" if not is_browser_online(snapshot) else "WATCHING",
+            "engine": "backend/engine.py",
+        }
+        r = requests.patch(
+            GIST_API_URL,
+            headers={"Authorization": f"Bearer {GIST_TOKEN}",
+                     "Accept": "application/vnd.github+json",
+                     "Content-Type": "application/json"},
+            json={"files": {GIST_FILENAME: {"content": json.dumps(snap, ensure_ascii=False)}}},
+            timeout=15,
+        )
+        if r.status_code in (200, 201):
+            return True
+        print(f"[Gist] push ตอบ {r.status_code}: {r.text[:120]}")
+    except Exception as e:
+        print(f"[Gist] push Error: {e}")
+    return False
+
+
+def is_browser_online(snapshot, now_ms=None):
+    """ผู้ใช้เปิดหน้าเว็บ (โหมด Master) อยู่ไหม — heartbeat browserLastSeenMs อายุน้อยกว่า 180 วินาที
+    หน้า Mirror (มือถือ/แท็บแสดงผลอย่างเดียว) ไม่นับเป็นผู้จัดการออเดอร์ — Cloud Executor ยังทำงานต่อได้"""
+    try:
+        if not isinstance(snapshot, dict):
+            return False
+        last = snapshot.get("browserLastSeenMs")
+        if last is None:
+            return False
+        fresh = (int(now_ms if now_ms is not None else time.time() * 1000) - int(last)) < BROWSER_STALE_SECS * 1000
+        if not fresh:
+            return False
+        role = str(snapshot.get("browserRole") or "MASTER").upper()
+        return role != "MIRROR"
+    except Exception:
+        return False
+
+
+def _bkk_session_key(now_th):
+    """ช่วงตลาดตามเวลาไทย: ASIA 06:00-13:59 | LONDON 14:00-18:59 | NY_OVERLAP 19:00-22:59 | LATE_NY 23:00-05:59"""
+    m = now_th.hour * 60 + now_th.minute
+    for name, start_m, end_m, _label in STABLE_SESSION_DEFS:
+        if start_m <= end_m:
+            if start_m <= m < end_m:
+                return name
+        elif m >= start_m or m < end_m:
+            return name
+    return "LATE_NY"
+
+
+def compute_m15_cooldown_unlock_at(close_ms, is_win):
+    """สูตรเดียวกับหน้าเว็บ: จบแท่ง M15 ปัจจุบัน + 1 แท่ง (ชนะ) / + 2 แท่ง (แพ้หรือเท่าทุน)"""
+    current_bar_end = (int(close_ms) // M15_MS) * M15_MS + M15_MS
+    return current_bar_end + (1 if is_win else 2) * M15_MS
+
+
+def resolve_price_delta(snapshot):
+    """ส่วนต่างราคา (USD) ระหว่าง feed ของ engine กับ price space ของออเดอร์ใน snapshot
+    หน้าเว็บแสดงราคา = PAXG + lockedOffset ส่วน feed ของ engine ≈ true spot = PAXG + basis
+    => delta = mt5Offset(ที่ล็อก) - spotBasisOffset ล่าสุดของหน้าเว็บ เท่านั้น
+    (ห้ามเอา mt5Offset ไปบวกกับ spot ตรง ๆ ซ้ำ — basis ของ PAXG ถูกบวกอยู่ในราคา true spot แล้ว)"""
+    mc = snapshot.get("masterConfig") or {}
+    px = snapshot.get("livePriceSpace") or {}
+    basis = _to_float(px.get("spotBasisOffset"), None)
+    locked = mc.get("lockedSpotOffset")
+    locked_on = (mc.get("mt5Locked") is not False) and (locked is not None and locked != "")
+    mt5_off = _to_float(mc.get("mt5Offset"), None)
+    if mt5_off is None:
+        mt5_off = _to_float(locked, DEFAULT_MT5_OFFSET)
+    if basis is None or not locked_on:
+        return 0.0
+    delta = mt5_off - basis
+    if abs(delta) > HEADLESS_MAX_PRICE_DELTA:
+        print(f"[Headless] price delta {delta:+.2f} เกินเพดาน {HEADLESS_MAX_PRICE_DELTA} — ใช้ค่าสูงสุดที่อนุญาต")
+        delta = HEADLESS_MAX_PRICE_DELTA if delta > 0 else -HEADLESS_MAX_PRICE_DELTA
+    return round(delta, 2)
+
+
+def headless_be_plan(entry, sl, tp, direction, be_rule):
+    """พอร์ตกฎบังทุน BE แบบเดียวกับ evaluateBeRecommendation บนหน้าเว็บ (ใช้ตัดสิน Auto-BE ฝั่งคลาวด์)"""
+    is_long = direction == "LONG"
+    sl_dist = max(0.5, abs(entry - sl))
+    tp_dist = max(0.5, abs(tp - entry))
+    std_be_sl = round(entry + 0.20, 2) if is_long else round(entry - 0.20, 2)
+    rule = str(be_rule or "NO_BE")
+    if rule == "EARLY_BE_50":
+        trig = round(entry + tp_dist * 0.50, 2) if is_long else round(entry - tp_dist * 0.50, 2)
+        return {"shouldBe": True, "rule": rule, "triggerPrice": trig, "beNewSl": std_be_sl,
+                "shortTag": f"EARLY_BE_50 ที่ ${trig:.2f} → SL ${std_be_sl:.2f}"}
+    if rule == "LOCK_HALF_0.8R":
+        trig = round(entry + sl_dist * 0.80, 2) if is_long else round(entry - sl_dist * 0.80, 2)
+        lock_sl = round(entry + sl_dist * 0.40, 2) if is_long else round(entry - sl_dist * 0.40, 2)
+        return {"shouldBe": True, "rule": rule, "triggerPrice": trig, "beNewSl": lock_sl,
+                "shortTag": f"ล็อกกำไร 0.4R ที่ ${trig:.2f} → SL ${lock_sl:.2f}"}
+    if rule == "LOCK_HALF_1R":
+        trig = round(entry + sl_dist * 1.00, 2) if is_long else round(entry - sl_dist * 1.00, 2)
+        lock_sl = round(entry + sl_dist * 0.50, 2) if is_long else round(entry - sl_dist * 0.50, 2)
+        return {"shouldBe": True, "rule": rule, "triggerPrice": trig, "beNewSl": lock_sl,
+                "shortTag": f"ล็อกกำไร 0.5R ที่ ${trig:.2f} → SL ${lock_sl:.2f}"}
+    if rule == "LATE_BE_85":
+        trig = round(entry + tp_dist * 0.85, 2) if is_long else round(entry - tp_dist * 0.85, 2)
+        return {"shouldBe": True, "rule": rule, "triggerPrice": trig, "beNewSl": std_be_sl,
+                "shortTag": f"LATE_BE_85 ที่ ${trig:.2f} → SL ${std_be_sl:.2f}"}
+    if rule == "BE_AT_1R":
+        trig = round(entry + sl_dist * 1.00, 2) if is_long else round(entry - sl_dist * 1.00, 2)
+        return {"shouldBe": True, "rule": rule, "triggerPrice": trig, "beNewSl": std_be_sl,
+                "shortTag": f"BE_AT_1R ที่ ${trig:.2f} → SL ${std_be_sl:.2f}"}
+    if rule == "TIME_EXIT_12B":
+        ref = round(entry + tp_dist * 0.85, 2) if is_long else round(entry - tp_dist * 0.85, 2)
+        return {"shouldBe": False, "rule": rule, "triggerPrice": ref, "beNewSl": std_be_sl,
+                "shortTag": "TIME_EXIT_12B (ไม่บัง BE — ออกแท่ง M15 ที่ 12)"}
+    ref = round(entry + tp_dist * 0.85, 2) if is_long else round(entry - tp_dist * 0.85, 2)
+    return {"shouldBe": False, "rule": rule, "triggerPrice": ref, "beNewSl": std_be_sl,
+            "shortTag": "NO_BE (ไม่บัง BE)"}
+
+
+def _order_open_ms(ao, now_th):
+    """เวลาเปิดออเดอร์เป็น epoch ms — ใช้ createdTs ก่อน ไม่มีค่อยประกอบจาก dateStr + openTime"""
+    ts = _to_float(ao.get("createdTs"), None)
+    if ts and ts > 1e12:
+        return int(ts)
+    if ts and ts > 1e9:
+        return int(ts * 1000)
+    try:
+        d = datetime.strptime(f"{ao.get('dateStr', now_th.strftime('%Y-%m-%d'))} {ao.get('openTime', '00:00:00')}",
+                              "%Y-%m-%d %H:%M:%S").replace(tzinfo=THAI_TZ)
+        return int(d.timestamp() * 1000)
+    except Exception:
+        return int(now_th.timestamp() * 1000)
+
+
+def _session_key_from_order(ao, now_th):
+    try:
+        d = datetime.strptime(f"{ao.get('dateStr', now_th.strftime('%Y-%m-%d'))} {ao.get('openTime', '00:00:00')}",
+                              "%Y-%m-%d %H:%M:%S").replace(tzinfo=THAI_TZ)
+        return _bkk_session_key(d)
+    except Exception:
+        return _bkk_session_key(now_th)
+
+
+def _mirror_trade_lists(snap):
+    """อัปเดต alias ระดับบนสุด todayTrades/journalTrades ให้ตรงกับ orderState (สเปก snapshot หน้าเว็บ)"""
+    os_ = snap.get("orderState")
+    if isinstance(os_, dict):
+        snap["todayTrades"] = os_.get("todayClosed") or []
+        snap["journalTrades"] = os_.get("learningArchive") or []
+
+
+def _headless_daily_rollover(snap, now_th):
+    """Daily rollover (BKK) เหมือนหน้าเว็บ: ย้าย todayClosed → learningArchive แบบไม่ซ้ำ (อ้าง tradeId)"""
+    os_ = snap.get("orderState")
+    if not isinstance(os_, dict):
+        return False
+    today = now_th.strftime("%Y-%m-%d")
+    if str(os_.get("currentDate") or "") == today:
+        return False
+    today_closed = os_.get("todayClosed") or []
+    archive = os_.get("learningArchive") or []
+    if today_closed:
+        known_ids = {r.get("tradeId") for r in archive if isinstance(r, dict) and r.get("tradeId")}
+        fresh = [r for r in today_closed if not (isinstance(r, dict) and r.get("tradeId") and r.get("tradeId") in known_ids)]
+        os_["learningArchive"] = fresh + archive
+    os_["todayClosed"] = []
+    os_["currentDate"] = today
+    os_["lastDateStr"] = today
+    snap["orderState"] = os_
+    _mirror_trade_lists(snap)
+    print(f"[Headless] Daily rollover (BKK) → ย้ายสถิติเข้าสมุดเรียนรู้ถาวรแล้ว (currentDate: {today})")
+    return True
+
+
+def _headless_update_ai_brain(snap, rec, ao, now_th):
+    """อัปเดตสมอง AI ใน snapshot (สถิติตามช่วงตลาด + น้ำหนักสูตร + insight) ให้ตรงพฤติกรรมหน้าเว็บ"""
+    brain = snap.get("aiBrain")
+    if not isinstance(brain, dict):
+        return
+    try:
+        sess = _session_key_from_order(ao, now_th)
+        stats = brain.setdefault("sessionStats", {}).setdefault(
+            sess, {"label": sess, "wins": 0, "losses": 0, "netR": 0, "bestFormula": "-"})
+        if rec["outcome"] == "WIN":
+            stats["wins"] = int(stats.get("wins") or 0) + 1
+        elif rec["outcome"] == "LOSS":
+            stats["losses"] = int(stats.get("losses") or 0) + 1
+        stats["netR"] = round(float(stats.get("netR") or 0) + rec["pnlR"], 2)
+        stats["bestFormula"] = rec.get("formula") or stats.get("bestFormula") or "-"
+        w = brain.setdefault("formulaWeights", {})
+        fk = rec.get("formula") or "-"
+        cur = float(w.get(fk, 50) or 50)
+        w[fk] = max(10, min(99, cur + (6 if rec["pnlR"] > 0 else -8)))
+        insights = brain.setdefault("learnedInsights", [])
+        insights.insert(0, {
+            "stamp": now_th.strftime("%m-%d %H:%M"),
+            "sess": sess, "tag": rec["outcome"],
+            "text": f"[Cloud Executor] {rec['dir']} ({fk}) ปิด {'+' if rec['pnlR'] >= 0 else ''}{rec['pnlR']}R (${rec['pnlUsd']}) — {rec['closeTag']}",
+        })
+        brain["learnedInsights"] = insights[:30]
+    except Exception as e:
+        print(f"[Headless] aiBrain update warning: {e}")
+
+
+def _headless_finalize_close(snap, ao, exit_price, close_tag, now_th):
+    """ปิดออเดอร์ headless: คำนวณ PnL ($/R) → todayTrades + journalTrades → cooldown M15 → ล้าง activeOrder + ntfy"""
+    os_ = snap.get("orderState") or {}
+    is_long = ao.get("dir") == "LONG"
+    entry = _to_float(ao.get("entry"), 0.0) or 0.0
+    sl = _to_float(ao.get("sl"), entry) or entry
+    lot = _to_float(ao.get("lot"), 0.01) or 0.01
+    exit_price = _to_float(exit_price, entry) or entry
+    diff_usd = (exit_price - entry) if is_long else (entry - exit_price)
+    pnl_usd = round(diff_usd * lot * 100, 2)
+    sl_dist = max(0.5, abs(entry - sl))
+    pnl_r = round(diff_usd / sl_dist, 2)
+    outcome = "WIN" if pnl_usd > 0.05 else ("LOSS" if pnl_usd < -0.05 else "BE")
+    now_ms = int(time.time() * 1000)
+    fk = ao.get("formula") or ao.get("shape") or "-"
+    if outcome == "WIN":
+        lesson = f"ชนะสูตร {fk} ({lot:.2f} Lot) — Cloud Executor ปิด {close_tag}"
+    elif outcome == "BE":
+        lesson = f"ปิดบังทุน BE สูตร {fk} ({lot:.2f} Lot) — Cloud Executor ปิด {close_tag}"
+    else:
+        lesson = f"โดน SL สูตร {fk} ({lot:.2f} Lot) — Cloud Executor ปิด {close_tag}"
+    rec = {
+        "tradeId": str(ao.get("id") or f"CLD-{now_ms}"),
+        "dateStr": now_th.strftime("%Y-%m-%d"),
+        "openTime": str(ao.get("openTime") or "--:--:--"),
+        "closeTime": now_th.strftime("%H:%M:%S"),
+        "dir": ao.get("dir"), "lot": lot,
+        "shape": ao.get("shape") or ao.get("planType") or "-",
+        "formula": fk,
+        "entry": round(entry, 2), "exit": round(exit_price, 2),
+        "sl": round(sl, 2), "tp": round(_to_float(ao.get("tp"), 0.0) or 0.0, 2),
+        "pnlR": pnl_r, "pnlUsd": pnl_usd, "outcome": outcome,
+        "closeTag": close_tag, "lesson": lesson,
+        "closedBy": "CLOUD-EXECUTOR",
+    }
+    today_closed = os_.get("todayClosed") or []
+    archive = os_.get("learningArchive") or []
+    os_["todayClosed"] = [rec] + [r for r in today_closed
+                                  if not (isinstance(r, dict) and r.get("tradeId") == rec["tradeId"])]
+    if rec["tradeId"] not in {r.get("tradeId") for r in archive if isinstance(r, dict)}:
+        os_["learningArchive"] = [rec] + archive   # เข้าสมุดเรียนรู้ทันที (rollover ฝั่งเว็บ dedupe ด้วย tradeId)
+    os_["activeOrder"] = None
+    cooldown_until = compute_m15_cooldown_unlock_at(now_ms, outcome == "WIN")
+    os_["lastCloseTs"] = now_ms
+    os_["cooldownUnlockAt"] = cooldown_until
+    os_["cooldownReason"] = "WIN" if outcome == "WIN" else "LOSS"
+    snap["orderState"] = os_
+    _mirror_trade_lists(snap)
+    _headless_update_ai_brain(snap, rec, ao, now_th)
+    tag_icon = {"WIN": "white_check_mark", "BE": "shield", "LOSS": "octagonal_sign"}[outcome]
+    unlock_str = datetime.fromtimestamp(cooldown_until / 1000, THAI_TZ).strftime("%H:%M")
+    send_ntfy(
+        f"{'ชน TP' if outcome == 'WIN' else ('ปิดบังทุน BE' if outcome == 'BE' else 'โดน SL')}: {ao.get('dir')} ({'+' if pnl_usd >= 0 else ''}${pnl_usd:.2f}) [Cloud]",
+        "\n".join([
+            f"{'✅' if outcome == 'WIN' else ('🛡️' if outcome == 'BE' else '🛑')} เข้า ${entry:.2f} → ออก ${exit_price:.2f} ({lot:.2f} Lot | {'+' if pnl_r >= 0 else ''}{pnl_r}R)",
+            f"☁️ ปิดโดย Cloud Executor ({close_tag}) — ล็อกพักถึง {unlock_str} น. | แผน: {ao.get('planType')}",
+        ]),
+        5, [tag_icon],
+    )
+    print(f"[Headless] ปิดออเดอร์ {ao.get('id')} ({close_tag}) → {outcome} {pnl_usd:+.2f}$ | cooldown ถึง {unlock_str} น.")
+
+
+def _headless_manage_active_order(snap, ao, adj_bid, adj_ask, buffer_usd, now_th):
+    """ตรวจ TP / SL+buffer / Auto-BE / TIME_EXIT_12B / การแมตช์ LIMIT — คืน True เมื่อมีการเปลี่ยนแปลงที่ต้อง push"""
+    os_ = snap.get("orderState") or {}
+    is_long = ao.get("dir") == "LONG"
+    eval_px = adj_bid if is_long else adj_ask
+    entry = _to_float(ao.get("entry"), 0.0) or 0.0
+    sl = _to_float(ao.get("sl"), 0.0) or 0.0
+    tp = _to_float(ao.get("tp"), 0.0) or 0.0
+    if ao.get("mode") == "LIMIT":
+        filled = (adj_ask <= entry) if is_long else (adj_bid >= entry)
+        if filled:
+            ao["mode"] = "OPEN"
+            ao["openTime"] = now_th.strftime("%H:%M:%S")
+            ao["beTriggered"] = False
+            os_["activeOrder"] = ao
+            snap["orderState"] = os_
+            send_ntfy(
+                f"แมตช์ออเดอร์ {ao.get('dir')} @ ${entry:.2f} ({(_to_float(ao.get('lot'), 0.01) or 0.01):.2f} Lot) [Cloud]",
+                "\n".join([f"🎯 {ao.get('planType')} | SL ${sl:.2f} | TP ${tp:.2f}",
+                           "☁️ Cloud Executor รับช่วงจัดการต่ออัตโนมัติ"]),
+                5, ["dart"],
+            )
+            print(f"[Headless] LIMIT แมตช์ที่ ${entry} → เปลี่ยนเป็น OPEN")
+            return True
+        if (ao.get("origin") or "AUTO") == "AUTO":
+            dist_pts = int(round(abs(eval_px - entry) * 100))
+            if dist_pts > 160:
+                os_["activeOrder"] = None
+                snap["orderState"] = os_
+                send_ntfy(
+                    f"ยกเลิก Limit AUTO ที่ค้างไกลราคา {dist_pts} จุด [Cloud]",
+                    "☁️ Cloud Executor จะรอสัญญาณใหม่จากสูตรผู้ชนะของช่วงตลาดถัดไป",
+                    3, ["wastebasket"],
+                )
+                print(f"[Headless] ยกเลิก LIMIT AUTO ระยะ {dist_pts} จุด (เกินโซน 160)")
+                return True
+        return False
+    # === mode == OPEN ===
+    tpHit = (eval_px >= tp) if is_long else (eval_px <= tp)
+    if tpHit:
+        _headless_finalize_close(snap, ao, tp, "TP HIT (CLOUD)", now_th)
+        return True
+    be_info = ao.get("beInfo") if isinstance(ao.get("beInfo"), dict) else headless_be_plan(entry, sl, tp, ao.get("dir"), ao.get("beRule"))
+    if be_info.get("shouldBe") and not ao.get("beTriggered"):
+        trig = _to_float(be_info.get("triggerPrice"), None)
+        if trig is not None and ((eval_px >= trig) if is_long else (eval_px <= trig)):
+            ao["beTriggered"] = True
+            auto_be_on = (snap.get("masterConfig") or {}).get("autoBeEnabled", True) is not False
+            if auto_be_on:
+                ao["sl"] = _to_float(be_info.get("beNewSl"), sl) or sl
+                sl = ao["sl"]
+            os_["activeOrder"] = ao
+            snap["orderState"] = os_
+            send_ntfy(
+                f"ถึงจุดบังทุน BE แล้ว! เลื่อน SL ไปที่ ${(_to_float(be_info.get('beNewSl'), 0) or 0):.2f} [Cloud]",
+                "\n".join([
+                    f"🛡️ {ao.get('dir')} @ ${entry:.2f} ({(_to_float(ao.get('lot'), 0.01) or 0.01):.2f} Lot) วิ่งถึง ${eval_px:.2f}",
+                    "☁️ Cloud Executor เลื่อน SL ตามกฎบังทุนอัตโนมัติ" if auto_be_on else "☁️ Auto-BE ปิดอยู่ — บันทึกสถานะไว้ให้ผู้ใช้เลื่อนเอง",
+                ]),
+                5, ["shield"],
+            )
+            print(f"[Headless] Auto-BE trigger ที่ {trig} → SL ใหม่ {be_info.get('beNewSl')}")
+            return True
+    slBreached = (eval_px <= (sl - buffer_usd)) if is_long else (eval_px >= (sl + buffer_usd))
+    if slBreached:
+        tag = "BE STOP HIT (CLOUD)" if ao.get("beTriggered") else "SL HIT (CLOUD)"
+        _headless_finalize_close(snap, ao, sl, tag, now_th)
+        return True
+    if str(ao.get("beRule") or "") == "TIME_EXIT_12B":
+        open_ms = _order_open_ms(ao, now_th)
+        if (int(time.time() * 1000) - open_ms) >= int(HEADLESS_TIME_EXIT_HOURS * 3600 * 1000):
+            _headless_finalize_close(snap, ao, eval_px, "TIME EXIT 12B (CLOUD)", now_th)
+            return True
+    return False
+
+
+def _headless_open_new_order(snap, bid, ask, curr_atr, session_stable, scalp_setup, news_items, now_th, price_delta):
+    """เปิดออเดอร์เสมือนใหม่เมื่อเข้าเงื่อนไขครบ (Auto-Limit เปิด + พ้น cooldown + ไม่มีข่าวแรง + สเปรดปกติ + สูตรผู้ชนะผ่านเกณฑ์)"""
+    mc = snap.get("masterConfig") or {}
+    os_ = snap.get("orderState") or {}
+    now_ms = int(time.time() * 1000)
+    if os_.get("autoArm") is not True:
+        print("[Headless] Auto-Limit ปิดอยู่ (autoArm = false) — ไม่เปิดไม้ใหม่")
+        return False
+    cd_until = _to_float(os_.get("cooldownUnlockAt"), 0) or 0
+    if cd_until > now_ms:
+        print(f"[Headless] ยังอยู่ในช่วงคูลดาวน์หลังปิดไม้ อีก ~{int((cd_until - now_ms) / 60000) + 1} นาที")
+        return False
+    for ev in (news_items or []):
+        try:
+            if ev.get("impact") == "High" and float(ev.get("hours_away", 99)) <= 0.25:
+                print(f"[Headless] พักเปิดไม้ — ข่าว High Impact ±15 นาที: {ev.get('title')}")
+                return False
+        except Exception:
+            continue
+    ceil_pts = _to_float(mc.get("maxSpreadPts"), DEFAULT_MAX_SPREAD_PTS) or DEFAULT_MAX_SPREAD_PTS
+    spread_pts = round(max(0.0, ask - bid) * 100, 1)
+    if spread_pts > ceil_pts:
+        print(f"[Headless] พักเปิดไม้ — สเปรด {spread_pts} จุด เกินเพดาน {ceil_pts} จุด")
+        return False
+    sess_key = _bkk_session_key(now_th)
+    winner = (((session_stable or {}).get("sessions") or {}).get(sess_key) or {}).get("winner")
+    if not isinstance(winner, dict):
+        print(f"[Headless] ไม่มีสูตรผู้ชนะของช่วง {sess_key} — ยังไม่เปิดไม้")
+        return False
+    stab = _to_float(winner.get("stability_score"), None)
+    if stab is None or stab <= HEADLESS_MIN_STABILITY:
+        print(f"[Headless] ช่วง {sess_key}: stability {stab} ไม่ผ่านเกณฑ์ (> {HEADLESS_MIN_STABILITY}) — ยังไม่เปิดไม้")
+        return False
+    if not scalp_setup or scalp_setup.get("direction") not in ("LONG", "SHORT"):
+        return False
+    direction = scalp_setup["direction"]
+    is_long = direction == "LONG"
+    sl_mult = max(0.25, min(0.90, _to_float(winner.get("sl_atr_mult"), 0.45) or 0.45))
+    rr = max(1.0, min(3.0, _to_float(winner.get("rr"), 1.5) or 1.5))
+    sl_usd = round(min(8.5, max(3.5, curr_atr * sl_mult)), 2)
+    tp_usd = round(sl_usd * rr, 2)
+    entry = round((ask if is_long else bid) + price_delta, 2)
+    sl = round(entry - sl_usd, 2) if is_long else round(entry + sl_usd, 2)
+    tp = round(entry + tp_usd, 2) if is_long else round(entry - tp_usd, 2)
+    sl_pts = int(round(sl_usd * 100))
+    tp_pts = int(round(tp_usd * 100))
+    be_rule = str(winner.get("be_rule") or "NO_BE")
+    be_info = headless_be_plan(entry, sl, tp, direction, be_rule)
+    bal = _to_float(mc.get("accountBalance"), 1000.0) or 1000.0
+    # ใช้ effectiveRiskPct จากหน้าเว็บก่อน (Discipline Guard อาจลดเหลือ 0.5%) ไม่มีค่อยใช้ riskPct ปกติ
+    risk_pct = max(0.1, min(5.0, _to_float(mc.get("effectiveRiskPct"), _to_float(mc.get("riskPct"), 1.0)) or 1.0))
+    target_risk = bal * (risk_pct / 100.0)
+    lot = max(0.01, round(target_risk / max(1.0, float(sl_pts)), 2))
+    risk_usd = round(lot * sl_pts, 2)
+    order = {
+        "id": "CLD-" + str(now_ms)[-6:],
+        "createdTs": now_ms,
+        "planType": f"CLOUD-{sess_key}",
+        "formula": winner.get("formula") or "-",
+        "dateStr": now_th.strftime("%Y-%m-%d"),
+        "openTime": now_th.strftime("%H:%M:%S"),
+        "mode": "OPEN",
+        "origin": "AUTO",
+        "dir": direction,
+        "shape": f"CLOUD-{sess_key} ({winner.get('formula')})",
+        "entry": entry, "sl": sl, "tp": tp,
+        "slPts": sl_pts, "tpPts": tp_pts,
+        "beRule": be_rule, "beInfo": be_info, "beTriggered": False,
+        "lot": lot, "riskUsd": risk_usd,
+        "reason": f"Headless Cloud Executor: {sess_key} winner {winner.get('formula')} (stability {stab}, WR {winner.get('win_rate_pct')}%)",
+    }
+    os_["activeOrder"] = order
+    snap["orderState"] = os_
+    send_ntfy(
+        f"☁️ เปิดไม้ Cloud {direction} @ ${entry:.2f} ({lot:.2f} Lot | เสี่ยง {risk_pct:.1f}% = ${risk_usd:.2f})",
+        "\n".join([
+            f"🎯 SL ${sl:.2f} ({sl_pts} จุด) | TP ${tp:.2f} ({tp_pts} จุด | 1:{rr})",
+            f"📊 สูตรผู้ชนะ {sess_key}: {winner.get('formula')} | stability {stab} | BE: {be_rule}",
+            f"⚙️ เปิดแทนหน้าเว็บอัตโนมัติ (Cloud Executor) — heartbeat ผู้ใช้ขาดเกิน {BROWSER_STALE_SECS // 60} นาที",
+        ]),
+        4, ["cloud"],
+    )
+    print(f"[Headless] เปิดไม้ใหม่ {direction} @ {entry} ({lot} Lot) ตามสูตรผู้ชนะ {sess_key}: {winner.get('formula')}")
+    return True
+
+
+def _summarize_headless_change(before_ao, after_ao, snap):
+    """สรุปสั้น ๆ ว่าคลาวด์ทำอะไรกับออเดอร์ในรอบนี้ (แนบไปกับ snapshot ให้หน้าเว็บแสดงแบนเนอร์แจ้งผู้ใช้)"""
+    try:
+        os_ = snap.get("orderState") or {}
+        closed = os_.get("todayClosed") or []
+        if before_ao and not after_ao:
+            if closed and isinstance(closed[0], dict) and closed[0].get("tradeId") == before_ao.get("id"):
+                r = closed[0]
+                usd = _to_float(r.get("pnlUsd"), 0.0) or 0.0
+                return f"ปิดไม้ {r.get('closeTag') or ''} ({'+' if usd >= 0 else ''}${usd:.2f})"
+            return "ยกเลิก Limit ที่ค้างไกลราคา"
+        if (not before_ao) and after_ao:
+            return f"เปิดไม้ใหม่ {after_ao.get('dir')} @ ${after_ao.get('entry')} ({after_ao.get('lot')} Lot)"
+        if before_ao and after_ao:
+            if before_ao.get("mode") == "LIMIT" and after_ao.get("mode") == "OPEN":
+                return f"LIMIT แมตช์เป็น OPEN @ ${after_ao.get('entry')}"
+            if before_ao.get("sl") != after_ao.get("sl") and after_ao.get("beTriggered"):
+                return f"เลื่อน SL มาบังทุนที่ ${after_ao.get('sl')}"
+        if not before_ao and not after_ao:
+            return "ปิดรอบวัน/ย้ายสถิติเข้าสมุดเรียนรู้"
+        return "จัดการออเดอร์อัตโนมัติ"
+    except Exception:
+        return "จัดการออเดอร์อัตโนมัติ"
+
+
+def run_headless_cloud_executor(snapshot, spot, bid, ask, curr_atr, session_stable, scalp_setup, news_items, now_th):
+    """Headless Cloud Executor ครบวงจร — ทำงานเมื่อผู้ใช้ปิดหน้าเว็บ/ปิดคอม (dry-run ได้โดย monkeypatch pull/push/send_ntfy)"""
+    if not isinstance(snapshot, dict):
+        print("[Headless] ไม่มี snapshot จาก Gist — ข้ามรอบนี้")
+        return False
+    if is_browser_online(snapshot):
+        print("[Headless] ผู้ใช้เปิดหน้าเว็บอยู่ (heartbeat สด < 3 นาที) — ข้ามการเปิด/ปิดออเดอร์ กันชนกับหน้าเว็บ (คำนวณตลาด/MC ตามปกติ)")
+        return False
+    if not GIST_TOKEN:
+        print("[Headless] ไม่มี GIST_TOKEN — ข้ามการจัดการออเดอร์ (บันทึกสถานะกลับ Gist ไม่ได้ กันทำงานซ้ำซ้อน; ตั้งค่า Secret GIST_TOKEN ใน GitHub Actions)")
+        return False
+    mc = snapshot.get("masterConfig") or {}
+    print(f"[Headless] ผู้ใช้ปิดเว็บ/ปิดคอม → เข้าโหมด Headless Cloud Executor เต็มรูปแบบ (snapshot source: {snapshot.get('_source')})")
+    price_delta = resolve_price_delta(snapshot)
+    basis_txt = _to_float((snapshot.get("livePriceSpace") or {}).get("spotBasisOffset"), None)
+    mt5_txt = _to_float(mc.get("mt5Offset"), DEFAULT_MT5_OFFSET)
+    if isinstance(basis_txt, (int, float)):
+        print(f"[Headless] price alignment: mt5Offset {mt5_txt} - basis {basis_txt} => delta {price_delta:+.2f} USD (ไม่บวก mt5Offset ซ้ำกับ true spot)")
+    else:
+        print(f"[Headless] price alignment: ยังไม่มี basis จากหน้าเว็บ => delta {price_delta:+.2f} USD")
+    changed = False
+    _before_ao = None
+    try:
+        _cur_ao = (snapshot.get("orderState") or {}).get("activeOrder")
+        if isinstance(_cur_ao, dict):
+            _before_ao = json.loads(json.dumps(_cur_ao))
+    except Exception:
+        _before_ao = None
+    if _headless_daily_rollover(snapshot, now_th):
+        changed = True
+    os_ = snapshot.get("orderState") or {}
+    ao = os_.get("activeOrder")
+    buffer_usd = max(0.0, (_to_float(mc.get("spreadBuffer"), _to_float(mc.get("mt5BufferPts"), DEFAULT_SPREAD_BUFFER_PTS)) or DEFAULT_SPREAD_BUFFER_PTS)) / 100.0
+    adj_bid = round(bid + price_delta, 2)
+    adj_ask = round(ask + price_delta, 2)
+    if isinstance(ao, dict) and ao.get("mode") in ("OPEN", "LIMIT"):
+        changed = _headless_manage_active_order(snapshot, ao, adj_bid, adj_ask, buffer_usd, now_th) or changed
+    elif isinstance(ao, dict):
+        os_["activeOrder"] = None
+        snapshot["orderState"] = os_
+        changed = True
+    else:
+        changed = _headless_open_new_order(snapshot, bid, ask, curr_atr, session_stable, scalp_setup, news_items, now_th, price_delta) or changed
+    if changed:
+        # ธงบอกหน้าเว็บว่า "คลาวด์จัดการออเดอร์ให้ระหว่างปิดเว็บ" (หน้าเว็บจะล้างเป็น false เมื่อกลับมาเปิดเอง)
+        snapshot["cloudExecutorActive"] = True
+        snapshot["cloudExecutorLastActionMs"] = int(time.time() * 1000)
+        snapshot["cloudExecutorLastAction"] = _summarize_headless_change(_before_ao, (snapshot.get("orderState") or {}).get("activeOrder"), snapshot)
+        ok = push_canonical_snapshot(snapshot)
+        print(f"[Headless] บันทึก snapshot กลับขึ้น Gist: {'สำเร็จ' if ok else 'ไม่สำเร็จ (ดู log ด้านบน)'} | action: {snapshot['cloudExecutorLastAction']}")
+    else:
+        print("[Headless] ตรวจครบทุกเงื่อนไขแล้ว — ไม่มีอะไรต้องเปลี่ยนในรอบนี้")
+    return changed
+
+
+def _eod_ai_postmortem(day_recs, report_date, summary_line):
+    """บทเรียนสั้น ๆ ท้ายวันด้วย ThaiLLM (ถ้ามีคีย์) หรือระบบสรุปในตัวไม่ใช้ AI"""
+    detail_lines = []
+    for r in day_recs[:12]:
+        rr_v = _to_float(r.get("pnlR"), 0.0) or 0.0
+        usd_v = _to_float(r.get("pnlUsd"), 0.0) or 0.0
+        detail_lines.append(f"{r.get('dir')} {r.get('formula') or '-'} {r.get('closeTag')}: {rr_v:+.2f}R (${usd_v:+.2f})")
+    if THAILLM_API_KEY:
+        try:
+            client = OpenAI(api_key=THAILLM_API_KEY, base_url="http://thaillm.or.th/api/typhoon/v1")
+            prompt = (
+                f"คุณคือ Chief Quant Strategist XAU/USD วิเคราะห์บทเรียนหลังปิดวัน {report_date} เป็นภาษาไทยกระชับ 3 ข้อ:\n"
+                f"- สรุปผล: {summary_line}\n"
+                f"- รายการไม้: " + ("; ".join(detail_lines) if detail_lines else "ไม่มีไม้ปิดในวันนี้") + "\n"
+                "วิเคราะห์สั้น ๆ: 1) จุดแข็งของวันนี้ 2) จุดอ่อน/สาเหตุที่แพ้ 3) ข้อปรับปรุงสำหรับวันถัดไป (ห้ามแต่งตัวเลขขึ้นเอง)"
+            )
+            resp = client.chat.completions.create(
+                model="/model/typhoon-v2.5-30b-a3b-instruct",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=420, temperature=0.3, timeout=18,
+            )
+            txt = (resp.choices[0].message.content or "").strip()
+            if len(txt) > 40:
+                return "🧠 AI Post-Mortem (ThaiLLM):\n" + txt
+        except Exception as e:
+            print(f"[EOD AI Warning] {e}")
+    total = len(day_recs)
+    if total == 0:
+        return "🧠 สรุปในตัว (ไม่ใช้ AI): วันนี้ไม่มีไม้ที่ปิด — รอสัญญาณคุณภาพจากสูตรผู้ชนะอย่างมีวินัย"
+    wins = sum(1 for r in day_recs if r.get("outcome") == "WIN")
+    losses = sum(1 for r in day_recs if r.get("outcome") == "LOSS")
+    bad_formula = {}
+    for r in day_recs:
+        if r.get("outcome") == "LOSS":
+            fk = r.get("formula") or "-"
+            bad_formula[fk] = bad_formula.get(fk, 0) + 1
+    worst = max(bad_formula.items(), key=lambda kv: kv[1])[0] if bad_formula else "ไม่มี"
+    return (
+        "🧠 สรุปในตัว (ไม่ใช้ AI):\n"
+        f"• ชนะ {wins} แพ้ {losses} จาก {total} ไม้\n"
+        f"• สูตรที่ควรจับตาเพิ่ม: {worst}\n"
+        "• วินัย: รักษาความเสี่ยงไม่เกิน 1%/ไม้ และให้ Cloud Executor ทำงานตามโซน + คูลดาวน์เดิม"
+    )
+
+
+def maybe_send_eod_report(snapshot, now_th, force=False):
+    """สรุปผลปิดวัน + AI Post-Mortem (หน้าต่าง 04:45-05:25 BKK) — ส่งครั้งเดียวต่อวันแล้วบันทึก lastEodReportDate ลง Gist"""
+    if not isinstance(snapshot, dict):
+        return False
+    if not GIST_TOKEN:
+        print("[EOD] ไม่มี GIST_TOKEN — ข้ามรายงานปิดวัน (กันส่งซ้ำเพราะบันทึกสถานะกลับ Gist ไม่ได้)")
+        return False
+    minutes_bkk = now_th.hour * 60 + now_th.minute
+    if not force and not (EOD_WINDOW_START_MIN <= minutes_bkk <= EOD_WINDOW_END_MIN):
+        return False
+    report_date = (now_th - timedelta(days=1)).strftime("%Y-%m-%d")
+    today_date = now_th.strftime("%Y-%m-%d")
+    if str(snapshot.get("lastEodReportDate") or "") == report_date:
+        print(f"[EOD] รายงานของ {report_date} ถูกส่งไปแล้ว — ข้าม")
+        return False
+    os_ = snapshot.get("orderState") or {}
+    merged, seen = [], set()
+    for src in (os_.get("todayClosed") or [], os_.get("learningArchive") or []):
+        for r in src:
+            if not isinstance(r, dict):
+                continue
+            ds = str(r.get("dateStr") or "")
+            ct = str(r.get("closeTime") or "")
+            in_day = (ds == report_date)
+            if not in_day and ds == today_date:
+                try:
+                    hh, mm = ct.split(":")[0], ct.split(":")[1]
+                    in_day = (int(hh) * 60 + int(mm)) <= (EOD_WINDOW_END_MIN - 15)
+                except Exception:
+                    in_day = False
+            if not in_day:
+                continue
+            key = (r.get("tradeId") or "", ct, r.get("dir"), r.get("entry"), r.get("exit"))
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(r)
+    wins = sum(1 for r in merged if r.get("outcome") == "WIN")
+    losses = sum(1 for r in merged if r.get("outcome") == "LOSS")
+    be_cnt = sum(1 for r in merged if r.get("outcome") == "BE")
+    total = len(merged)
+    net_r = round(sum(_to_float(r.get("pnlR"), 0.0) or 0.0 for r in merged), 2)
+    net_usd = round(sum(_to_float(r.get("pnlUsd"), 0.0) or 0.0 for r in merged), 2)
+    wr = round((wins / total) * 100, 1) if total else 0.0
+    summary_line = f"จำนวน {total} ไม้ | ชนะ {wins} แพ้ {losses} เท่าทุน {be_cnt} | Win Rate {wr}% | Net {net_r:+.2f}R (${net_usd:+.2f})"
+    ai_part = _eod_ai_postmortem(merged, report_date, summary_line)
+    send_ntfy(
+        f"📊 สรุปปิดวัน {report_date} (Cloud EOD + AI Post-Mortem)",
+        "\n".join([summary_line, "", ai_part]),
+        4, ["bar_chart"],
+    )
+    snapshot["lastEodReportDate"] = report_date
+    snapshot["lastEodReport"] = {
+        "dateStr": report_date, "total": total, "wins": wins, "losses": losses, "be": be_cnt,
+        "winRatePct": wr, "netR": net_r, "netUsd": net_usd,
+        "sentAtTh": now_th.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    ok = push_canonical_snapshot(snapshot)
+    print(f"[EOD] ส่งรายงานปิดวัน {report_date} เรียบร้อย (บันทึก Gist: {'ok' if ok else 'failed'})")
+    return True
+
+
 def run_cycle(send_summary_alert=True):
     now_th = datetime.now(THAI_TZ)
+    # === CANONICAL GIST SYNC: ดึง snapshot ล่าสุดจาก Gist ทุกครั้งที่รัน (API ก่อน → fallback raw public) ===
+    snapshot = None
+    try:
+        snapshot = pull_canonical_snapshot()
+        if snapshot is not None:
+            print(f"[Gist] โหลด Canonical Snapshot สำเร็จ (source: {snapshot.get('_source')}, revision: {snapshot.get('revision')}, browserOnline: {is_browser_online(snapshot)})")
+        else:
+            print("[Gist] โหลด Canonical Snapshot ไม่สำเร็จ — ระบบหลักยังทำงานปกติ (โหมดไม่แตะออเดอร์)")
+    except Exception as e_gist:
+        print(f"[Gist Warning] {e_gist}")
+    # === EOD REPORT: สรุปปิดวัน + AI Post-Mortem (04:45-05:25 BKK) — ทำงานก่อน weekend guard เพื่อให้สรุปครบทุกวัน ===
+    try:
+        if snapshot is not None:
+            maybe_send_eod_report(snapshot, now_th)
+    except Exception as e_eod:
+        print(f"[EOD Warning] {e_eod}")
     wk_closed, wk_reason = is_gold_market_closed_bkk(now_th)
     if wk_closed:
         prev_state = load_json_safe(STATE_PATH, {})
@@ -1912,6 +2629,13 @@ def run_cycle(send_summary_alert=True):
 
     save_json_safe(STATE_PATH, state_payload)
     print(f"[OK] บันทึก state.json V14.0 สำเร็จ | Spot: ${spot} | Scalp Entry: ${sc_entry} | AI: {ai_model_name}")
+
+    # === HEADLESS CLOUD EXECUTOR: จัดการออเดอร์แทนหน้าเว็บครบวงจรเมื่อผู้ใช้ปิดเว็บ/ปิดคอม ===
+    try:
+        if snapshot is not None:
+            run_headless_cloud_executor(snapshot, spot, bid, ask, curr_atr, session_stable, scalp_setup, news_items, now_th)
+    except Exception as e_hl:
+        print(f"[Headless Warning] {e_hl}")
 
     if send_summary_alert:
         send_ntfy(

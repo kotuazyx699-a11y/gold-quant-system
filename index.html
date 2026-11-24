@@ -8,6 +8,15 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- === PWA: โหมดแอปมือถือเต็มจอ (Android/Chrome + iOS Safari) === -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Gold Quant V14" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
   <style>
     body { font-family: 'IBM Plex Sans Thai', sans-serif; background-color: #080c14; color: #e2e8f0; }
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
@@ -291,6 +300,12 @@
             <button id="btn-sync-mt5-entry" onclick="syncActiveOrderEntryToMt5()" class="hidden px-2.5 py-1 rounded font-bold bg-sky-600 hover:bg-sky-500 text-white transition">🔄 ซิงก์ราคาเข้า MT5</button>
             <button id="btn-close-order" onclick="closeActiveOrderManual()" class="hidden px-2.5 py-1 rounded font-bold bg-rose-600 hover:bg-rose-500 text-white transition">💰 ปิดมือ (Close)</button>
           </div>
+        </div>
+
+        <!-- ☁️ Cloud Executor Handover Banner: แสดงเมื่อคลาวด์จัดการออเดอร์ให้ระหว่างปิดเว็บ -->
+        <div id="lob-cloud-handover-banner" class="hidden bg-cyan-950/60 border border-cyan-500/60 rounded-lg px-3 py-2 font-mono-num text-xs text-cyan-200 items-center justify-between gap-2">
+          <span id="lob-cloud-handover-text">☁️ คลาวด์จัดการออเดอร์ให้ระหว่างปิดเว็บเรียบร้อยแล้ว</span>
+          <button onclick="dismissCloudHandoverBanner()" class="px-2 py-0.5 rounded bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-100 font-bold shrink-0">รับทราบ ✕</button>
         </div>
 
         <!-- สถานะ 1: ยังไม่เข้าออเดอร์ -> โชว์แผน Limit ปัจจุบัน -->
@@ -688,6 +703,9 @@
           </div>
         </div>
 
+        <!-- 🎯 Forward Test Tracker (50 ไม้จริง) + Discipline Guard -->
+        <div id="forward-test-tracker" class="bg-gray-900/80 border border-amber-600/40 rounded-lg p-3 space-y-2 font-mono-num text-xs"></div>
+
         <div id="session-matrix-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-3 font-mono-num text-xs"></div>
 
         <div class="bg-gray-900/80 border border-gray-800 rounded-lg p-3 space-y-2">
@@ -855,6 +873,11 @@
         riskPct: 1.0,
         fixedLotSize: 0.01,
         autoBeEnabled: true,
+        forwardTestLock: false,
+        forwardTestLockedProfiles: null,
+        forwardTestLockedAt: "",
+        autoRiskReduce: true,
+        effectiveRiskPct: 1.0,
         lockedSpotOffset: 7.51,
         ghToken: "",
         ghGistId: PUBLIC_MIRROR_GIST_ID,
@@ -884,6 +907,7 @@
       cfg.spreadBuffer = toNumOr(cfg.spreadBuffer, toNumOr(cfg.mt5BufferPts, 47));
       cfg.mt5BufferPts = cfg.spreadBuffer;
       cfg.maxSpreadPts = toNumOr(cfg.maxSpreadPts, 65);
+      cfg.effectiveRiskPct = Math.max(0.1, Math.min(5, toNumOr(cfg.effectiveRiskPct, toNumOr(cfg.riskPct, 1.0))));
       return cfg;
     }
     let latestAiBrief = { html: "", badge: "", ts: 0 };
@@ -928,6 +952,10 @@
 
     // ผู้ชนะของช่วงตลาดปัจจุบัน: ใช้ค่าจาก state.json ก่อน ไม่มีค่อยตกไปใช้ค่าสำรองในตัว
     function getSessionProfile(sessId) {
+      // 🔒 โหมดล็อกค่าสูตรช่วงเก็บสถิติ Forward Test 50 ไม้: ใช้ค่าที่แช่แข็งไว้ตอนเปิดล็อก (ไม่เปลี่ยนตาม MC รอบใหม่)
+      if (masterConfig.forwardTestLock && masterConfig.forwardTestLockedProfiles && masterConfig.forwardTestLockedProfiles[sessId]) {
+        return { ...masterConfig.forwardTestLockedProfiles[sessId], source: "locked", generatedAt: masterConfig.forwardTestLockedAt || "" };
+      }
       const be = sessionStableProfiles.sessions && sessionStableProfiles.sessions[sessId];
       if (be && be.winner) return { ...be.winner, source: sessionStableProfiles.source, generatedAt: sessionStableProfiles.generatedAt };
       const fb = SESSION_STABLE_FALLBACK[sessId] || SESSION_STABLE_FALLBACK.LONDON;
@@ -1437,7 +1465,19 @@
           latestAiBrief,
           todayTrades: orderState.todayClosed || [],
           journalTrades: orderState.learningArchive || [],
-          plans: buildCanonicalPlansSnapshot()
+          plans: buildCanonicalPlansSnapshot(),
+          // Heartbeat: อายุ < 180 วิ = ผู้ใช้เปิดหน้าเว็บ (โหมด Master) อยู่ → Cloud Executor จะไม่แย่งเปิด/ปิดออเดอร์
+          browserLastSeenMs: Date.now(),
+          browserRole: getEffectiveDeviceRole(),
+          // ช่องว่างราคาระหว่าง feed หน้าเว็บ (PAXG + offset) กับ true spot — ให้ engine align ราคาก่อนเทียบ TP/SL
+          livePriceSpace: {
+            spotMid: Number((liveModel && liveModel.spot) || lastRenderedMid || 0),
+            spotBasisOffset: Number(spotBasisOffset) || 0,
+            mt5Offset: Number(masterConfig.mt5Offset) || 0,
+            at: Date.now()
+          },
+          // หน้าเว็บกลับมาจัดการเองแล้ว → ล้างธง Cloud Executor (engine จะตั้ง true อีกครั้งเมื่อมันเปิด/ปิดไม้แทนเรา)
+          cloudExecutorActive: false
         };
         const res = await fetch(`https://api.github.com/gists/${encodeURIComponent(masterConfig.ghGistId)}`, {
           method: "PATCH",
@@ -1539,7 +1579,42 @@
           if (badgeEl && latestAiBrief.badge) badgeEl.textContent = latestAiBrief.badge;
           if (contentEl && latestAiBrief.html) contentEl.innerHTML = latestAiBrief.html;
         }
+        // ☁️ Cloud Executor Handover: ถ้าคลาวด์เพิ่งเปิด/ปิดออเดอร์ให้ระหว่างปิดเว็บ → แสดงแถบสรุปบน LIVE ORDER BOARD
+        maybeShowCloudHandoverBanner(remote);
       } catch (e) { console.warn('[CloudSync] applyCanonicalSnapshot:', e); }
+    }
+
+    // === ☁️ CLOUD EXECUTOR HANDOVER NOTICE: แถบสรุปบน LIVE ORDER BOARD เมื่อคลาวด์จัดการออเดอร์ให้ระหว่างปิดเว็บ ===
+    const CLOUD_HANDOVER_SEEN_KEY="gq_cloud_handover_seen_ts";
+    let cloudHandoverHideTimer = null;
+
+    function maybeShowCloudHandoverBanner(remote) {
+      try {
+        if (!remote || remote.cloudExecutorActive !== true) return;
+        const actionTs = Number(remote.cloudExecutorLastActionMs || remote.revision || 0);
+        const seenTs = Number(localStorage.getItem(CLOUD_HANDOVER_SEEN_KEY) || 0);
+        if (!actionTs || actionTs <= seenTs) return; // เคยเห็นเหตุการณ์นี้แล้ว — ไม่โชว์ซ้ำ
+        localStorage.setItem(CLOUD_HANDOVER_SEEN_KEY, String(actionTs));
+        const banner = document.getElementById('lob-cloud-handover-banner');
+        const txt = document.getElementById('lob-cloud-handover-text');
+        if (!banner || !txt) return;
+        const detail = String(remote.cloudExecutorLastAction || '').trim();
+        const atTh = String((remote.cloudExecutor && remote.cloudExecutor.lastRunTh) || '').split(' ')[1] || '';
+        txt.textContent = `☁️ คลาวด์จัดการออเดอร์ให้ระหว่างปิดเว็บเรียบร้อยแล้ว${detail ? ' — ' + detail : ''}${atTh ? ' (' + atTh + ' น.)' : ''}`;
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+        clearTimeout(cloudHandoverHideTimer);
+        cloudHandoverHideTimer = setTimeout(() => dismissCloudHandoverBanner(), 60000); // แสดง 60 วิ แล้วซ่อนเอง
+        recordAiInsight(`[CLOUD] Cloud Executor ทำงานระหว่างปิดเว็บ: ${detail || 'เปิด/ปิดออเดอร์อัตโนมัติ'}`, 'CLOUD');
+      } catch (e) { console.warn('[cloudHandover]', e); }
+    }
+
+    function dismissCloudHandoverBanner() {
+      try {
+        const banner = document.getElementById('lob-cloud-handover-banner');
+        if (banner) { banner.classList.add('hidden'); banner.classList.remove('flex'); }
+        clearTimeout(cloudHandoverHideTimer);
+      } catch (e) {}
     }
 
     // สำรองข้อมูลฝั่ง Backend จาก ./data/state.json ใน repo (ใช้เมื่อ Gist ตอบไม่ปกติ)
@@ -1633,6 +1708,28 @@
 
     // Poll Cloud Sync every 3.5 seconds so PC and Phone stay 100% identical
     setInterval(pullCloudSyncState, 3500);
+
+    // === HEARTBEAT → CLOUD EXECUTOR HANDOVER: เครื่อง Master (คอมผู้สร้าง) เต้นทุก 45 วิ ===
+    // ถ้า heartbeat หยุดเกิน 3 นาที (ปิดเว็บ/ปิดคอม) backend/engine.py บนคลาวด์จะเข้าจัดการออเดอร์แทนอัตโนมัติ 100%
+    function pushHeartbeatIfMaster() {
+      try {
+        if (sessionGistHalted) return;
+        if (!masterConfig.ghToken || !masterConfig.ghGistId) return; // เครื่องไม่มี Token อ่านอย่างเดียว — ไม่ต้องเต้น
+        if (getEffectiveDeviceRole() !== "MASTER") return; // MIRROR แสดงผลอย่างเดียว — ไม่กัน Cloud Executor
+        pushCloudSyncState(false);
+      } catch (e) {}
+    }
+    setInterval(pushHeartbeatIfMaster, 45000);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pushHeartbeatIfMaster(); });
+
+    // === PWA: ลงทะเบียน Service Worker (Network-First — ยกเว้น data/state.json + GitHub/Gist ให้ข้อมูลสด 100%) ===
+    function registerPwaServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      if (!(location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) return; // file:// ไม่รองรับ SW
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('[PWA] sw.js พร้อมใช้งาน (โหมดแอปเต็มจอ)'))
+        .catch((e) => console.warn('[PWA] sw:', e));
+    }
 
     function copyMobileSyncUrl() {
       const shareObj = {
@@ -2101,7 +2198,8 @@
 
     function getActiveLotSetting() {
       const bal = Math.max(100, parseFloat(document.getElementById('input-balance')?.value) || 5000);
-      const riskPct = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct')?.value) || 1.0);
+      // ความเสี่ยงที่ใช้จริงต่อไม้ = ค่าตั้ง (%) หรือ 0.5% อัตโนมัติเมื่อ Discipline Guard ทำงาน (ติดลบใกล้เกณฑ์ p05)
+      const riskPct = getEffectiveRiskPct();
       
       // ดึงระยะ SL จริงจากแผนเทรดปัจจุบัน (Engine A & B) แทนค่า Hardcode
       let scSlPts = 650; // fallback
@@ -2230,6 +2328,184 @@
       pushCloudSyncState(false);
     }
 
+    // =========================================================================================
+    // 🎯 FORWARD TEST TRACKER (30-50 ไม้จริง) + DISCIPLINE GUARD
+    // นับสถิติจริงจากสมุดบันทึก (todayClosed + learningArchive, dedupe tradeId) เทียบเกณฑ์ Worst-Case 5% (p05)
+    // ของแต่ละช่วงตลาดจาก Monte Carlo + สวิตช์ล็อกค่าสูตร 50 ไม้ + ลดเสี่ยง 0.5% อัตโนมัติเมื่อใกล้เกณฑ์
+    // =========================================================================================
+    const FORWARD_TEST_TARGET = 50;
+    const FORWARD_TEST_MIN_TRADES_FOR_GUARD = 6;
+
+    function getSessionIdFromHHMM(t) {
+      try {
+        const hh = parseInt(String(t || "").split(":")[0], 10);
+        if (!isFinite(hh)) return null;
+        if (hh >= 6 && hh <= 13) return "ASIA";
+        if (hh >= 14 && hh <= 18) return "LONDON";
+        if (hh >= 19 && hh <= 22) return "NY_OVERLAP";
+        return "LATE_NY";
+      } catch (e) { return null; }
+    }
+
+    function collectRealTradesForForwardTest() {
+      const all = [];
+      try {
+        const src = (orderState.todayClosed || []).concat(orderState.learningArchive || []);
+        const seen = new Set();
+        for (const r of src) {
+          if (!r || typeof r !== "object") continue;
+          const key = r.tradeId || `${r.dateStr}|${r.openTime}|${r.dir}|${r.entry}|${r.exit}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          all.push(r);
+        }
+      } catch (e) {}
+      return all;
+    }
+
+    function computeForwardTestStats() {
+      const trades = collectRealTradesForForwardTest();
+      const out = { count: trades.length, wins: 0, losses: 0, be: 0, netR: 0, netUsd: 0, wr: null, perSession: {} };
+      ["ASIA", "LONDON", "NY_OVERLAP", "LATE_NY"].forEach(k => { out.perSession[k] = { n: 0, wins: 0, netR: 0 }; });
+      for (const r of trades) {
+        const pnlR = Number(r.pnlR) || 0;
+        out.netR += pnlR;
+        out.netUsd += Number(r.pnlUsd) || 0;
+        if (r.outcome === "WIN") out.wins++; else if (r.outcome === "LOSS") out.losses++; else out.be++;
+        const sid = (r.session && out.perSession[r.session]) ? r.session : getSessionIdFromHHMM(r.openTime);
+        if (sid && out.perSession[sid]) {
+          out.perSession[sid].n++;
+          if (r.outcome === "WIN") out.perSession[sid].wins++;
+          out.perSession[sid].netR += pnlR;
+        }
+      }
+      out.netR = +out.netR.toFixed(2);
+      out.netUsd = +out.netUsd.toFixed(2);
+      ["ASIA", "LONDON", "NY_OVERLAP", "LATE_NY"].forEach(k => { out.perSession[k].netR = +out.perSession[k].netR.toFixed(2); });
+      const dec = out.wins + out.losses;
+      out.wr = dec > 0 ? +((out.wins / dec) * 100).toFixed(1) : null;
+      return out;
+    }
+
+    // เกณฑ์ทริกเกอร์ Discipline Guard: ช่วงตลาดปัจจุบัน ติดลบ และ แย่กว่า/เข้าใกล้ 75% ของเกณฑ์ worst-case p05
+    // (ถ้า p05 ของช่วงนั้นเป็นบวก ใช้เส้นตาย -2R แทน เพราะ p05 บอกว่าควรบวกได้)
+    function getForwardTestDiscipline(stats) {
+      const st = stats || computeForwardTestStats();
+      const cur = getBangkokSession().id;
+      const prof = getSessionProfile(cur);
+      const p05 = Number(prof.p05_worst_r) || 0;
+      const sess = st.perSession[cur] || { n: 0, netR: 0 };
+      const threshold = p05 < 0 ? +(p05 * 0.75).toFixed(2) : -2.0;
+      const breached = sess.n >= FORWARD_TEST_MIN_TRADES_FOR_GUARD && sess.netR < 0 && sess.netR <= threshold;
+      return { sessionId: cur, p05, realNetR: sess.netR, realN: sess.n, threshold, breached, delta: +(sess.netR - p05).toFixed(2) };
+    }
+
+    // ความเสี่ยงที่ใช้จริงต่อไม้: ปกติใช้ค่าที่ตั้งไว้ / ลดเหลือ 0.5% อัตโนมัติเมื่อ Discipline Guard ทำงาน
+    // + ซิงก์ค่า effectiveRiskPct ลง snapshot เพื่อให้ Cloud Executor ฝั่ง engine ใช้ความเสี่ยงเดียวกันตอนผู้ใช้ปิดเว็บ
+    function getEffectiveRiskPct() {
+      let base = 1.0;
+      try {
+        base = Math.max(0.1, parseFloat(document.getElementById('input-risk-pct')?.value) || Number(masterConfig.riskPct) || 1.0);
+      } catch (e) { base = Number(masterConfig.riskPct) || 1.0; }
+      let eff = base;
+      try {
+        if (masterConfig.autoRiskReduce !== false) {
+          const d = getForwardTestDiscipline();
+          if (d.breached) eff = 0.5;
+        }
+      } catch (e) {}
+      const rounded = +eff.toFixed(2);
+      if (Number(masterConfig.effectiveRiskPct) !== rounded) {
+        masterConfig.effectiveRiskPct = rounded;
+        saveMasterConfigLocal();
+        clearTimeout(window._gqRiskPushDebounce);
+        window._gqRiskPushDebounce = setTimeout(() => { pushCloudSyncState(false); }, 1500);
+      }
+      return eff;
+    }
+
+    function toggleForwardTestLock() {
+      masterConfig.forwardTestLock = !masterConfig.forwardTestLock;
+      if (masterConfig.forwardTestLock) {
+        const snap = {};
+        ["ASIA", "LONDON", "NY_OVERLAP", "LATE_NY"].forEach(k => {
+          const p = getSessionProfile(k); // ค่าปัจจุบันก่อนล็อก (จาก MC ล่าสุด หรือ fallback)
+          snap[k] = {
+            formula: p.formula, sl_atr_mult: Number(p.sl_atr_mult), rr: Number(p.rr), be_rule: p.be_rule,
+            win_rate_pct: Number(p.win_rate_pct) || 0, p05_worst_r: Number(p.p05_worst_r) || 0,
+            stability_score: Number(p.stability_score) || 0, max_dd_95: Number(p.max_dd_95) || 0
+          };
+        });
+        masterConfig.forwardTestLockedProfiles = snap;
+        masterConfig.forwardTestLockedAt = getBangkokTimeStr();
+        recordAiInsight("[FORWARD TEST] 🔒 ล็อกค่าสูตรทั้ง 4 ช่วงเพื่อเก็บสถิติ 50 ไม้จริง (สูตรไม่เปลี่ยนตาม MC รอบใหม่)", "FORWARD_TEST");
+      } else {
+        masterConfig.forwardTestLockedProfiles = null;
+        masterConfig.forwardTestLockedAt = "";
+        recordAiInsight("[FORWARD TEST] ปลดล็อกค่าสูตร — กลับไปใช้ผู้ชนะ Monte Carlo ล่าสุดของแต่ละช่วง", "FORWARD_TEST");
+      }
+      saveMasterConfigLocal();
+      pushCloudSyncState(false);
+      renderAiBrainUI();
+      renderOrderAndLedgerUI();
+    }
+
+    function toggleAutoRiskReduce() {
+      masterConfig.autoRiskReduce = (masterConfig.autoRiskReduce === false); // สลับค่า (ค่าเริ่มต้น = เปิด)
+      recordAiInsight(`[FORWARD TEST] Discipline Guard ลดเสี่ยง 0.5%: ${masterConfig.autoRiskReduce ? "เปิด" : "ปิด"}`, "FORWARD_TEST");
+      saveMasterConfigLocal();
+      pushCloudSyncState(false);
+      renderAiBrainUI();
+      recalcPropMath();
+    }
+
+    function renderForwardTestTrackerUI() {
+      const el = document.getElementById('forward-test-tracker');
+      if (!el) return;
+      try {
+        const st = computeForwardTestStats();
+        const disc = getForwardTestDiscipline(st);
+        const shown = Math.min(st.count, FORWARD_TEST_TARGET);
+        const pct = Math.min(100, Math.round((st.count / FORWARD_TEST_TARGET) * 100));
+        const fmtS = (v) => `${Number(v) >= 0 ? "+" : ""}${Number(v).toFixed(2)}`;
+        const chip = (k) => {
+          const s = st.perSession[k] || { n: 0, netR: 0 };
+          const p05 = Number(getSessionProfile(k).p05_worst_r) || 0;
+          const delta = +(s.netR - p05).toFixed(2);
+          const near = s.n >= FORWARD_TEST_MIN_TRADES_FOR_GUARD && s.netR < 0 && s.netR <= (p05 < 0 ? p05 * 0.75 : -2.0);
+          const cls = near ? "border-rose-500/70 bg-rose-950/40 text-rose-300"
+            : (s.n === 0 ? "border-gray-700 bg-gray-900/60 text-gray-400"
+              : (s.netR >= 0 ? "border-emerald-700/60 bg-emerald-950/30 text-emerald-300" : "border-amber-600/60 bg-amber-950/30 text-amber-300"));
+          const nameTxt = k === "NY_OVERLAP" ? "NY OVERLAP" : k;
+          return `<div class="rounded border ${cls} px-2 py-1.5">
+            <div class="flex items-center justify-between gap-1"><span class="font-bold">${nameTxt}</span><span class="text-[9px] opacity-80">${s.n} ไม้</span></div>
+            <div class="flex items-center justify-between text-[10px]"><span>จริง ${fmtS(s.netR)}R</span><span>p05 ${fmtS(p05)}R</span></div>
+            <div class="text-[9px] opacity-90">Δ ${fmtS(delta)}R ${near ? "⚠️ ใกล้เกณฑ์" : ""}</div>
+          </div>`;
+        };
+        const riskNow = Number(masterConfig.effectiveRiskPct) || 1.0;
+        const guardOn = masterConfig.autoRiskReduce !== false;
+        const wrTxt = st.wr === null ? "-" : `${st.wr}%`;
+        el.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-sm font-bold text-amber-300">🎯 Forward Test Tracker: ${shown} / ${FORWARD_TEST_TARGET} ไม้จริง${st.count > FORWARD_TEST_TARGET ? ` (สะสมทั้งหมด ${st.count})` : ""}</span>
+            <span class="text-[11px] ${st.netR >= 0 ? "text-emerald-300" : "text-rose-300"}">WR จริง ${wrTxt} | Net R จริง ${fmtS(st.netR)}R (${fmtS(st.netUsd)}$) | ชนะ ${st.wins} แพ้ ${st.losses} BE ${st.be}</span>
+          </div>
+          <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+            <div class="h-2 rounded-full ${st.count >= FORWARD_TEST_TARGET ? "bg-emerald-500" : "bg-amber-500"}" style="width:${pct}%"></div>
+          </div>
+          <div class="text-[10px] text-gray-400">เทียบเกณฑ์ Worst-Case 5% (Monte Carlo p05) ของช่วงตลาดปัจจุบัน (${disc.sessionId}): จริง ${fmtS(disc.realNetR)}R | เกณฑ์ ${fmtS(disc.p05)}R → Δ ${fmtS(disc.delta)}R${disc.realN > 0 ? ` | เส้นตายลดเสี่ยง ${fmtS(disc.threshold)}R` : ""}</div>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-1.5">${["ASIA", "LONDON", "NY_OVERLAP", "LATE_NY"].map(chip).join("")}</div>
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-gray-800/70">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button onclick="toggleForwardTestLock()" class="px-2.5 py-1 rounded font-bold ${masterConfig.forwardTestLock ? "bg-amber-500 text-gray-950" : "bg-gray-800 text-gray-300 border border-gray-600"}">${masterConfig.forwardTestLock ? "🔒 ล็อกค่าสูตรอยู่ (ช่วง 50 ไม้)" : "🔓 ล็อกค่าสูตรช่วงเก็บสถิติ 50 ไม้"}</button>
+              <button onclick="toggleAutoRiskReduce()" class="px-2.5 py-1 rounded font-bold ${guardOn ? "bg-emerald-600 text-white" : "bg-gray-800 text-gray-300 border border-gray-600"}">${guardOn ? "🛡️ ลดเสี่ยง 0.5% อัตโนมัติ: เปิด" : "🛡️ ลดเสี่ยง 0.5% อัตโนมัติ: ปิด"}</button>
+            </div>
+            <span class="text-[10px] ${riskNow < Number(masterConfig.riskPct || 1) ? "text-rose-300 font-bold" : "text-gray-400"}">ความเสี่ยงที่ใช้จริงตอนนี้: ${riskNow.toFixed(1)}% (ตั้งค่า ${Number(masterConfig.riskPct || 1).toFixed(1)}%)${masterConfig.forwardTestLock && masterConfig.forwardTestLockedAt ? ` | ล็อกสูตรเมื่อ ${masterConfig.forwardTestLockedAt} น.` : ""}</span>
+          </div>`;
+      } catch (e) { console.warn('[forwardTest]', e); }
+    }
+
     function renderAiBrainUI() {
       const curSess = getBangkokSession();
       document.getElementById('brain-current-session').textContent = `ช่วงเวลาปัจจุบัน: ${curSess.label}`;
@@ -2261,7 +2537,7 @@
             <div class="text-[10px] text-purple-300 truncate mt-1">สูตรเด่นช่วงนี้: ${s.bestFormula}</div>
             <div class="mt-1.5 pt-1.5 border-t border-gray-800/70 space-y-0.5">
               <div class="flex items-center justify-between gap-1">
-                <span class="text-[9px] px-1 py-0.2 rounded border ${p05BadgeCls} font-bold whitespace-nowrap">MC 250K${prof.source === 'backend' ? '' : ' · ค่าสำรอง'}</span>
+                <span class="text-[9px] px-1 py-0.2 rounded border ${p05BadgeCls} font-bold whitespace-nowrap">MC 250K${prof.source === 'backend' ? '' : (prof.source === 'locked' ? ' · 🔒 ล็อก 50 ไม้' : ' · ค่าสำรอง')}</span>
                 <span class="text-[10px] font-bold ${p05Cls} truncate">${prof.formula}</span>
               </div>
               <div class="text-[10px] text-gray-400 whitespace-nowrap">SL ${Number(prof.sl_atr_mult).toFixed(2)}xATR | TP 1:${Number(prof.rr).toFixed(1)} | BE: ${prof.be_rule}</div>
@@ -2288,6 +2564,7 @@
             <span class="text-gray-200">${item.text}</span>
           </div>`).join('');
       }
+      renderForwardTestTrackerUI(); // 🎯 อัปเดตแถบ Forward Test Tracker ทุกครั้งที่สมอง/สถิติเปลี่ยน
     }
 
     let orderState = {
@@ -2342,7 +2619,10 @@
         if (orderState.todayClosed && orderState.todayClosed.length > 0) {
           const dayNetR = orderState.todayClosed.reduce((a, x) => a + x.pnlR, 0);
           const dayNetUsd = orderState.todayClosed.reduce((a, x) => a + x.pnlUsd, 0);
-          orderState.learningArchive = orderState.todayClosed.concat(orderState.learningArchive);
+          // กันซ้ำ: Cloud Executor อาจบันทึกไม้ลงสมุดเรียนรู้ไปแล้ว (match ด้วย tradeId)
+          const _knownCloudIds = new Set((orderState.learningArchive || []).map(x => x && x.tradeId).filter(Boolean));
+          const _freshClosed = (orderState.todayClosed || []).filter(x => !x || !x.tradeId || !_knownCloudIds.has(x.tradeId));
+          orderState.learningArchive = _freshClosed.concat(orderState.learningArchive);
           recordAiInsight(`สรุปปิดวัน ${oldDate}: เทรด ${orderState.todayClosed.length} ไม้ (${dayNetR >= 0 ? '+' : ''}${dayNetR.toFixed(2)}R) ย้ายเข้าสมุดเรียนรู้ถาวรแล้ว`, "EOD");
           if (notify) {
             sendNtfy(
@@ -4629,6 +4909,7 @@
       try { await seedInitial60sTape(); } catch (e) { console.warn('[init] seedInitial60sTape:', e); }
       try { connectLiveStreams(); } catch (e) { console.warn('[init] connectLiveStreams:', e); }
       try { runFullLiveQuantAndAI(false); } catch (e) { console.warn('[init] runFullLiveQuantAndAI:', e); }
+      try { registerPwaServiceWorker(); } catch (e) { console.warn('[PWA] register:', e); }
     });
   
     // === V14.1 UNIFIED MASTER LOOP (ALL-IN-ONE) ===
