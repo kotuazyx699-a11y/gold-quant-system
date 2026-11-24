@@ -1,98 +1,77 @@
-﻿name: Gold Quant V18 Autonomous 15-Min Alert
+name: Gold Quant V18 Autonomous 15-Min Engine (Monte Carlo 1M) + Alert
 
+# รวมทุกอย่างไว้ในไฟล์เดียว: รัน backend/engine.py (Vector Grid + Monte Carlo 1,000,000 รอบ),
+# อัปเดต data/state.json + journals แล้ว commit กลับเข้า repo และส่งแจ้งเตือน ntfy เองในตัว
+# - รันอัตโนมัติทุก 15 นาที จันทร์-ศุกร์ (ไม่ต้องกด Run workflow เองอีก)
+# - รันอัตโนมัติทันทีเมื่อมีการแก้ backend/engine.py หรือไฟล์ workflow นี้ (push)
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/15 * * * 1-5'
+  push:
+    paths:
+      - 'backend/engine.py'
+      - '.github/workflows/update_quant.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: gold-quant-engine
+  cancel-in-progress: false
+
 jobs:
-  quant-ntfy-alert:
+  run-quant-engine:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run Spot XAU/USD Quant & Push ntfy Alert
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run backend engine (Monte Carlo 1M + state.json + ntfy alert)
+        env:
+          NTFY_TOPIC: pansakorn888
+          ACCOUNT_BALANCE: "1000"
+          RISK_PER_TRADE_PCT: "1.0"
+        run: python backend/engine.py
+
+      - name: Commit & push updated state (data/state.json + journals)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/state.json data/mue_memory.json data/scalp_journal.json data/trade_journal.json data/active_order.json data/macro_cache.json data/alert_state.json data/learning_weights.json
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "auto: engine cycle update (state.json + journals) [skip ci]"
+            git pull --rebase --autostash
+            git push
+          fi
+
+      - name: Notify on failure (ntfy)
+        if: failure()
+        env:
+          NTFY_TOPIC: pansakorn888
         run: |
           python3 - << 'EOF'
-          import urllib.request
-          import json
-          from datetime import datetime, timezone, timedelta
-
-          NTFY_TOPIC = "pansakorn888"
-          bkk_now = datetime.now(timezone(timedelta(hours=7))).strftime("%H:%M:%S")
-
-          # 1. Fetch True Spot XAU/USD (US-accessible global endpoint)
-          spot = 0.0
-          try:
-              req = urllib.request.Request("https://api.gold-api.com/price/XAU", headers={"User-Agent": "Mozilla/5.0"})
-              with urllib.request.urlopen(req, timeout=10) as r:
-                  data = json.loads(r.read().decode())
-                  spot = float(data.get("price", 0))
-          except Exception as e:
-              print("Gold-API err:", e)
-
-          # 2. Fetch 15m OHLC from Kraken PAXG/USD (US-accessible) for ATR & EMA21 trend
-          closes, highs, lows = [], [], []
-          try:
-              req2 = urllib.request.Request("https://api.kraken.com/0/public/OHLC?pair=PAXGUSD&interval=15", headers={"User-Agent": "Mozilla/5.0"})
-              with urllib.request.urlopen(req2, timeout=10) as r2:
-                  j2 = json.loads(r2.read().decode())
-                  res_key = [k for k in j2.get("result", {}).keys() if k != "last"][0]
-                  candles = j2["result"][res_key][-60:]
-                  for c in candles:
-                      highs.append(float(c[2]))
-                      lows.append(float(c[3]))
-                      closes.append(float(c[4]))
-          except Exception as e:
-              print("Kraken err:", e)
-
-          if spot <= 0 and closes:
-              spot = closes[-1]
-
-          if closes and len(closes) >= 21:
-              ema21 = closes[0]
-              k = 2 / 22.0
-              for px in closes[1:]:
-                  ema21 = px * k + ema21 * (1 - k)
-              trs = [max(highs[i] - lows[i], abs(highs[i] - closes[i-1]), abs(lows[i] - closes[i-1])) for i in range(-14, 0)]
-              atr = sum(trs) / len(trs)
-              # Align EMA21 to Spot basis
-              ema21_spot = ema21 + (spot - closes[-1])
-              trend = "BEAR (SHORT)" if spot < ema21_spot else "BULL (LONG)"
-              sl_dist = max(4.5, min(8.5, round(atr * 0.40, 2)))
-              tp_dist = round(sl_dist * 1.8, 2)
-              if spot < ema21_spot:
-                  entry = round(spot + 2.80, 2)
-                  sl = round(entry + sl_dist, 2)
-                  tp = round(entry - tp_dist, 2)
-                  side = "SHORT"
-              else:
-                  entry = round(spot - 2.80, 2)
-                  sl = round(entry - sl_dist, 2)
-                  tp = round(entry + tp_dist, 2)
-                  side = "LONG"
-
-              msg = (
-                  f"เวลา {bkk_now} น. (BKK)\n"
-                  f"Spot XAU/USD: ${spot:.2f} | แนวโน้ม: {trend}\n"
-                  f"EMA21: ${ema21_spot:.2f} | ATR(14): ${atr:.2f}\n"
-                  f"แผน Near-Spot Scalp ({side}):\n"
-                  f"Entry: ${entry:.2f} | SL: ${sl:.2f} | TP: ${tp:.2f}"
-              )
-          else:
-              msg = f"เวลา {bkk_now} น. (BKK) | Spot XAU/USD: ${spot:.2f}"
-
-          req_ntfy = urllib.request.Request(
-              f"https://ntfy.sh/{NTFY_TOPIC}",
+          import os, urllib.request
+          topic = os.environ.get("NTFY_TOPIC", "pansakorn888")
+          msg = "GitHub Actions: Gold Quant engine cycle ล้มเหลว — ตรวจสอบ logs ล่าสุดใน repo"
+          req = urllib.request.Request(
+              f"https://ntfy.sh/{topic}",
               data=msg.encode("utf-8"),
-              headers={
-                  "Title": f"XAU/USD 15m Report (${spot:.2f})",
-                  "Priority": "4",
-                  "Tags": "chart_with_upwards_trend"
-              },
+              headers={"Title": "Gold Quant Engine FAILED", "Priority": "4", "Tags": "warning"},
               method="POST"
           )
-          with urllib.request.urlopen(req_ntfy, timeout=10) as resp:
-              print("ntfy status:", resp.status)
+          urllib.request.urlopen(req, timeout=10)
+          print("failure alert sent")
           EOF

@@ -259,7 +259,7 @@
           ฐานราคา: Auto Consensus
         </span>
         <label class="text-[11px] text-cyan-300">เผื่อสเปรด MT5 (จุด):</label>
-        <input id="input-mt5-buffer" type="number" value="35" min="0" max="200" step="5" onchange="saveMt5Buffer()"
+        <input id="input-mt5-buffer" type="number" value="47" min="0" max="200" step="5" onchange="saveMt5Buffer()"
           class="w-16 px-2 py-0.5 text-xs font-bold bg-gray-800 border border-cyan-600/60 rounded text-amber-300 text-center" />
       </div>
     </section>
@@ -437,7 +437,7 @@
       <!-- Over-Risk Warning Banner (Auto-triggered when Fixed Lot exceeds Risk Budget) -->
       <div id="over-risk-banner" class="hidden card p-3 border-rose-500/80 bg-rose-950/60 text-rose-200 text-xs font-mono-num flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <span id="over-risk-text">⚠️ OVER-RISK WARNING: ขนาด Lot เกินงบความเสี่ยงที่กำหนด</span>
-        <button onclick="document.getElementById('select-lot-mode').value='AUTO'; onLotSettingsChanged();"
+        <button onclick="document.getElementById('select-lot-mode').value='auto_prop'; onLotSettingsChanged();"
           class="px-2.5 py-1 rounded bg-rose-500 hover:bg-rose-400 text-gray-950 font-bold whitespace-nowrap">
           สลับเป็น Auto Prop ทันที
         </button>
@@ -451,8 +451,8 @@
               <label class="block text-[10px] text-gray-400 uppercase">โหมดขนาด Lot</label>
               <select id="select-lot-mode" onchange="onLotSettingsChanged()"
                 class="mt-1 px-2 py-1 text-xs font-mono-num font-bold bg-gray-800 border border-cyan-600/60 rounded text-cyan-300">
+                <option value="auto_prop">Auto Prop — เสี่ยง 1% ของพอร์ตตามระยะ SL จริง (มาตรฐาน/บังคับเมื่อเปิด Auto-Limit)</option>
                 <option value="FIXED">กำหนด Lot เอง (เช่น 0.01)</option>
-                <option value="AUTO">คำนวณ Auto Prop (% เสี่ยง)</option>
               </select>
             </div>
             <div id="wrap-fixed-lot">
@@ -624,6 +624,9 @@
             <button id="btn-ea-scalp-market" onclick="placeMarketOrderNow()" class="px-3 py-2 rounded-lg font-bold bg-emerald-500 hover:bg-emerald-400 text-gray-950 transition">
               ⚡ เปิด Scalp Market
             </button>
+            <button id="btn-ea-copy-ticket" onclick="copyMt5Ticket('A')" class="col-span-2 px-3 py-2 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 text-white transition">
+              📋 คัดลอกตั๋ว MT5 (Entry/SL/TP + Offset | Lot Auto Prop)
+            </button>
           </div>
         </div>
 
@@ -664,6 +667,9 @@
             </button>
             <button id="btn-eb-swing-market" onclick="placeSwingMarketOrderNow()" class="px-3 py-2 rounded-lg font-bold bg-cyan-600 hover:bg-cyan-500 text-gray-950 transition">
               ⚡ เปิด Swing Market
+            </button>
+            <button id="btn-eb-copy-ticket" onclick="copyMt5Ticket('B')" class="col-span-2 px-3 py-2 rounded-lg font-bold bg-amber-600 hover:bg-amber-500 text-gray-950 transition">
+              📋 คัดลอกตั๋ว MT5 (Entry/SL/TP + Offset | Lot Auto Prop)
             </button>
           </div>
         </div>
@@ -828,26 +834,58 @@
     let lastCloudRevision = 0;
     let sessionGistHalted = false; // true = Gist ถูกปฏิเสธถาวรในเซสชันนี้ → หยุดยิง Gist แล้วอ่าน ./data/state.json แทน
 
+    // === CANONICAL PUBLIC MIRROR: Gist กลางที่ทุกเครื่อง (คอม/มือถือ/คนทั่วไปที่เปิดเว็บแบบ Public) อ่านค่าชุดเดียวกัน 100% ===
+    const PUBLIC_MIRROR_GIST_ID = "278b204024c1edbc8ed0de38797ad968";
+    const PUBLIC_MIRROR_GIST_OWNER = "kotuazyx699-a11y";
+
     // Unified Master Configuration (Shared identically across PC & Mobile)
-    let masterConfig = {
-      creatorPin: "8888",
-      ntfyTopic: "pansakorn888",
-      twelveDataKey: "",
-      mt5BufferPts: 35,
-      lotMode: "AUTO",
-      accountBalance: 1000,
-      riskPct: 1.0,
-      fixedLotSize: 0.01,
-      autoBeEnabled: true,
-      lockedSpotOffset: null,
-      ghToken: "",
-      ghGistId: "",
-      thaillmApiKey: "",
-      thaillmEndpoint: "https://thaillm-proxy.kotuazyx699.workers.dev/",
-      thaillmModel: "typhoon-s-thaillm-8b-instruct",
-      deviceRoleMode: "AUTO",
-      updatedAt: 0
-    };
+    // ค่าเริ่มต้นมาตรฐานกลาง: mt5Locked true / mt5Offset 7.51 / spreadBuffer 47 / lotMode auto_prop / riskPct 1.0
+    function defaultMasterConfig() {
+      return {
+        creatorPin: "8888",
+        ntfyTopic: "pansakorn888",
+        twelveDataKey: "",
+        mt5BufferPts: 47,
+        spreadBuffer: 47,
+        mt5Offset: 7.51,
+        mt5Locked: true,
+        maxSpreadPts: 65,
+        lotMode: "auto_prop",
+        accountBalance: 1000,
+        riskPct: 1.0,
+        fixedLotSize: 0.01,
+        autoBeEnabled: true,
+        lockedSpotOffset: 7.51,
+        ghToken: "",
+        ghGistId: PUBLIC_MIRROR_GIST_ID,
+        thaillmApiKey: "",
+        thaillmEndpoint: "https://thaillm-proxy.kotuazyx699.workers.dev/",
+        thaillmModel: "typhoon-s-thaillm-8b-instruct",
+        deviceRoleMode: "AUTO",
+        updatedAt: 0
+      };
+    }
+    let masterConfig = defaultMasterConfig();
+
+    function toNumOr(v, d) {
+      if (v === null || v === undefined || v === "") return d;
+      const n = Number(v);
+      return isNaN(n) ? d : n;
+    }
+
+    // รวมค่ามาตรฐานใหม่ + อัปเกรดค่าเก่าให้ตรงกันทุกเครื่อง (AUTO→auto_prop, lockedSpotOffset↔mt5Offset/mt5Locked, mt5BufferPts↔spreadBuffer)
+    function normalizeMasterConfig(cfg) {
+      if (!cfg || typeof cfg !== "object") return cfg;
+      if (cfg.lotMode === "AUTO" || !cfg.lotMode) cfg.lotMode = "auto_prop";
+      const oldLocked = toNumOr(cfg.lockedSpotOffset, null);
+      if (typeof cfg.mt5Locked !== "boolean") cfg.mt5Locked = (oldLocked !== null);
+      cfg.mt5Offset = toNumOr(cfg.mt5Offset, (oldLocked !== null ? oldLocked : 7.51));
+      cfg.lockedSpotOffset = cfg.mt5Locked ? cfg.mt5Offset : null;
+      cfg.spreadBuffer = toNumOr(cfg.spreadBuffer, toNumOr(cfg.mt5BufferPts, 47));
+      cfg.mt5BufferPts = cfg.spreadBuffer;
+      cfg.maxSpreadPts = toNumOr(cfg.maxSpreadPts, 65);
+      return cfg;
+    }
     let latestAiBrief = { html: "", badge: "", ts: 0 };
 
     function isMobileBrowser() {
@@ -1071,8 +1109,11 @@
     function loadMasterConfig() {
       try {
         const raw = localStorage.getItem(MASTER_CONFIG_KEY);
+        masterConfig = defaultMasterConfig();
         if (raw) masterConfig = Object.assign(masterConfig, JSON.parse(raw));
       } catch (e) {}
+      // อัปเกรดค่าเก่าให้เป็นมาตรฐานกลาง (AUTO→auto_prop, lockedSpotOffset↔mt5Offset/mt5Locked, mt5BufferPts↔spreadBuffer)
+      normalizeMasterConfig(masterConfig);
 
       // Support ?ntfy= query param
       try {
@@ -1100,6 +1141,7 @@
         }
       } catch (e) {}
 
+      normalizeMasterConfig(masterConfig);
       applyMasterConfigToUI();
       saveMasterConfigLocal();
     }
@@ -1109,8 +1151,11 @@
     }
 
     function applyMasterConfigToUI() {
-      document.getElementById('input-mt5-buffer').value = masterConfig.mt5BufferPts;
-      document.getElementById('select-lot-mode').value = masterConfig.lotMode;
+      normalizeMasterConfig(masterConfig);
+      document.getElementById('input-mt5-buffer').value = masterConfig.spreadBuffer;
+      const lotSel = document.getElementById('select-lot-mode');
+      lotSel.value = masterConfig.lotMode;
+      if (lotSel.value !== masterConfig.lotMode) lotSel.value = "auto_prop"; // ค่าไม่ตรง option → บังคับ auto_prop
       document.getElementById('input-fixed-lot').value = Number(masterConfig.fixedLotSize || 0.01).toFixed(2);
 
       if (masterConfig.lockedSpotOffset !== null && !isNaN(masterConfig.lockedSpotOffset)) {
@@ -1234,6 +1279,8 @@
       const baseMid = (rawWsBid + rawWsAsk) / 2.0;
       const exactOffset = +(targetMt5 - baseMid).toFixed(2);
       masterConfig.lockedSpotOffset = exactOffset;
+      masterConfig.mt5Offset = exactOffset;
+      masterConfig.mt5Locked = true;
       spotBasisOffset = exactOffset;
       document.getElementById('admin-current-offset').textContent = `ล็อก Offset MT5: ${exactOffset >= 0 ? '+' : ''}$${exactOffset.toFixed(2)}`;
       alert(`ล็อกฐานราคาให้ตรงกับ MT5 ($${targetMt5.toFixed(2)}) เรียบร้อย! กด "บันทึก & ซิงก์ทุกเครื่องทันที" เพื่อส่งค่านี้ไปมือถือครับ`);
@@ -1243,6 +1290,7 @@
       masterConfig.twelveDataKey = document.getElementById('admin-td-key').value.trim();
       masterConfig.fixedLotSize = Math.max(0.01, parseFloat(document.getElementById('admin-lot-val').value) || 0.01);
       masterConfig.mt5BufferPts = Math.max(0, Math.min(200, parseInt(document.getElementById('admin-buffer-val').value, 10) || 0));
+      masterConfig.spreadBuffer = masterConfig.mt5BufferPts;
       masterConfig.ntfyTopic = sanitizeNtfyTopic(document.getElementById('admin-ntfy-val').value);
       const newPin = document.getElementById('admin-new-pin').value.trim();
       if (newPin.length >= 4) masterConfig.creatorPin = newPin;
@@ -1347,18 +1395,49 @@
       }
     }
 
+    // ตัดรหัสลับเฉพาะเครื่องออกจาก Snapshot สาธารณะ (Token / API Key ห้ามหลุดขึ้น Gist เด็ดขาด)
+    function sanitizeCloudMasterConfig(cfg) {
+      const c = Object.assign({}, cfg);
+      c.ghToken = "";
+      c.thaillmApiKey = "";
+      return c;
+    }
+
+    // สรุปแผน Engine A (Scalp) / Engine B (Swing) ล่าสุด แนบขึ้น Gist ให้ทุกเครื่องเห็นแผนเดียวกัน
+    function buildCanonicalPlansSnapshot() {
+      try {
+        const out = { updatedAt: getBangkokTimeStr(), engineA: null, engineB: null };
+        if (liveModel && liveModel.scalpSetup) {
+          const s = liveModel.scalpSetup;
+          out.engineA = { dir: s.dir, entry: s.entry, sl: s.sl, tp: s.tp, be: s.be, slPts: s.slPts, tpPts: s.tpPts, beRule: s.beRule, rr: s.rr, formula: s.formulaName, mode: s.setupMode };
+        }
+        if (liveModel && liveModel.trendSetup) {
+          const t = liveModel.trendSetup;
+          out.engineB = { dir: t.dir, entry: t.entry, sl: t.sl, tp: t.tp, be: t.be, beRule: t.beRule, rr: t.rr, formula: t.formulaName, label: t.label };
+        }
+        return out;
+      } catch (e) { return null; }
+    }
+
     async function pushCloudSyncState(manual = false) {
       if (sessionGistHalted) return; // หยุดยิง Gist ตลอดเซสชันนี้ (กัน Error ซ้ำ)
       if (!masterConfig.ghToken || !masterConfig.ghGistId) return;
       try {
+        normalizeMasterConfig(masterConfig);
         const rev = Date.now();
         lastCloudRevision = rev;
+        // === CANONICAL SNAPSHOT: ครอบคลุม mt5Offset/mt5Locked/spreadBuffer/พอร์ต/เสี่ยง/lotMode + activeOrder/todayTrades/journalTrades/cooldownUnlockAt + แผน Engine A/B ===
         const payload = {
           revision: rev,
-          masterConfig,
+          schema: 2,
+          savedAt: new Date().toISOString(),
+          masterConfig: sanitizeCloudMasterConfig(masterConfig),
           orderState,
           aiBrain,
-          latestAiBrief
+          latestAiBrief,
+          todayTrades: orderState.todayClosed || [],
+          journalTrades: orderState.learningArchive || [],
+          plans: buildCanonicalPlansSnapshot()
         };
         const res = await fetch(`https://api.github.com/gists/${encodeURIComponent(masterConfig.ghGistId)}`, {
           method: "PATCH",
@@ -1404,6 +1483,65 @@
       } catch (e) { console.warn('[CloudSync] clearDeadGhToken:', e); }
     }
 
+    // === CANONICAL SNAPSHOT APPLY: นำค่าจาก Gist มาทับ localStorage ทั้งหมด 100% (ค่าเก่าในเครื่องห้ามค้างทับ) ===
+    let gistRawOnlyMode = false; // true = GitHub API ติด rate limit → อ่าน Gist ผ่าน raw CDN แทน (public, ไม่จำกัดโควตา)
+
+    function defaultOrderState() {
+      return {
+        sessionStart: sessionStartTimestamp,
+        currentDate: getBangkokDateStr(),
+        autoArm: true,
+        autoRefresh15m: true,
+        activeOrder: null,
+        todayClosed: [],
+        learningArchive: [],
+        cooldownUnlockAt: 0,
+        cooldownReason: ""
+      };
+    }
+
+    function applyCanonicalSnapshot(remote) {
+      try {
+        const keepToken = String(masterConfig.ghToken || "");
+        const keepLlmKey = String(masterConfig.thaillmApiKey || "");
+        if (remote.masterConfig && typeof remote.masterConfig === "object") {
+          // ทับค่าตั้งค่าทั้งหมดด้วยชุดมาตรฐาน + ค่าล่าสุดจาก Gist (ไม่ให้ค่าเก่าในเครื่องค้างทับ)
+          masterConfig = normalizeMasterConfig(Object.assign(defaultMasterConfig(), remote.masterConfig));
+          if (keepToken) masterConfig.ghToken = keepToken; // Token เป็นความลับเฉพาะเครื่อง — ไม่รับจาก Gist สาธารณะ
+          if (keepLlmKey) masterConfig.thaillmApiKey = keepLlmKey;
+          saveMasterConfigLocal();
+          applyMasterConfigToUI();
+        }
+        if (remote.orderState && typeof remote.orderState === "object") {
+          orderState = Object.assign(defaultOrderState(), remote.orderState);
+          if ((!Array.isArray(orderState.todayClosed) || !orderState.todayClosed.length) && Array.isArray(remote.todayTrades)) orderState.todayClosed = remote.todayTrades;
+          if ((!Array.isArray(orderState.learningArchive) || !orderState.learningArchive.length) && Array.isArray(remote.journalTrades)) orderState.learningArchive = remote.journalTrades;
+          if (remote.plans && typeof remote.plans === "object") orderState.canonicalPlans = remote.plans;
+          if (orderState.sessionStart) sessionStartTimestamp = orderState.sessionStart;
+          if (typeof orderState.cooldownUnlockAt !== "number" || !isFinite(orderState.cooldownUnlockAt)) orderState.cooldownUnlockAt = 0;
+          if (typeof orderState.cooldownReason !== "string") orderState.cooldownReason = "";
+          saveOrderStateLocal();
+          mirrorM15CooldownToLocalStorage();
+          renderOrderAndLedgerUI();
+        } else if (remote.plans && typeof remote.plans === "object") {
+          orderState.canonicalPlans = remote.plans;
+          saveOrderStateLocal();
+        }
+        if (remote.aiBrain) {
+          aiBrain = Object.assign(aiBrain, remote.aiBrain);
+          saveAiBrainLocal();
+          renderAiBrainUI();
+        }
+        if (remote.latestAiBrief && remote.latestAiBrief.html && remote.latestAiBrief.ts > (latestAiBrief.ts || 0)) {
+          latestAiBrief = remote.latestAiBrief;
+          const badgeEl = document.getElementById('ai-engine-badge');
+          const contentEl = document.getElementById('ai-content');
+          if (badgeEl && latestAiBrief.badge) badgeEl.textContent = latestAiBrief.badge;
+          if (contentEl && latestAiBrief.html) contentEl.innerHTML = latestAiBrief.html;
+        }
+      } catch (e) { console.warn('[CloudSync] applyCanonicalSnapshot:', e); }
+    }
+
     // สำรองข้อมูลฝั่ง Backend จาก ./data/state.json ใน repo (ใช้เมื่อ Gist ตอบไม่ปกติ)
     let lastBackendStateFallbackMs = 0;
     async function pullBackendStateFallback() {
@@ -1414,10 +1552,31 @@
       } catch (e) { console.warn('[CloudSync] pullBackendStateFallback:', e); }
     }
 
+    // อ่าน Gist ผ่าน raw CDN (ไม่กิน API quota 60 ครั้ง/ชม. — สำหรับเครื่อง Mirror/คนทั่วไปที่เปิดเว็บแบบ Public)
+    async function pullGistRawFallback() {
+      try {
+        const rawUrl = `https://gist.githubusercontent.com/${PUBLIC_MIRROR_GIST_OWNER}/${encodeURIComponent(masterConfig.ghGistId)}/raw/gold_quant_sync.json?t=${Date.now()}`;
+        const res = await fetch(rawUrl, { cache: "no-store" });
+        if (!res.ok) return null;
+        return JSON.parse(await res.text());
+      } catch (e) { console.warn('[CloudSync] raw fallback:', e); return null; }
+    }
+
     async function pullCloudSyncState() {
       if (!masterConfig.ghGistId) return;
       // Gist ถูกปฏิเสธถาวร (401/404) แล้วในเซสชันนี้ → หยุดยิง Gist ทั้งหมด แล้วอ่านข้อมูลสำรองจาก ./data/state.json แทน
       if (sessionGistHalted) { await pullBackendStateFallback(); return; }
+      // API ติด rate limit แล้ว → อ่าน Gist ผ่าน raw CDN ตรง ๆ แทน (ยังได้ Canonical Snapshot ครบเหมือนเดิม)
+      if (gistRawOnlyMode) {
+        const rawRemote = await pullGistRawFallback();
+        if (rawRemote && rawRemote.revision && rawRemote.revision > lastCloudRevision) {
+          lastCloudRevision = rawRemote.revision;
+          applyCanonicalSnapshot(rawRemote);
+        } else if (!rawRemote) {
+          await pullBackendStateFallback();
+        }
+        return;
+      }
       try {
         const url = `https://api.github.com/gists/${encodeURIComponent(masterConfig.ghGistId)}?t=${Date.now()}`;
         let headers = { "Accept": "application/vnd.github+json" };
@@ -1431,9 +1590,20 @@
           res = await fetch(url, { headers, cache: "no-store" });
         }
 
-        // ยิงซ้ำแบบไม่แนบ Token แล้วยังได้ 401/404/403 → หยุดยิง Gist ตลอดเซสชันนี้ แล้วอ่าน ./data/state.json แทน
-        // (403 = ติด Rate Limit 60 ครั้ง/ชม. ของ GitHub — ยิงซ้ำทุก 3.5 วิ มีแต่เจอ 403 ทุกครั้ง ไม่มีประโยชน์)
+        // 401/404/403 → เครื่อง Public/Mirror ที่ไม่มี Token: สลับไปโหมด raw CDN แทนการหยุดอ่านทั้งเซสชัน
+        // (403 = ติด Rate Limit 60 ครั้ง/ชม. ของ GitHub API — ยิงซ้ำทุก 3.5 วิ มีแต่เจอ 403 ทุกครั้ง ไม่มีประโยชน์)
         if (res.status === 401 || res.status === 404 || res.status === 403) {
+          if (!masterConfig.ghToken) {
+            gistRawOnlyMode = true;
+            const rawRemote = await pullGistRawFallback();
+            if (rawRemote && rawRemote.revision && rawRemote.revision > lastCloudRevision) {
+              lastCloudRevision = rawRemote.revision;
+              applyCanonicalSnapshot(rawRemote);
+            } else if (!rawRemote) {
+              await pullBackendStateFallback();
+            }
+            return;
+          }
           sessionGistHalted = true;
           const reason = res.status === 403 ? "ติด Rate Limit 60 ครั้ง/ชม. หรือไม่มีสิทธิ์เข้าถึง Gist" : "Token ไม่ถูกต้อง/Gist ถูกลบ";
           const auditEl = document.getElementById('data-audit-line');
@@ -1451,30 +1621,8 @@
         const remote = JSON.parse(rawContent);
         if (remote && remote.revision && remote.revision > lastCloudRevision) {
           lastCloudRevision = remote.revision;
-          if (remote.masterConfig) {
-            masterConfig = Object.assign(masterConfig, remote.masterConfig);
-            saveMasterConfigLocal();
-            applyMasterConfigToUI();
-          }
-          if (remote.orderState) {
-            orderState = Object.assign(orderState, remote.orderState);
-            if (orderState.sessionStart) sessionStartTimestamp = orderState.sessionStart;
-            saveOrderStateLocal();
-            mirrorM15CooldownToLocalStorage();
-            renderOrderAndLedgerUI();
-          }
-          if (remote.aiBrain) {
-            aiBrain = Object.assign(aiBrain, remote.aiBrain);
-            saveAiBrainLocal();
-            renderAiBrainUI();
-          }
-          if (remote.latestAiBrief && remote.latestAiBrief.html && remote.latestAiBrief.ts > (latestAiBrief.ts || 0)) {
-            latestAiBrief = remote.latestAiBrief;
-            const badgeEl = document.getElementById('ai-engine-badge');
-            const contentEl = document.getElementById('ai-content');
-            if (badgeEl && latestAiBrief.badge) badgeEl.textContent = latestAiBrief.badge;
-            if (contentEl && latestAiBrief.html) contentEl.innerHTML = latestAiBrief.html;
-          }
+          // นำ Canonical Snapshot จาก Gist มาทับ localStorage ทั้งหมด 100% (ค่าเก่าในเครื่องห้ามค้างทับ)
+          applyCanonicalSnapshot(remote);
         }
       } catch (e) {
         // เครือข่าย/JSON ผิดพลาด → ใช้ข้อมูลสำรองจาก ./data/state.json แทน
@@ -1492,6 +1640,10 @@
         ntfyTopic: masterConfig.ntfyTopic,
         twelveDataKey: masterConfig.twelveDataKey,
         mt5BufferPts: masterConfig.mt5BufferPts,
+        spreadBuffer: masterConfig.spreadBuffer,
+        mt5Offset: masterConfig.mt5Offset,
+        mt5Locked: masterConfig.mt5Locked,
+        maxSpreadPts: masterConfig.maxSpreadPts,
         lotMode: masterConfig.lotMode,
         fixedLotSize: masterConfig.fixedLotSize,
         accountBalance: masterConfig.accountBalance || 1000,
@@ -1622,10 +1774,60 @@
       const el = document.getElementById('input-mt5-buffer');
       const val = Math.max(0, Math.min(200, parseInt(el.value, 10) || 0));
       masterConfig.mt5BufferPts = val;
+      masterConfig.spreadBuffer = val;
       el.value = val;
       saveMasterConfigLocal();
       pushCloudSyncState(false);
       renderOrderAndLedgerUI();
+    }
+
+    // Offset ฐานราคา MT5 ที่ใช้จริงตอนนี้ (ล็อกไว้ หรือใช้ค่า Auto Consensus ล่าสุด)
+    function getEffectiveMt5Offset() {
+      const locked = masterConfig.lockedSpotOffset;
+      if (locked !== null && locked !== undefined && locked !== "" && !isNaN(Number(locked))) return Number(locked);
+      return Number(spotBasisOffset) || 0;
+    }
+
+    // 📋 คัดลอกตั๋วคำสั่ง MT5 (Entry/SL/TP บวก MT5 Offset แล้ว + Lot Auto Prop) ของ Engine A/B ลง Clipboard ทันที
+    function copyMt5Ticket(engineKey) {
+      try {
+        const isA = String(engineKey).toUpperCase() === "A";
+        const engineName = isA ? "Engine A (Scalp)" : "Engine B (Swing)";
+        let plan = null;
+        if (isA && liveModel && liveModel.scalpSetup) plan = liveModel.scalpSetup;
+        if (!isA && liveModel && liveModel.trendSetup) plan = liveModel.trendSetup;
+        // แผนสำรองจาก Canonical Snapshot (เครื่อง Mirror ที่ยังคำนวณแผนเองไม่เสร็จ)
+        if (!plan && orderState && orderState.canonicalPlans) plan = isA ? orderState.canonicalPlans.engineA : orderState.canonicalPlans.engineB;
+        if (!plan) { alert("ยังไม่มีแผน " + engineName + " ให้คัดลอก กรุณารอระบบคำนวณแผนก่อนครับ"); return; }
+        const lotInfo = getActiveLotSetting();
+        const lot = isA ? lotInfo.scalpLot : lotInfo.swingLot;
+        const off = getEffectiveMt5Offset();
+        const adj = (v) => (Number(v) + off).toFixed(2);
+        const dirTxt = String(plan.dir || "").toUpperCase();
+        const lines = [
+          "XAUUSD " + dirTxt + " — " + engineName,
+          "Entry: " + adj(plan.entry),
+          "SL: " + adj(plan.sl),
+          "TP: " + adj(plan.tp),
+          "Lot: " + lot.toFixed(2) + " (Auto Prop เสี่ยง " + Number(masterConfig.riskPct || 1.0).toFixed(1) + "% | พอร์ต $" + Number(masterConfig.accountBalance || 1000).toLocaleString() + ")",
+          "(บวก MT5 Offset " + (off >= 0 ? "+" : "") + "$" + off.toFixed(2) + " เรียบร้อย | " + getBangkokTimeStr() + " น.)"
+        ];
+        const text = lines.join("\n");
+        const done = () => {
+          const btn = document.getElementById(isA ? "btn-ea-copy-ticket" : "btn-eb-copy-ticket");
+          if (btn && !btn.dataset.busy) { // กันกดรัว ๆ แล้วข้อความค้าง: ล็อก busy จนกว่าจะรีเทิร์นข้อความเดิม
+            btn.dataset.busy = "1";
+            const old = btn.textContent;
+            btn.textContent = "✅ คัดลอกตั๋ว MT5 แล้ว!";
+            setTimeout(() => { btn.textContent = old; delete btn.dataset.busy; }, 1800);
+          }
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(() => prompt("คัดลอกตั๋ว MT5 ด้านล่างนี้:", text));
+        } else {
+          prompt("คัดลอกตั๋ว MT5 ด้านล่างนี้:", text);
+        }
+      } catch (e) { console.warn('[copyTicket]', e); }
     }
 
     function isGoldMarketClosedBkk() { return window.isGoldMarketClosedBKK(); } function _unused_isGoldMarketClosedBkk() {
@@ -2193,10 +2395,10 @@
     // Auto-Limit = ล็อกโหมดความเสี่ยง 1% (Auto Prop) อัตโนมัติ เพื่อไม่ให้เปิด Lot เกินงบ
     function forceAutoPropRisk1Pct(silent) {
       try {
-        masterConfig.lotMode = "AUTO";
+        masterConfig.lotMode = "auto_prop";
         masterConfig.riskPct = 1.0;
         const sel = document.getElementById('select-lot-mode');
-        if (sel) sel.value = "AUTO";
+        if (sel) sel.value = "auto_prop";
         const riskInp = document.getElementById('input-risk-pct');
         if (riskInp) riskInp.value = "1.0";
         updateLotModeVisibility();
@@ -2292,6 +2494,7 @@
 
     function placeScalpLimitOrder(manual = false, isAutoRefresh = false) {
       if (guardOrderPlacementBlocked(manual)) return; // ดักชั้นที่ 2: ล็อกพักหลังปิดไม้ตามรอบแท่ง M15
+      forceAutoPropRisk1Pct(true); // บังคับ Lot Auto Prop เสี่ยง 1% ตามระยะ SL จริง (กัน 0.05 Lot เกินความเสี่ยง)
       if (!manual && isGoldMarketClosedBkk()) return;
       if (!liveModel || !liveModel.scalpSetup) return;
       const sc = liveModel.scalpSetup;
@@ -2349,6 +2552,7 @@
 
     function placeSwingLimitOrder(manual = false) {
       if (guardOrderPlacementBlocked(manual)) return; // ดักชั้นที่ 2: ล็อกพักหลังปิดไม้ตามรอบแท่ง M15
+      forceAutoPropRisk1Pct(true); // บังคับ Lot Auto Prop เสี่ยง 1% ตามระยะ SL จริง (กัน 0.05 Lot เกินความเสี่ยง)
       if (!liveModel || !liveModel.trendSetup) return;
       if (orderState.activeOrder) {
         if (manual) alert("มีออเดอร์ค้างหรือถืออยู่แล้ว กรุณายกเลิก Limit เดิมก่อนวางแผน Swing/Reversal ครับ");
@@ -2402,6 +2606,7 @@
 
     function placeMarketOrderNow() {
       if (guardOrderPlacementBlocked(true)) return; // ดักชั้นที่ 2: ล็อกพักหลังปิดไม้ตามรอบแท่ง M15
+      forceAutoPropRisk1Pct(true); // บังคับ Lot Auto Prop เสี่ยง 1% ตามระยะ SL จริง (กัน 0.05 Lot เกินความเสี่ยง)
       if (isGoldMarketClosedBkk()) return;
       if (!liveModel || !liveModel.scalpSetup || !lastRenderedMid) return;
       if (Date.now() < sessionStartTimestamp) return;
@@ -2534,6 +2739,7 @@
 
     function placeSwingMarketOrderNow() {
       if (guardOrderPlacementBlocked(true)) return; // ดักชั้นที่ 2: ล็อกพักหลังปิดไม้ตามรอบแท่ง M15
+      forceAutoPropRisk1Pct(true); // บังคับ Lot Auto Prop เสี่ยง 1% ตามระยะ SL จริง (กัน 0.05 Lot เกินความเสี่ยง)
       if (isGoldMarketClosedBkk()) return alert("ตลาดทองคำปิดทำการช่วงเสาร์–อาทิตย์ครับ");
       if (!liveModel || !liveModel.trendSetup || !lastRenderedMid) return;
       if (orderState.activeOrder && orderState.activeOrder.mode === "OPEN") {
@@ -2798,8 +3004,8 @@
           setElProps('ao-be-price-pill', { textContent: `อ้างอิงฉุกเฉิน: $${bInfo.triggerPrice.toFixed(2)}` });
         }
 
+        // ราคาปิดปัจจุบันที่ใช้ตัดสินจริง: SHORT ใช้ Ask / LONG ใช้ Bid (ไม่บวก Spread Buffer ซ้ำ — ระยะจุดต้องตรงกับราคาที่แสดง)
         const evalPx = ao.dir === "LONG" ? (currentBid || currentMid) : (currentAsk || currentMid);
-        const guardedSl = ao.dir === "LONG" ? (ao.sl - masterConfig.mt5BufferPts / 100) : (ao.sl + masterConfig.mt5BufferPts / 100);
 
         setElProps('ao-side-lot', { textContent: `${ao.dir} (${ao.lot.toFixed(2)} Lot)`, className: `text-sm font-bold ${ao.dir === 'LONG' ? 'text-emerald-400' : 'text-rose-400'}` });
         setElProps('ao-time', { textContent: `${ao.planType} | ${ao.openTime}` });
@@ -2809,11 +3015,13 @@
 
         if (evalPx) {
           const distEntryPts = Math.round(Math.abs(evalPx - ao.entry) * 100);
-          const distSlPts = Math.round(Math.abs(evalPx - guardedSl) * 100);
-          const distTpPts = Math.round(Math.abs(evalPx - ao.tp) * 100);
+          const distSlPts = Math.round(Math.abs(evalPx - ao.sl) * 100);      // ระยะวิ่งคงเหลือจริงถึง SL (ไม่บวก buffer)
+          const distTpPts = Math.round(Math.abs(evalPx - ao.tp) * 100);      // ระยะวิ่งคงเหลือจริงถึง TP
+          const slCapitalPts = Math.round(Math.abs(ao.entry - ao.sl) * 100); // ระยะทุนเต็มจากจุดเข้า (SL)
+          const tpCapitalPts = Math.round(Math.abs(ao.entry - ao.tp) * 100); // ระยะเป้าจากจุดเข้า (TP)
           setElProps('ao-dist-entry', { textContent: ao.mode === "LIMIT" ? `ห่าง ${distEntryPts} จุด` : `${ao.dir === 'LONG' ? 'Bid' : 'Ask'} $${evalPx.toFixed(2)}` });
-          setElProps('ao-dist-sl', { textContent: `เหลือ ${distSlPts} จุด` });
-          setElProps('ao-dist-tp', { textContent: `เหลือ ${distTpPts} จุด` });
+          setElProps('ao-dist-sl', { textContent: `เหลือ ${distSlPts} จุด (ทุน ${slCapitalPts} จุด)` });
+          setElProps('ao-dist-tp', { textContent: `เหลือ ${distTpPts} จุด (ทุน ${tpCapitalPts} จุด)` });
 
           if (ao.mode === "OPEN") {
             const diff = ao.dir === "LONG" ? (evalPx - ao.entry) : (ao.entry - evalPx);
@@ -4190,6 +4398,50 @@
       });
     }
 
+    // ตรวจข่าว High Impact ในระยะ ±15 นาที (จาก state.json) + สเปรดปัจจุบันเทียบเพดานที่ตั้งไว้ (maxSpreadPts)
+    function getNewsSpreadPauseState() {
+      try {
+        const ns = backendV14State || {};
+        const newsArr = Array.isArray(ns.news) ? ns.news : (ns.macro && Array.isArray(ns.macro.news) ? ns.macro.news : []);
+        for (const ev of newsArr) {
+          if (!ev || String(ev.impact).toLowerCase() !== "high") continue;
+          const hrs = Number(ev.hours_away);
+          if (isFinite(hrs) && hrs <= 0.25) {
+            return { paused: true, key: `news:${ev.title || "USD"}:${ev.time_th || ""}`, reason: `📰 ข่าว USD High Impact: ${ev.title || "USD Event"} (อยู่ในระยะ ±15 นาที รอบ ${ev.time_th || "-"})` };
+          }
+        }
+      } catch (e) {}
+      try {
+        if (lastRenderedAsk !== null && lastRenderedBid !== null && Number.isFinite(lastRenderedAsk) && Number.isFinite(lastRenderedBid)) {
+          const ceiling = Math.max(10, Number(masterConfig.maxSpreadPts) || 65);
+          const spreadPts = Math.round(Math.max(0, lastRenderedAsk - lastRenderedBid) * 100);
+          if (spreadPts > ceiling) {
+            return { paused: true, key: "spread_high", reason: `📈 สเปรดถ่าง ${spreadPts} จุด เกินเพดานที่ตั้งไว้ ${ceiling} จุด` };
+          }
+        }
+      } catch (e) {}
+      return { paused: false, key: "", reason: "" };
+    }
+
+    // เมื่อเข้าเงื่อนไขพัก: ยกเลิก Limit อัตโนมัติ (AUTO) ที่ค้างอยู่ + บันทึกเหตุผลลงสมุดเรียนรู้ (กันสแปมด้วย key เดียวกัน)
+    let lastNewsSpreadPauseKey = "";
+    function applyNewsSpreadAutoPause(guard) {
+      if (!guard || !guard.paused) return;
+      if (guard.key === lastNewsSpreadPauseKey) return;
+      lastNewsSpreadPauseKey = guard.key;
+      recordAiInsight(`[AUTONOMIC] หยุด Auto-Limit ชั่วคราวอัตโนมัติ — ${guard.reason}`, "AUTONOMIC");
+      try {
+        const ao = orderState.activeOrder;
+        if (orderState.autoArm && ao && ao.mode === "LIMIT" && (ao.origin || "AUTO") === "AUTO") {
+          orderState.activeOrder = null;
+          saveOrderStateLocal();
+          pushCloudSyncState(false);
+          renderOrderAndLedgerUI();
+          recordAiInsight("[AUTONOMIC] ยกเลิก Limit AUTO ที่ค้างอยู่ เพราะเข้าเงื่อนไขข่าวแรง/สเปรดถ่าง — ระบบจะยิงใหม่เมื่อสภาวะกลับสู่ปกติ", "AUTONOMIC");
+        }
+      } catch (e) { console.warn('[newsSpreadPause]', e); }
+    }
+
     function evaluateLiveOrderFlowGate(mid, obi, bidPct, delta60s) {
       if (!liveModel || !liveModel.scalpSetup) return;
       const sc = liveModel.scalpSetup;
@@ -4235,6 +4487,19 @@
         box.className = "card p-4 border-amber-500/50 bg-gradient-to-r from-amber-950/30 via-gray-900 to-gray-900 space-y-3";
         return;
       }
+
+      // === MUE-X AUTONOMIC: หยุด Auto-Limit ชั่วคราวอัตโนมัติ เมื่อมีข่าว High Impact ±15 นาที หรือสเปรดถ่างเกินเพดานที่ตั้งไว้ ===
+      const nsGuard = getNewsSpreadPauseState();
+      if (nsGuard.paused) {
+        pill.textContent = "⏸️ AUTO-LIMIT PAUSED (ข่าวแรง/สเปรดถ่าง)";
+        pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500 rounded-full";
+        head.textContent = `${nsGuard.reason} — ระบบหยุด Auto-Limit ชั่วคราวอัตโนมัติ (ปุ่มเปิดไม้มือยังใช้ได้ตามเดิม)`;
+        box.className = "card p-4 border-rose-500/60 bg-gradient-to-r from-rose-950/40 via-gray-900 to-gray-900 space-y-3";
+        applyNewsSpreadAutoPause(nsGuard);
+        return;
+      }
+      lastNewsSpreadPauseKey = "";
+
       if (v14Rg && (v14Rg.news_pause || v14Rg.spread_pause)) {
         pill.textContent = `🛑 ${v14Rg.status}`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-rose-950 text-rose-300 border border-rose-500 rounded-full";
@@ -4283,9 +4548,7 @@
         rawWsBid = bids[0][0]; rawWsAsk = asks[0][0];
         lastTickTimestamp = Date.now();
 
-        const effectiveOffset = (masterConfig.lockedSpotOffset !== null && !isNaN(masterConfig.lockedSpotOffset))
-          ? Number(masterConfig.lockedSpotOffset)
-          : spotBasisOffset;
+        const effectiveOffset = getEffectiveMt5Offset();
 
         const rawMid = ((rawWsBid + rawWsAsk) / 2.0) + effectiveOffset;
         const halfSpread = Math.max(0.05, (rawWsAsk - rawWsBid) / 2.0);
