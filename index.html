@@ -297,7 +297,7 @@
         <div id="active-order-empty" class="bg-gray-950/70 border border-gray-800 rounded-lg p-2 font-mono-num text-xs space-y-1.5">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-gray-300 font-bold">⏳ สถานะ: ยังไม่มีออเดอร์เปิด (แสดงจุด Limit ปัจจุบันพร้อมเข้า)</span>
-            <span id="lob-cooldown-note" class="text-[11px] text-cyan-300">พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market</span>
+            <span id="lob-cooldown-note" class="text-[11px] text-cyan-300">พร้อมยิงเมื่อ Spot เข้าโซน ≤160 จุด + OBI 3s + Tape/Wall ยืนยัน หรือกดเปิด Market เอง</span>
           </div>
           <div id="lob-idle-limit-preview" class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
             <div class="bg-purple-950/25 border border-purple-800/50 rounded p-2 flex items-center justify-between">
@@ -632,9 +632,9 @@
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2.5">
             <div>
               <span class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">ENGINE B: H1 EMA200 TREND & SWING SNIPER</span>
-              <h2 class="text-base font-bold text-white">จับรอบเทรนด์ใหญ่ & จุดกลับตัว (1:2.2R)</h2>
+              <h2 class="text-base font-bold text-white">จับรอบเทรนด์ใหญ่ & จุดกลับตัว (R:R ปรับตาม Session Profile)</h2>
             </div>
-            <span id="trend-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/60">Swing 1:2.2</span>
+            <span id="trend-bt-badge" class="text-xs font-mono-num px-2.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/60">Swing Session-Adaptive</span>
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-900/90 border border-amber-700/40 rounded-lg p-2.5 text-xs">
@@ -650,7 +650,7 @@
           </div>
 
           <div id="tr-be-note" class="text-[11px] font-mono-num text-cyan-300 bg-cyan-950/20 border border-cyan-800/40 rounded px-2.5 py-2">
-            ✅ แผน Swing 1:2.2: ควรบังทุน BE เมื่อราคาวิ่งถึง +1.0R
+            ✅ แผน Swing (Session-Adaptive): รอโหลดแผนล่าสุด...
           </div>
 
           <div class="flex items-center justify-between gap-2 text-[11px] font-mono-num bg-amber-950/25 border border-amber-800/40 rounded px-2.5 py-1.5">
@@ -878,6 +878,58 @@
 
     let backendV14State = null;
 
+    // === SESSION STABLE PROFILES (ผลจาก backend Vector Grid + Bootstrap MC 250,000 รอบ/ช่วง) ===
+    // ค่าสำรองในตัว: ใช้เมื่อ state.json ยังไม่โหลด/พัง — ระบบออเดอร์ห้ามล็อกหรือสะดุดเพราะค่านี้หาย
+    const SESSION_STABLE_FALLBACK = {
+      ASIA:       { formula: "DOUBLE_BOTTOM_TOP", sl_atr_mult: 0.65, rr: 2.4, be_rule: "NO_BE",          win_rate_pct: 36.6, p05_worst_r: -10.212, max_dd_95: 16.201, stability_score: -0.2306, trades: 41 },
+      LONDON:     { formula: "LIQUIDITY_SWEEP",   sl_atr_mult: 0.75, rr: 2.0, be_rule: "NO_BE",          win_rate_pct: 55.6, p05_worst_r: 6.41,    max_dd_95: 7.764,  stability_score: 0.4587,  trades: 36 },
+      NY_OVERLAP: { formula: "HYBRID_REGIME",     sl_atr_mult: 0.45, rr: 2.0, be_rule: "TIME_EXIT_12B", win_rate_pct: 39.4, p05_worst_r: -15.71,  max_dd_95: 25.879, stability_score: -0.2389, trades: 94 },
+      LATE_NY:    { formula: "VP_EDGE_FADE",      sl_atr_mult: 0.55, rr: 1.2, be_rule: "TIME_EXIT_12B", win_rate_pct: 64.0, p05_worst_r: -0.964,  max_dd_95: 6.583,  stability_score: -0.0937, trades: 25 }
+    };
+    let sessionStableProfiles = { source: "fallback", generatedAt: "", sessions: {} };
+
+    // ผู้ชนะของช่วงตลาดปัจจุบัน: ใช้ค่าจาก state.json ก่อน ไม่มีค่อยตกไปใช้ค่าสำรองในตัว
+    function getSessionProfile(sessId) {
+      const be = sessionStableProfiles.sessions && sessionStableProfiles.sessions[sessId];
+      if (be && be.winner) return { ...be.winner, source: sessionStableProfiles.source, generatedAt: sessionStableProfiles.generatedAt };
+      const fb = SESSION_STABLE_FALLBACK[sessId] || SESSION_STABLE_FALLBACK.LONDON;
+      return { ...fb, source: "fallback", generatedAt: "" };
+    }
+
+    // รับข้อมูล session_stable_profiles จาก state.json (validate + เก็บเฉพาะ 4 ช่วง + กันหน้าเว็บพัง)
+    function applySessionStableProfiles(ssp) {
+      try {
+        if (!ssp || typeof ssp !== "object" || !ssp.sessions || typeof ssp.sessions !== "object") return false;
+        const clean = {};
+        let okCount = 0;
+        ["ASIA", "LONDON", "NY_OVERLAP", "LATE_NY"].forEach(k => {
+          const sd = ssp.sessions[k];
+          const w = sd && sd.winner;
+          if (w && Number.isFinite(Number(w.sl_atr_mult)) && Number.isFinite(Number(w.rr))) {
+            clean[k] = {
+              winner: {
+                formula: String(w.formula || "-"),
+                sl_atr_mult: Number(w.sl_atr_mult),
+                rr: Number(w.rr),
+                be_rule: String(w.be_rule || "NO_BE"),
+                win_rate_pct: Number(w.win_rate_pct || 0),
+                p05_worst_r: Number(w.p05_worst_r || 0),
+                max_dd_95: Number(w.max_dd_95 || 0),
+                stability_score: Number(w.stability_score || 0),
+                trades: Number(w.trades || 0)
+              },
+              window_bkk: String(sd.window_bkk || "")
+            };
+            okCount++;
+          }
+        });
+        if (!okCount) return false;
+        sessionStableProfiles = { source: "backend", generatedAt: String(ssp.generated_at || ""), sessions: clean };
+        try { renderAiBrainUI(); } catch (e) {}
+        return true;
+      } catch (e) { console.warn('[sessionProfiles]', e); return false; }
+    }
+
     const BACKEND_STALE_ENTRY_USD = 25;
     const BACKEND_STALE_NOTE = "(ข้อมูล Backend รอบเก่า — ยึดแผนสดด้านบนเป็นหลัก)";
 
@@ -921,6 +973,7 @@
         const data = await res.json();
         if (!data || typeof data !== "object") return;
         backendV14State = data;
+        try { applySessionStableProfiles(data.session_stable_profiles); } catch (e) { console.warn('[sessionProfiles]', e); }
 
         const ver = data.version || "14.1";
         const rg = data.risk_guard || {};
@@ -1610,8 +1663,8 @@
       const hr = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', hour: '2-digit', hour12: false }).format(new Date(ts)), 10);
       if (hr >= 6 && hr <= 13) return { id: "ASIA", label: "ASIA (06:00-13:59)" };
       if (hr >= 14 && hr <= 18) return { id: "LONDON", label: "LONDON (14:00-18:59)" };
-      if (hr >= 19 && hr <= 23) return { id: "NY_OVERLAP", label: "NY OVERLAP (19:00-23:59)" };
-      return { id: "LATE_NY", label: "LATE NY (00:00-05:59)" };
+      if (hr >= 19 && hr <= 22) return { id: "NY_OVERLAP", label: "NY OVERLAP (19:00-22:59)" };
+      return { id: "LATE_NY", label: "LATE NY (23:00-05:59)" };
     }
 
     function sanitizeNtfyTopic(raw) {
@@ -1727,6 +1780,34 @@
           verdict: `✅ ควรบัง BE ช่วงปลาย เมื่อถึง $${trig.toFixed(2)} (85% TP)`,
           shortTag: `บัง BE ที่ $${trig.toFixed(2)} → SL $${standardBeSl.toFixed(2)}`,
           reason: `ห้ามรีบบังช่วงต้น รอราคาวิ่งใกล้เป้าถึง $${trig.toFixed(2)} ค่อยเลื่อน SL บังทุนที่ $${standardBeSl.toFixed(2)}`
+        };
+      }
+
+      if (beRule === "BE_AT_1R") {
+        const trig1r = isLong ? +(entry + slDist * 1.00).toFixed(2) : +(entry - slDist * 1.00).toFixed(2);
+        return {
+          shouldBe: true, triggerPrice: trig1r, beNewSl: standardBeSl,
+          verdict: `✅ ควรบังทุน BE เมื่อถึง $${trig1r.toFixed(2)} (+1R)`,
+          shortTag: `บังทุน BE ที่ $${trig1r.toFixed(2)} → SL $${standardBeSl.toFixed(2)}`,
+          reason: `Session Profile ใช้กฎ BE_AT_1R: ราคาวิ่งถึง $${trig1r.toFixed(2)} (+1R) ให้เลื่อน SL มาบังทุนที่ $${standardBeSl.toFixed(2)}`
+        };
+      }
+      if (beRule === "TIME_EXIT_12B") {
+        const refTime = isLong ? +(entry + tpDist * 0.85).toFixed(2) : +(entry - tpDist * 0.85).toFixed(2);
+        return {
+          shouldBe: false, triggerPrice: refTime, beNewSl: standardBeSl,
+          verdict: `⏱️ กฎ TIME_EXIT_12B: ไม่บัง BE — ถือถึงแท่ง M15 ที่ 12 แล้วออกที่ราคาปิดหากไม่ชน SL/TP`,
+          shortTag: `TIME_EXIT_12B (ไม่บัง BE — ออกแท่งที่ 12)`,
+          reason: `Session Profile ใช้ TIME_EXIT_12B: ปล่อยวิ่งตามแผน ออกอัตโนมัติที่ราคาปิดแท่ง M15 ที่ 12 หากไม่ชน SL/TP ก่อน`
+        };
+      }
+      if (beRule === "NO_BE") {
+        const refNoBe = isLong ? +(entry + tpDist * 0.85).toFixed(2) : +(entry - tpDist * 0.85).toFixed(2);
+        return {
+          shouldBe: false, triggerPrice: refNoBe, beNewSl: standardBeSl,
+          verdict: `🚫 กฎ NO_BE: ไม่บัง BE — ปล่อยวิ่งชน TP/SL เต็มระยะตามแผน`,
+          shortTag: `NO_BE (ไม่บัง BE)`,
+          reason: `Session Profile ใช้กฎ NO_BE: Backtest ยืนยันปล่อยวิ่งหา TP/SL เต็มระยะ ลดโอกาสโดนไส้เทียนสะบัดชนทุน`
         };
       }
 
@@ -1959,6 +2040,12 @@
         const tot = s.wins + s.losses;
         const wr = tot > 0 ? ((s.wins / tot) * 100).toFixed(0) : "-";
         const isCurrent = k === curSess.id;
+        const prof = getSessionProfile(k);
+        const p05 = Number(prof.p05_worst_r) || 0;
+        const p05Ok = p05 >= 0;
+        const p05Cls = p05Ok ? 'text-emerald-400' : 'text-amber-400';
+        const p05BadgeCls = p05Ok ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/50' : 'bg-amber-950/50 text-amber-300 border-amber-600/50';
+        const fmtSigned = (v) => `${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}`;
         return `
           <div class="bg-gray-900/90 border ${isCurrent ? 'border-cyan-400 shadow-md shadow-cyan-500/10' : 'border-gray-800'} rounded-lg p-2.5">
             <div class="flex items-center justify-between mb-1">
@@ -1970,6 +2057,22 @@
               <span class="font-bold ${s.netR >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${s.netR >= 0 ? '+' : ''}${s.netR}R</span>
             </div>
             <div class="text-[10px] text-purple-300 truncate mt-1">สูตรเด่นช่วงนี้: ${s.bestFormula}</div>
+            <div class="mt-1.5 pt-1.5 border-t border-gray-800/70 space-y-0.5">
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-[9px] px-1 py-0.2 rounded border ${p05BadgeCls} font-bold whitespace-nowrap">MC 250K${prof.source === 'backend' ? '' : ' · ค่าสำรอง'}</span>
+                <span class="text-[10px] font-bold ${p05Cls} truncate">${prof.formula}</span>
+              </div>
+              <div class="text-[10px] text-gray-400 whitespace-nowrap">SL ${Number(prof.sl_atr_mult).toFixed(2)}xATR | TP 1:${Number(prof.rr).toFixed(1)} | BE: ${prof.be_rule}</div>
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="text-gray-400">Stability <span class="font-bold ${Number(prof.stability_score) >= 0 ? 'text-emerald-300' : 'text-amber-300'}">${Number(prof.stability_score).toFixed(3)}</span></span>
+                <span class="${p05Cls} font-bold">Worst5% ${fmtSigned(p05)}R</span>
+              </div>
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="text-gray-500">Max DD 95%</span>
+                <span class="text-gray-300 font-bold">${Number(prof.max_dd_95).toFixed(2)}R</span>
+              </div>
+              ${p05Ok ? '' : '<div class="text-[9px] leading-tight text-amber-400/90">⚠️ Worst-case ติดลบ — รอสัญญาณยืนยันสดเข้มงวดขึ้น (OBI 3s + Tape/Wall)</div>'}
+            </div>
           </div>`;
       }).join('');
 
@@ -2081,9 +2184,39 @@
 
     function toggleAutoLimit() {
       orderState.autoArm = !orderState.autoArm;
+      if (orderState.autoArm) forceAutoPropRisk1Pct();
       saveOrderStateLocal();
       pushCloudSyncState(false);
       renderOrderAndLedgerUI();
+    }
+
+    // Auto-Limit = ล็อกโหมดความเสี่ยง 1% (Auto Prop) อัตโนมัติ เพื่อไม่ให้เปิด Lot เกินงบ
+    function forceAutoPropRisk1Pct(silent) {
+      try {
+        masterConfig.lotMode = "AUTO";
+        masterConfig.riskPct = 1.0;
+        const sel = document.getElementById('select-lot-mode');
+        if (sel) sel.value = "AUTO";
+        const riskInp = document.getElementById('input-risk-pct');
+        if (riskInp) riskInp.value = "1.0";
+        updateLotModeVisibility();
+        saveMasterConfigLocal();
+        recalcPropMath();
+        if (!silent) recordAiInsight("[AUTONOMIC] เปิด Auto-Limit → ล็อกโหมดความเสี่ยง 1% (Auto Prop) อัตโนมัติ", "AUTONOMIC");
+      } catch (e) { console.warn('[autoProp]', e); }
+    }
+
+    // MUE-X AUTONOMIC: ยกเลิก Limit อัตโนมัติที่ค้างอยู่ไกลราคาเกินโซน (กันออเดอร์ล่วงหน้าไกลราคา)
+    function cancelAutoLimitTooFar(distPts) {
+      try {
+        const ao = orderState.activeOrder;
+        if (!ao || ao.mode !== "LIMIT" || (ao.origin || "AUTO") !== "AUTO") return;
+        orderState.activeOrder = null;
+        saveOrderStateLocal();
+        pushCloudSyncState(false);
+        renderOrderAndLedgerUI();
+        recordAiInsight(`[AUTONOMIC] ยกเลิก Limit อัตโนมัติที่ค้างไกลราคา — Spot ห่างจุดเข้า ${distPts} จุด (เกินโซน 160) รอเข้าโซนใหม่ + ยืนยัน OBI 3s/Tape/Wall ก่อนยิง`, "AUTONOMIC");
+      } catch (e) { console.warn('[autonomic-cancel]', e); }
     }
 
     function toggleAutoRefreshLimit() {
@@ -2184,6 +2317,7 @@
         dateStr: getBangkokDateStr(),
         openTime: getBangkokTimeStr(),
         mode: "LIMIT",
+        origin: manual ? "MANUAL" : "AUTO",
         dir: sc.dir,
         shape: `${tag} (${sc.formulaName})`,
         entry: sc.entry,
@@ -2244,7 +2378,7 @@
         sl: tr.sl,
         tp: tr.tp,
         slPts, tpPts,
-        beRule: "LOCK_HALF_1R",
+        beRule: tr.beRule || "LOCK_HALF_1R",
         beInfo: tr.beInfo,
         beTriggered: false,
         lot, riskUsd,
@@ -2431,7 +2565,7 @@
         entry: +entry.toFixed(2),
         sl, tp,
         slPts, tpPts,
-        beRule: "LOCK_HALF_1R",
+        beRule: tr.beRule || "LOCK_HALF_1R",
         beInfo: tr.beInfo,
         beTriggered: false,
         lot, riskUsd,
@@ -3460,13 +3594,21 @@
         revReason = `ตามเทรนด์หลัก ${isBearMacro ? 'BEAR' : 'BULL'} (${activeTrendGene.entryMode} | OOS WR ${activeTrendGene.oosWr}%)`;
       }
 
-      const scSlUsd = Math.max(3.5, Math.min(8.5, +(last.atr * chosenGene.slMult).toFixed(2)));
+      // === SESSION STABLE PROFILES: โหลดพารามิเตอร์ผู้ชนะของช่วงตลาดปัจจุบันอัตโนมัติ (มีค่าสำรองในตัว) ===
+      const curSessId = getBangkokSession().id;
+      const sessProf = getSessionProfile(curSessId);
+      const effSlMult = Number(sessProf.sl_atr_mult);
+      const effRr = Number(sessProf.rr);
+      const effBeRule = sessProf.be_rule || beRuleLabel;
+      const sessProfTag = `📊 ${curSessId} ${sessProf.formula} (SL ${effSlMult}xATR | RR ${effRr} | ${effBeRule})`;
+
+      const scSlUsd = Math.max(3.5, Math.min(8.5, +(last.atr * effSlMult).toFixed(2)));
       const scSlPts = Math.round(scSlUsd * 100);
-      const scTpUsd = +(scSlUsd * chosenGene.rr).toFixed(2);
+      const scTpUsd = +(scSlUsd * effRr).toFixed(2);
       const scTpPts = Math.round(scTpUsd * 100);
 
-      const trSlDist = +(Math.max(12.0, last.atr * 1.35)).toFixed(2);
-      const trTpDist = +(trSlDist * 2.2).toFixed(2);
+      const trSlDist = +(Math.max(3.5, Math.min(8.5, last.atr * effSlMult))).toFixed(2);
+      const trTpDist = +(trSlDist * effRr).toFixed(2);
       let trDir, trEntry, trLabel, trIsRev = false, trFormula;
 
       if (setupMode === "REVERSAL") {
@@ -3476,11 +3618,11 @@
       } else {
         trDir = isBearMacro ? "SHORT" : "LONG"; trFormula = activeTrendGene.entryMode;
         trEntry = +(last.ema21).toFixed(2);
-        trLabel = `SWING TREND ${trDir} EMA21 RETEST (1:2.2)`;
+        trLabel = `SWING TREND ${trDir} EMA21 RETEST (1:${effRr} | 📊 ${sessProf.formula})`;
       }
       const trSl = trDir === "SHORT" ? +(trEntry + trSlDist).toFixed(2) : +(trEntry - trSlDist).toFixed(2);
       const trTp = trDir === "SHORT" ? +(trEntry - trTpDist).toFixed(2) : +(trEntry + trTpDist).toFixed(2);
-      const trBeInfo = evaluateBeRecommendation(trEntry, trSl, trTp, trDir, "LOCK_HALF_1R", last.atr);
+      const trBeInfo = evaluateBeRecommendation(trEntry, trSl, trTp, trDir, effBeRule, last.atr);
 
       const idealOffset = Math.max(1.80, Math.min(5.20, +(last.atr * 0.16).toFixed(2)));
       let scEntry, anchorSourceText;
@@ -3526,7 +3668,7 @@
 
       const scSl = scDir === "SHORT" ? +(scEntry + scSlUsd).toFixed(2) : +(scEntry - scSlUsd).toFixed(2);
       const scTp = scDir === "SHORT" ? +(scEntry - scTpUsd).toFixed(2) : +(scEntry + scTpUsd).toFixed(2);
-      const scBeInfo = evaluateBeRecommendation(scEntry, scSl, scTp, scDir, beRuleLabel, last.atr);
+      const scBeInfo = evaluateBeRecommendation(scEntry, scSl, scTp, scDir, effBeRule, last.atr);
       const distPts = Math.round(Math.abs(scEntry - spotMid) * 100);
       const modeTag = setupMode === "REVERSAL" ? "🔄 REVERSAL" : (setupMode === "TREND_CAUTION" ? "⚠️ TREND (CAUTION)" : "🌊 TREND");
 
@@ -3541,7 +3683,7 @@
           revSafetyLocked,
           revReason,
           dir: scDir,
-          bias: `${modeTag} ${scDir} @ $${scEntry.toFixed(2)} (ห่าง ${distPts} จุด | ความมั่นใจ ${conf.totalScore}% เกรด ${conf.grade})`,
+          bias: `${modeTag} ${scDir} @ $${scEntry.toFixed(2)} (ห่าง ${distPts} จุด | ความมั่นใจ ${conf.totalScore}% เกรด ${conf.grade}) | ${sessProfTag}`,
           anchorSourceText,
           conf,
           entry: +scEntry.toFixed(2),
@@ -3549,15 +3691,25 @@
           be: scBeInfo.triggerPrice,
           tp: scTp,
           slPts: scSlPts, tpPts: scTpPts,
-          beRule: beRuleLabel,
+          beRule: effBeRule,
           beInfo: scBeInfo,
-          rr: chosenGene.rr,
-          tolPts: 160
+          rr: effRr,
+          tolPts: 160,
+          sessionProfile: {
+            id: curSessId, formula: sessProf.formula, sl_atr_mult: effSlMult, rr: effRr, be_rule: effBeRule,
+            stability_score: sessProf.stability_score, p05_worst_r: sessProf.p05_worst_r,
+            max_dd_95: sessProf.max_dd_95, win_rate_pct: sessProf.win_rate_pct, source: sessProf.source
+          }
         },
         trendSetup: {
           dir: trDir, entry: trEntry, sl: trSl, be: trBeInfo.triggerPrice, tp: trTp,
-          beInfo: trBeInfo,
-          slDist: trSlDist, isReversal: trIsRev, formulaName: trFormula, label: trLabel
+          beInfo: trBeInfo, beRule: effBeRule, rr: effRr,
+          slDist: trSlDist, isReversal: trIsRev, formulaName: trFormula, label: trLabel,
+          sessionProfile: {
+            id: curSessId, formula: sessProf.formula, sl_atr_mult: effSlMult, rr: effRr, be_rule: effBeRule,
+            stability_score: sessProf.stability_score, p05_worst_r: sessProf.p05_worst_r,
+            max_dd_95: sessProf.max_dd_95, win_rate_pct: sessProf.win_rate_pct, source: sessProf.source
+          }
         }
       };
     }
@@ -3687,7 +3839,7 @@
 
         document.getElementById('scalp-bt-badge').textContent = `Trend WR: ${totalWr}% (${totalWins + totalLosses} ไม้) | Net: ${totalNetR >= 0 ? '+' : ''}${totalNetR.toFixed(2)}R`;
         document.getElementById('scalp-bias').textContent = scalpSetup.bias;
-        document.getElementById('scalp-rr-badge').textContent = `SL ${scalpSetup.slPts} จุด / TP ${scalpSetup.tpPts} จุด (1:${scalpSetup.rr})`;
+        document.getElementById('scalp-rr-badge').textContent = `SL ${scalpSetup.slPts} จุด / TP ${scalpSetup.tpPts} จุด (1:${scalpSetup.rr} | ${scalpSetup.sessionProfile ? scalpSetup.sessionProfile.formula : '-'})`;
         document.getElementById('sc-entry').textContent = `$${scalpSetup.entry.toFixed(2)}`;
         document.getElementById('sc-sl-label').textContent = `Scalp SL (${scalpSetup.slPts} จุด)`;
         document.getElementById('sc-sl').textContent = `$${scalpSetup.sl.toFixed(2)}`;
@@ -3718,12 +3870,12 @@
         beReason.textContent = scalpSetup.beInfo.reason;
 
         document.getElementById('setup-bias').textContent = trendSetup.label;
-        document.getElementById('trend-bt-badge').textContent = `Swing SL: $${trendSetup.slDist} (1:2.2)`;
+        document.getElementById('trend-bt-badge').textContent = `Swing SL: $${trendSetup.slDist} (1:${trendSetup.rr} | ${trendSetup.sessionProfile ? trendSetup.sessionProfile.formula : '-'})`;
         document.getElementById('setup-entry').textContent = `$${Number(trendSetup.entry).toFixed(2)}`;
         document.getElementById('setup-sl').textContent = `$${Number(trendSetup.sl).toFixed(2)}`;
         document.getElementById('setup-be').textContent = `$${Number(trendSetup.beInfo.triggerPrice).toFixed(2)}`;
         document.getElementById('setup-tp').textContent = `$${Number(trendSetup.tp).toFixed(2)}`;
-        document.getElementById('tr-be-note').textContent = `✅ แผน Swing 1:2.2: ควรบังทุน BE เมื่อราคาถึง $${trendSetup.beInfo.triggerPrice.toFixed(2)} (เลื่อน SL ล็อกกำไรที่ $${trendSetup.beInfo.beNewSl.toFixed(2)})`;
+        document.getElementById('tr-be-note').textContent = `📊 Swing 1:${trendSetup.rr} (${trendSetup.sessionProfile ? trendSetup.sessionProfile.formula : '-'}): ${trendSetup.beInfo.shouldBe ? `ควรบังทุน BE เมื่อราคาถึง $${trendSetup.beInfo.triggerPrice.toFixed(2)} (เลื่อน SL ไปที่ $${trendSetup.beInfo.beNewSl.toFixed(2)})` : trendSetup.beInfo.verdict}`;
 
         document.getElementById('anatomy-cards-grid').innerHTML = mueRes.results.map(r => `
           <div class="bg-gray-900/90 border ${r.netR >= 0 ? 'border-emerald-700/60' : 'border-purple-700/50'} rounded-lg p-2">
@@ -3781,12 +3933,17 @@
         recalcPropMath();
 
         if (!isMirrorClientPassive()) {
-          // ล็อกพัก M15: หยุด Auto-Limit / Auto-Entry ชั่วคราวระหว่างคูลดาวน์หลังปิดไม้
+          // === MUE-X AUTONOMIC TRIGGER: ไม่วางออเดอร์ล่วงหน้าไกลราคา (ทุกช่วงตลาดรวม ASIA — ห้ามล็อกช่วงเอเชีย) ===
+          // Auto-Limit = เฝ้าโซน + รอ Execution Gate ยืนยันครบ 3 ชั้นหน้างาน (ระยะ <= 160 จุด + OBI 3.0s + Tape/Wall) แล้วยิง Market จริง
+          // ไม่วาง Limit ล่วงหน้าอัตโนมัติอีกต่อไป — ยกเลิกเฉพาะ Limit ที่ระบบเดิมเคยวางค้างไว้และตอนนี้อยู่ไกลราคาเกินโซนเท่านั้น
+          // (ล็อกพัก M15: หยุด Auto-Limit / Auto-Entry ชั่วคราวระหว่างคูลดาวน์หลังปิดไม้)
           if (orderState.autoArm && !getCooldownGuardStatus().inCooldown) {
-            if (!orderState.activeOrder) {
-              placeScalpLimitOrder(false, false);
-            } else if (orderState.activeOrder.mode === "LIMIT" && orderState.autoRefresh15m) {
-              placeScalpLimitOrder(false, true);
+            const autoZonePts = scalpSetup.tolPts || 160;
+            const distToEntryPts = Math.round(Math.abs(spotMid - scalpSetup.entry) * 100);
+            const inAutoZone = distToEntryPts <= autoZonePts;
+            const aoNow = orderState.activeOrder;
+            if (aoNow && aoNow.mode === "LIMIT" && !inAutoZone && (aoNow.origin || "AUTO") === "AUTO") {
+              cancelAutoLimitTooFar(distToEntryPts);
             }
           }
         }
@@ -4092,7 +4249,7 @@
         head.textContent = `ยืนยันครบ 3 ชั้น (ความมั่นใจ ${sc.conf.totalScore}%)! เปิดออเดอร์ ${sc.dir} @ $${mid.toFixed(2)} | SL $${sc.sl.toFixed(2)} | TP $${sc.tp.toFixed(2)}`;
         box.className = "card p-4 border-emerald-400 bg-gradient-to-r from-emerald-950/60 via-gray-900 to-emerald-950/40 space-y-3";
 
-        if (!isMirrorClientPassive() && !getCooldownGuardStatus().inCooldown && (!orderState.activeOrder || orderState.activeOrder.mode === "LIMIT") && Date.now() - lastAutoFireTs > 300000) {
+        if (!isMirrorClientPassive() && orderState.autoArm && !getCooldownGuardStatus().inCooldown && (!orderState.activeOrder || orderState.activeOrder.mode === "LIMIT") && Date.now() - lastAutoFireTs > 300000) {
           lastAutoFireTs = Date.now();
           placeMarketOrderNow();
         }
@@ -4110,7 +4267,7 @@
       } else {
         pill.textContent = `SCANNING (${distPts} จุดถึงโซน $${sc.entry.toFixed(2)})`;
         pill.className = "px-2.5 py-0.5 text-xs font-mono-num font-bold bg-gray-800 text-amber-300 border border-gray-700 rounded-full";
-        head.textContent = `แผน ${sc.dir} ที่ $${sc.entry.toFixed(2)} (ห่าง ${distPts} จุด | ความมั่นใจ ${sc.conf.totalScore}% เกรด ${sc.conf.grade} — ${sc.conf.closestAnchor.name})`;
+        head.textContent = `แผน ${sc.dir} ที่ $${sc.entry.toFixed(2)} (ห่าง ${distPts} จุด | ความมั่นใจ ${sc.conf.totalScore}% เกรด ${sc.conf.grade} — ${sc.conf.closestAnchor.name}) | MUE-X Autonomic: รอ Spot เข้าโซน ≤160 จุด แล้วยืนยัน OBI 3s + Tape/Wall ก่อนยิงจริง`;
         box.className = "card p-4 border-cyan-500/40 bg-gradient-to-r from-gray-900 via-cyan-950/20 to-purple-950/20 space-y-3";
       }
     }
@@ -4201,6 +4358,7 @@
       try { loadMasterConfig(); } catch (e) { console.warn('[init] loadMasterConfig:', e); }
       try { loadAiBrain(); } catch (e) { console.warn('[init] loadAiBrain:', e); }
       try { loadOrderState(); } catch (e) { console.warn('[init] loadOrderState:', e); }
+      try { if (orderState.autoArm) forceAutoPropRisk1Pct(true); } catch (e) { console.warn('[init] autoPropRisk:', e); }
       try { recalcPropMath(); } catch (e) { console.warn('[init] recalcPropMath:', e); }
       try { await pullCloudSyncState(); } catch (e) { console.warn('[init] pullCloudSyncState:', e); }
       try { await syncBackendV14State(); } catch (e) { console.warn('[init] syncBackendV14State:', e); }
@@ -4376,7 +4534,7 @@
       } else {
         if (cdPill) cdPill.classList.add("hidden");
         if (cdBtn) cdBtn.classList.add("hidden");
-        if (cdNote) cdNote.textContent = "พร้อมเข้าออเดอร์ทันทีเมื่อราคาถึงจุด Limit หรือกดเปิด Market";
+        if (cdNote) cdNote.textContent = "พร้อมยิงเมื่อ Spot เข้าโซน ≤160 จุด + OBI 3s + Tape/Wall ยืนยัน หรือกดเปิด Market เอง";
       }
     }
 

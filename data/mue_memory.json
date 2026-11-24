@@ -1,16 +1,16 @@
 {
-  "generation": 6,
-  "last_evolved_at": "2026-11-23 23:47:56",
+  "generation": 7,
+  "last_evolved_at": "2026-11-24 10:32:17",
   "genes": {
     "D_SHAPED": {
       "mode": "POC_PULLBACK",
-      "sl_points": 656,
+      "sl_points": 648,
       "tp_points": 750,
       "tol_points": 150,
       "obi_min": 0.18,
       "generation": 4,
       "fitness": 0.99,
-      "rule_th": "MUE-X Gen#4: POC_PULLBACK | Dynamic ATR SL (~656 จุด) / TP >= 750 จุด (±150 จุด + OBI >= 0.18)"
+      "rule_th": "MUE-X Gen#4: POC_PULLBACK | Dynamic ATR SL (~648 จุด) / TP >= 750 จุด (±150 จุด + OBI >= 0.18)"
     },
     "B_SHAPED": {
       "mode": "VALLEY_MIGRATION",
@@ -34,13 +34,13 @@
     },
     "DOUBLE_ZONE": {
       "mode": "POC_PULLBACK",
-      "sl_points": 672,
+      "sl_points": 673,
       "tp_points": 750,
       "tol_points": 220,
       "obi_min": 0.18,
       "generation": 2,
       "fitness": 0.55,
-      "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~672 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
+      "rule_th": "MUE-X Gen#2: POC_PULLBACK | Dynamic ATR SL (~673 จุด) / TP >= 750 จุด (±220 จุด + OBI >= 0.18)"
     }
   }
 }

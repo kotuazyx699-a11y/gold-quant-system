@@ -221,10 +221,30 @@ def update_hydra_vault():
     os.makedirs(DATA_DIR, exist_ok=True)
     existing_df = pd.read_csv(VAULT_PATH, index_col=0, parse_dates=True) if os.path.exists(VAULT_PATH) else None
 
+    # Normalize index ให้เป็น UTC DatetimeIndex เสมอ — กัน vault เก่าที่เก็บ timestamp เป็น string
+    # ผสม timezone (+00:00 / -05:00) ทำให้ pd.concat + sort_index พังใน pandas 3.x (TypeError: str vs Timestamp)
+    if existing_df is not None and not existing_df.empty:
+        try:
+            ex_idx = existing_df.index
+            if isinstance(ex_idx, pd.DatetimeIndex) and getattr(ex_idx, "tz", None) is not None:
+                existing_df.index = ex_idx.tz_convert("UTC")
+            elif isinstance(ex_idx, pd.DatetimeIndex):
+                existing_df.index = ex_idx.tz_localize("UTC")
+            else:
+                ts_e = pd.to_datetime(pd.Series(list(ex_idx)).astype(str), utc=True, format="mixed", errors="coerce")
+                if not ts_e.isna().any():
+                    existing_df.index = pd.DatetimeIndex(ts_e)
+        except Exception:
+            pass
+
     new_df = yf.download("GC=F", period="60d", interval="15m", progress=False)
     if isinstance(new_df.columns, pd.MultiIndex):
         new_df.columns = new_df.columns.get_level_values(0)
     new_df = new_df[["Open", "High", "Low", "Close", "Volume"]].dropna()
+    if getattr(new_df.index, "tz", None) is not None:
+        new_df.index = new_df.index.tz_convert("UTC")
+    elif len(new_df):
+        new_df.index = new_df.index.tz_localize("UTC")
 
     spot_mid, spot_bid, spot_ask, feed_src = None, None, None, "XAU/USD Spot"
     try:
@@ -695,6 +715,625 @@ def run_trend_walk_forward(df):
     return {"best": best_obj}
 
 
+# =========================================================================================
+# SESSION STABLE PROFILES — Vectorized Parameter Grid + Bootstrap Monte Carlo (1,000,000 รอบ)
+# แบ่ง 4 ช่วงตลาดตามเวลาไทย (GMT+7): ASIA 06:00-13:59 | LONDON 14:00-18:59 |
+# NY_OVERLAP 19:00-22:59 | LATE_NY 23:00-05:59
+# สัญญาณ 8 สูตร (พอร์ตตรรกะชุดเดียวกับ backtest บนหน้าเว็บ) -> จำลองเส้นทางราคา 24 แท่งล่วงหน้า
+# ด้วย MFE/MAE matrix (NumPy) -> Grid SL 0.25-0.75xATR x TP R:R 1.2-2.4 x กฎ BE 4 แบบ
+# บังคับหัก Spread+Slippage ตามความผันผวนจริงของแต่ละช่วงในทุกไม้ -> Bootstrap Monte Carlo
+# 250,000 รอบ/ช่วง (รวม 1,000,000 รอบ, float32) -> เลือกชุดพารามิเตอร์ที่คงตัวสุดของแต่ละช่วง
+# บันทึกลง state.json คีย์ "session_stable_profiles" (คีย์เดิมทั้งหมดคงอยู่ครบ)
+# =========================================================================================
+
+STABLE_FORWARD_BARS = 24
+STABLE_MC_ITERS_PER_SESSION = 250000
+STABLE_MC_MAX_CANDIDATES = 125
+STABLE_MC_MIN_ITERS = 2000
+STABLE_GRID_SL_MULT = (0.25, 0.35, 0.45, 0.55, 0.65, 0.75)
+STABLE_GRID_RR = (1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4)
+STABLE_BE_RULES = ("NO_BE", "LOCK_HALF_0.8R", "BE_AT_1R", "TIME_EXIT_12B")
+STABLE_FORMULAS = ("VALLEY_SNIPER", "TREND_PULLBACK", "HYBRID_REGIME", "VP_EDGE_FADE",
+                   "LIQUIDITY_SWEEP", "DOUBLE_BOTTOM_TOP", "RSI_ENGULFING", "VWAP_SNAPBACK")
+STABLE_SESSION_DEFS = (
+    ("ASIA", 360, 840, "06:00-13:59"),
+    ("LONDON", 840, 1140, "14:00-18:59"),
+    ("NY_OVERLAP", 1140, 1380, "19:00-22:59"),
+    ("LATE_NY", 1380, 360, "23:00-05:59"),
+)
+STABLE_SL_CLAMP = (3.5, 8.5)              # เพดาน/พื้น SL (USD) แบบเดียวกับ simulateGeneExact บนหน้าเว็บ
+STABLE_FRICTION_BASE_USD = 0.40           # ต้นทุนฐานต่อไม้ (เท่าค่า PROP_FRICTION_USD ของหน้าเว็บ)
+STABLE_FRICTION_SIGMA_RATIO = 0.35        # ส่วนเบี่ยงเบนสุ่มของสเปรดใน Monte Carlo
+STABLE_ANOMALY_JUMP_USD = 25.0            # ตัดสัญญาณที่หน้าต่าง 24 แท่งมีแท่งกระโดดผิดปกติ (basis shift ของ vault)
+
+
+def _stable_side_select(long_c, short_c, first_is_long, valid):
+    """รวมเงื่อนไข LONG/SHORT เป็น side (+1/-1/0) โดยให้ลำดับความสำคัญตาม if/else ต้นฉบับบนหน้าเว็บ"""
+    s = np.zeros(long_c.shape[0], dtype=np.int8)
+    if first_is_long:
+        s[valid & long_c] = 1
+        s[valid & (~long_c) & short_c] = -1
+    else:
+        s[valid & short_c] = -1
+        s[valid & (~short_c) & long_c] = 1
+    return s
+
+
+def _stable_clean_frame(df):
+    """จัดเรียงแท่ง M15 ตามเวลา UTC จริง + ตัดแท่งซ้ำ (index vault เป็น string ผสม timezone ได้)
+    คืน (DataFrame OHLCV เรียงเวลาแล้ว, นาทีในวันตามเวลาไทย)"""
+    work = df[["Open", "High", "Low", "Close", "Volume"]].copy()
+    minutes = None
+    try:
+        idx = df.index
+        if isinstance(idx, pd.DatetimeIndex) and getattr(idx, "tz", None) is not None:
+            ts = pd.DatetimeIndex(idx.tz_convert("UTC"))
+        elif isinstance(idx, pd.DatetimeIndex):
+            ts = pd.DatetimeIndex(idx).tz_localize("UTC")
+        else:
+            ts_p = pd.to_datetime(pd.Series(list(idx)).astype(str), utc=True, format="mixed", errors="coerce")
+            if ts_p.isna().any():
+                keepmask = (~ts_p.isna()).to_numpy()
+                work = work.iloc[keepmask]
+                ts_p = ts_p[~ts_p.isna()]
+            ts = pd.DatetimeIndex(ts_p)
+        work.index = ts
+        work = work[~work.index.duplicated(keep="last")].sort_index()
+        work.index = work.index.tz_convert("UTC")
+        bkk = work.index.tz_convert("Asia/Bangkok")
+        minutes = (bkk.hour * 60 + bkk.minute).to_numpy()
+    except Exception as e:
+        print(f"[STABLE Warning] clean frame: {e}")
+        minutes = None
+    return work, minutes
+
+
+def _stable_site_indicators(sim_df):
+    """อินดิเคเตอร์เวอร์ชันเดียวกับ computeIndicatorsAndVP บนหน้าเว็บ (EMA21/50/200, ATR14, RSI14, ADX proxy)"""
+    close = sim_df["Close"].astype(float)
+    high = sim_df["High"].astype(float)
+    low = sim_df["Low"].astype(float)
+    openp = sim_df["Open"].astype(float)
+    ema21 = close.ewm(span=21, adjust=False).mean()
+    ema50 = close.ewm(span=50, adjust=False).mean()
+    ema200 = close.ewm(span=200, adjust=False).mean()
+    prev_c = close.shift(1)
+    tr = pd.concat([high - low, (high - prev_c).abs(), (low - prev_c).abs()], axis=1).max(axis=1)
+    atr14 = tr.rolling(14).mean()
+    gain = close.diff().clip(lower=0).rolling(14).mean()
+    loss = (-close.diff().clip(upper=0)).rolling(14).mean()
+    rsi14 = 100.0 - (100.0 / (1.0 + gain / loss.clip(lower=0.001)))
+    up = high.diff()
+    dn = -low.diff()
+    pdm = np.where((up > dn) & (up > 0), up, 0.0)
+    mdm = np.where((dn > up) & (dn > 0), dn, 0.0)
+    pdm_sum = pd.Series(pdm, index=sim_df.index).rolling(14).sum()
+    mdm_sum = pd.Series(mdm, index=sim_df.index).rolling(14).sum()
+    tr_sum = tr.rolling(14).sum()
+    pdi = 100.0 * pdm_sum / tr_sum.clip(lower=0.01)
+    mdi = 100.0 * mdm_sum / tr_sum.clip(lower=0.01)
+    adx_proxy = ((pdi - mdi).abs() / np.maximum(1.0, pdi + mdi)) * 70.0 + 15.0
+    return {
+        "o": openp.to_numpy(dtype=np.float64),
+        "h": high.to_numpy(dtype=np.float64),
+        "l": low.to_numpy(dtype=np.float64),
+        "c": close.to_numpy(dtype=np.float64),
+        "ema21": ema21.to_numpy(),
+        "ema50": ema50.to_numpy(),
+        "ema200": ema200.to_numpy(),
+        "atr": atr14.bfill().fillna(5.0).to_numpy(),
+        "rsi": rsi14.fillna(50.0).to_numpy(),
+        "adx": adx_proxy.fillna(22.0).to_numpy(),
+    }
+
+
+def _stable_micro_vp_arrays(h, l, c, v, bins=18):
+    """พอร์ตตรรกะ computeVP (16 แท่งล่าสุด, 18 bins) เป็นรายแท่ง -> คืน val/vah/poc/valley ต่อแท่ง"""
+    n = len(c)
+    vp_val = np.full(n, np.nan)
+    vp_vah = np.full(n, np.nan)
+    vp_poc = np.full(n, np.nan)
+    vp_vly = np.full(n, np.nan)
+    for i in range(24, n):
+        h16 = h[i - 16:i]
+        l16 = l[i - 16:i]
+        c16 = c[i - 16:i]
+        v16 = v[i - 16:i]
+        lo_ = float(l16.min())
+        hi_ = float(h16.max())
+        if hi_ <= lo_:
+            hi_ = lo_ + 1.0
+        step = (hi_ - lo_) / bins
+        typ = (h16 + l16 + c16) / 3.0
+        bi = ((typ - lo_) / step).astype(np.int64)
+        np.clip(bi, 0, bins - 1, out=bi)
+        vols = np.zeros(bins)
+        np.add.at(vols, bi, np.maximum(1.0, v16))
+        poc_i = int(vols.argmax())
+        target = vols.sum() * 0.70
+        li = ri = poc_i
+        acc = vols[poc_i]
+        while acc < target and (li > 0 or ri < bins - 1):
+            lv = vols[li - 1] if li > 0 else -1.0
+            rv = vols[ri + 1] if ri < bins - 1 else -1.0
+            if rv >= lv and ri < bins - 1:
+                ri += 1
+                acc += vols[ri]
+            elif li > 0:
+                li -= 1
+                acc += vols[li]
+            else:
+                break
+        if li == poc_i and li > 0:
+            li -= 1
+        if ri == poc_i and ri < bins - 1:
+            ri += 1
+        sm = np.empty(bins)
+        sm[0] = (2.0 * vols[0] + vols[1]) / 3.0
+        sm[-1] = (vols[-2] + 2.0 * vols[-1]) / 3.0
+        sm[1:-1] = (vols[:-2] + vols[1:-1] + vols[2:]) / 3.0
+        valley = None
+        cand = [k for k in range(1, bins - 1) if sm[k] >= sm[k - 1] and sm[k] >= sm[k + 1]]
+        if len(cand) >= 2:
+            cand.sort(key=lambda ix: -sm[ix])
+            p0, p1 = cand[0], cand[1]
+            if abs(p0 - p1) >= 4 and sm[p1] >= 0.58 * sm[p0]:
+                i1, i2 = (p0, p1) if p0 < p1 else (p1, p0)
+                seg = sm[i1 + 1:i2]
+                if seg.size:
+                    mi = i1 + 1 + int(seg.argmin())
+                    if sm[mi] <= 0.72 * sm[p1]:
+                        valley = lo_ + (mi + 0.5) * step
+        vp_val[i] = lo_ + (li + 0.5) * step
+        vp_vah[i] = lo_ + (ri + 0.5) * step
+        vp_poc[i] = lo_ + (poc_i + 0.5) * step
+        vp_vly[i] = valley if valley is not None else vp_poc[i]
+    return vp_val, vp_vah, vp_poc, vp_vly
+
+
+def _stable_formula_signals(ind):
+    """สัญญาณ LONG(+1)/SHORT(-1) ทุกแท่งสำหรับ 8 สูตร — vectorized จากตรรกะ scanTrendSignals/scanReversalSignals"""
+    o = ind["o"]
+    h = ind["h"]
+    l = ind["l"]
+    c = ind["c"]
+    atr = ind["atr"]
+    rsi = ind["rsi"]
+    adx = ind["adx"]
+    ema21 = ind["ema21"]
+    ema50 = ind["ema50"]
+    ema200 = ind["ema200"]
+    val = ind["vp_val"]
+    vah = ind["vp_vah"]
+    poc = ind["vp_poc"]
+    vly = ind["vp_vly"]
+    n = len(c)
+    tol_t = np.clip(atr * 0.25, 1.5, 4.5)
+    tol_r = np.clip(atr * 0.22, 1.5, 4.0)
+    is_bear = c < ema200
+    is_bull = c > ema200
+    strong = adx >= 24.0
+    valid = np.zeros(n, dtype=bool)
+    valid[60:] = True
+    valid &= np.isfinite(ema200) & np.isfinite(atr)
+    prev_o = np.roll(o, 1)
+    prev_c = np.roll(c, 1)
+    prev_rsi = np.roll(rsi, 1)
+    sig = {}
+
+    # 1) VALLEY_SNIPER — แตะ Valley/POC ฝั่งเทรนด์ EMA21 vs EMA50 (LONG ก่อน)
+    long_c = (np.abs(l - vly) <= tol_t) & (c > o) & (ema21 >= ema50)
+    short_c = (np.abs(h - vly) <= tol_t) & (c < o) & (ema21 <= ema50)
+    sig["VALLEY_SNIPER"] = _stable_side_select(long_c, short_c, True, valid)
+
+    # 2) TREND_PULLBACK — ดึงกลับเข้า VAH/POC (โซนขาย) หรือ VAL/POC (โซนซื้อ) ในเทรนด์แรง (SHORT ก่อน)
+    short_c = is_bear & strong & ((np.abs(h - vah) <= tol_t) | (np.abs(h - poc) <= tol_t)) & (c < o)
+    long_c = is_bull & strong & ((np.abs(l - val) <= tol_t) | (np.abs(l - poc) <= tol_t)) & (c > o)
+    sig["TREND_PULLBACK"] = _stable_side_select(long_c, short_c, False, valid)
+
+    # 3) HYBRID_REGIME — เทรนด์แรงใช้ POC/VAL-VAH ตามฝั่ง macro, เทรนด์อ่อนกลับมาดักขอบ Value Area (SHORT ก่อน)
+    short_c = ((strong & is_bear & ((np.abs(h - poc) <= tol_t) | (np.abs(h - val) <= tol_t)) & (c < o))
+               | ((~strong) & (np.abs(h - vah) <= tol_t) & (c < o)))
+    long_c = ((strong & is_bull & ((np.abs(l - poc) <= tol_t) | (np.abs(l - vah) <= tol_t)) & (c > o))
+              | ((~strong) & (np.abs(l - val) <= tol_t) & (c > o)))
+    sig["HYBRID_REGIME"] = _stable_side_select(long_c, short_c, False, valid)
+
+    # 4) VP_EDGE_FADE — ดักขอบ VAL/VAH เกินเขต + RSI สุดโต่ง (LONG ก่อน)
+    long_c = (np.abs(l - val) <= tol_r) & (rsi <= 36.0) & (c > o)
+    short_c = (np.abs(h - vah) <= tol_r) & (rsi >= 64.0) & (c < o)
+    sig["VP_EDGE_FADE"] = _stable_side_select(long_c, short_c, True, valid)
+
+    # 5) LIQUIDITY_SWEEP — กวาด Low/High 16 แท่งก่อนหน้าแล้วดึงกลับ (LONG ก่อน)
+    sw_lo = pd.Series(l).rolling(16).min().shift(1).to_numpy()
+    sw_hi = pd.Series(h).rolling(16).max().shift(1).to_numpy()
+    rng_ = np.maximum(0.1, h - l)
+    lw = np.minimum(o, c) - l
+    uw = h - np.maximum(o, c)
+    long_c = is_bear & (l < sw_lo) & (c > sw_lo) & (lw >= 0.42 * rng_)
+    short_c = is_bull & (h > sw_hi) & (c < sw_hi) & (uw >= 0.42 * rng_)
+    sig["LIQUIDITY_SWEEP"] = _stable_side_select(long_c, short_c, True, valid)
+
+    # 6) RSI_ENGULFING — แท่งกลืน + RSI แท่งก่อนสุดโต่ง (LONG ก่อน)
+    long_c = is_bear & (prev_rsi <= 32.0) & (c > o) & (c > prev_o) & (o <= prev_c)
+    short_c = is_bull & (prev_rsi >= 68.0) & (c < o) & (c < prev_o) & (o >= prev_c)
+    sig["RSI_ENGULFING"] = _stable_side_select(long_c, short_c, True, valid)
+
+    # 7) DOUBLE_BOTTOM_TOP — แตะ Low/High เดิมของกรอบ 13 แท่ง (i-16..i-4) + RSI divergence (LONG ก่อน)
+    dbt = np.zeros(n, dtype=np.int8)
+    nwin = n - 16
+    if nwin > 0:
+        wl = np.lib.stride_tricks.sliding_window_view(l, 13)[:nwin]
+        wh = np.lib.stride_tricks.sliding_window_view(h, 13)[:nwin]
+        min_l = wl.min(axis=1)
+        arg_l = wl.argmin(axis=1)
+        max_h = wh.max(axis=1)
+        arg_h = wh.argmax(axis=1)
+        rr_idx = np.arange(nwin)
+        rsi_lo = rsi[arg_l + rr_idx]
+        rsi_hi = rsi[arg_h + rr_idx]
+        long_c16 = is_bear[16:] & (np.abs(l[16:] - min_l) <= tol_r[16:]) & (rsi[16:] > rsi_lo + 2.0) & (c[16:] > o[16:])
+        short_c16 = is_bull[16:] & (np.abs(h[16:] - max_h) <= tol_r[16:]) & (rsi[16:] < rsi_hi - 2.0) & (c[16:] < o[16:])
+        long_full = np.zeros(n, dtype=bool)
+        short_full = np.zeros(n, dtype=bool)
+        long_full[16:] = long_c16
+        short_full[16:] = short_c16
+        dbt = _stable_side_select(long_full, short_full, True, valid)
+    sig["DOUBLE_BOTTOM_TOP"] = dbt
+
+    # 8) VWAP_SNAPBACK — ยืดเกิน EMA21 +/- 2.1 ATR + ไส้เทียนกลับตัว (LONG ก่อน)
+    long_c = (c <= ema21 - 2.1 * atr) & (c > o) & (lw >= 0.30 * rng_)
+    short_c = (c >= ema21 + 2.1 * atr) & (c < o) & (uw >= 0.30 * rng_)
+    sig["VWAP_SNAPBACK"] = _stable_side_select(long_c, short_c, True, valid)
+    return sig
+
+
+def _stable_path_matrices(h, l, c):
+    """MFE/MAE matrix แบบ vectorized: ระยะ High/Low ของ 24 แท่งล่วงหน้า เทียบ close ของแท่งสัญญาณ (USD)"""
+    n = len(c)
+    H = STABLE_FORWARD_BARS
+    m = n - H
+    W_h = np.lib.stride_tricks.sliding_window_view(h, H)[1:]
+    W_l = np.lib.stride_tricks.sliding_window_view(l, H)[1:]
+    base_c = c[:m, None]
+    UHi = (W_h - base_c).astype(np.float32)
+    ULo = (W_l - base_c).astype(np.float32)
+    C12u = (c[12:12 + m] - c[:m]).astype(np.float32)
+    C24u = (c[H:H + m] - c[:m]).astype(np.float32)
+    jump = np.zeros(n, dtype=bool)
+    if n > 1:
+        jump[1:] = np.abs(np.diff(c)) >= STABLE_ANOMALY_JUMP_USD
+    ok = ~np.lib.stride_tricks.sliding_window_view(jump, H)[1:].any(axis=1)
+    return {"UHi": UHi, "ULo": ULo, "C12u": C12u, "C24u": C24u, "ok": ok, "m": m}
+
+
+def _stable_session_ids(minutes):
+    sid = np.full(len(minutes), -1, dtype=np.int8)
+    for k, (_n, s, e, _w) in enumerate(STABLE_SESSION_DEFS):
+        if s < e:
+            mask = (minutes >= s) & (minutes < e)
+        else:
+            mask = (minutes >= s) | (minutes < e)
+        sid[mask] = k
+    return sid
+
+
+def _stable_simulate_combo(FY, AD, C12s, C24s, atr_f, sl_mult, rr, be_rule):
+    """จำลองผลลัพธ์ R ต่อไม้ของสัญญาณชุดหนึ่งจาก MFE/MAE matrix (vectorized ทุกไม้พร้อมกัน)"""
+    H = FY.shape[1]
+    idx_h = np.arange(H, dtype=np.int16)[None, :]
+    sl_usd = np.clip(atr_f * np.float32(sl_mult), STABLE_SL_CLAMP[0], STABLE_SL_CLAMP[1]).astype(np.float32)
+    tp_usd = sl_usd * np.float32(rr)
+    hor = (idx_h < 12) if be_rule == "TIME_EXIT_12B" else None
+
+    def first_hit(mask):
+        if hor is not None:
+            mask = mask & hor
+        has = mask.any(axis=1)
+        j = np.where(has, mask.argmax(axis=1), 0).astype(np.int16)
+        return has, j
+
+    has_sl, j_sl = first_hit(AD >= sl_usd[:, None])
+    has_tp, j_tp = first_hit(FY >= tp_usd[:, None])
+
+    if be_rule == "TIME_EXIT_12B":
+        base_exit = np.clip(C12s / sl_usd, -1.0, np.float32(rr)).astype(np.float32)
+        sl_first = has_sl & (~has_tp | (j_sl <= j_tp))
+        gross = np.where(has_tp & ~sl_first, np.float32(rr),
+                 np.where(sl_first, np.float32(-1.0), base_exit))
+        eo = np.where(sl_first, j_sl + 1, np.where(has_tp, j_tp + 1, 12)).astype(np.int16)
+    elif be_rule == "NO_BE":
+        base_exit = np.clip(C24s / sl_usd, -1.0, np.float32(rr)).astype(np.float32)
+        sl_first = has_sl & (~has_tp | (j_sl <= j_tp))
+        gross = np.where(has_tp & ~sl_first, np.float32(rr),
+                 np.where(sl_first, np.float32(-1.0), base_exit))
+        eo = np.where(sl_first, j_sl + 1, np.where(has_tp, j_tp + 1, 24)).astype(np.int16)
+    else:
+        # BE_AT_1R: แตะ +1R แล้วเลื่อน SL ไปที่ทุน | LOCK_HALF_0.8R: แตะ +0.8R แล้วล็อกกำไรครึ่งทาง (+0.4R)
+        trig_mult = np.float32(1.0) if be_rule == "BE_AT_1R" else np.float32(0.8)
+        stop_lvl = np.float32(0.0) if be_rule == "BE_AT_1R" else np.float32(-0.4)
+        lock_gain = np.float32(0.0) if be_rule == "BE_AT_1R" else np.float32(0.4)
+        has_be, j_be = first_hit(FY >= (sl_usd * trig_mult)[:, None])
+        pre_sl = has_sl & (~has_be | (j_sl <= j_be))
+        post_mask = ((AD >= (sl_usd * stop_lvl)[:, None])
+                     & (idx_h >= np.where(has_be, j_be, 0)[:, None])
+                     & has_be[:, None])
+        has_lock, j_lock = first_hit(post_mask)
+        tp_first = has_tp & ~pre_sl & (~has_lock | (j_tp < j_lock))
+        be_first = has_lock & ~pre_sl & ~tp_first
+        base_exit = np.clip(C24s / sl_usd, -1.0, np.float32(rr)).astype(np.float32)
+        gross = np.where(pre_sl, np.float32(-1.0),
+                 np.where(tp_first, np.float32(rr),
+                  np.where(be_first, lock_gain, base_exit)))
+        eo = np.where(pre_sl, j_sl + 1,
+              np.where(tp_first, j_tp + 1,
+               np.where(be_first, j_lock + 1, 24))).astype(np.int16)
+    return gross, eo, sl_usd
+
+
+def _stable_chain_keep(rows, exit_off):
+    """ลำดับไม้แบบไม่ทับซ้อน: ข้ามสัญญาณที่เกิดก่อนแท่งออกของไม้ก่อนหน้า (ตรรกะเดียวกับ simulateGeneExact)
+    คืน None ถ้าไม่มีการคาบเกี่ยวเลย (ใช้สัญญาณทั้งหมด)"""
+    if len(rows) < 2 or np.all(np.diff(rows) > STABLE_FORWARD_BARS):
+        return None
+    keep = np.ones(len(rows), dtype=bool)
+    last_exit = -1
+    for t in range(len(rows)):
+        ri = int(rows[t])
+        if ri <= last_exit:
+            keep[t] = False
+        else:
+            last_exit = ri + int(exit_off[t])
+    return keep
+
+
+def _stable_bootstrap_mc(r_seq, iters, sigma_r, seed_int):
+    """Bootstrap Monte Carlo: สุ่ม Resample ลำดับ R + ความคลาดเคลื่อนสเปรดสุ่ม (float32) แล้วคืนค่าคงตัว 3 ตัว"""
+    r = np.asarray(r_seq, dtype=np.float32)
+    m = int(r.size)
+    if m < 2 or iters < 1:
+        return {"median_r": 0.0, "p05_worst_r": 0.0, "max_dd_95": 0.0}
+    rng = np.random.default_rng(int(seed_int))
+    totals = np.empty(iters, dtype=np.float32)
+    dds = np.empty(iters, dtype=np.float32)
+    chunk = int(max(STABLE_MC_MIN_ITERS // 2, min(12000, 30_000_000 // max(1, m * 3))))
+    sig = np.float32(sigma_r)
+    done = 0
+    while done < iters:
+        cn = int(min(chunk, iters - done))
+        pick = rng.integers(0, m, size=(cn, m))
+        samp = r[pick]
+        if sig > 0:
+            samp += rng.standard_normal(size=samp.shape, dtype=np.float32) * sig
+        eq = np.cumsum(samp, axis=1, dtype=np.float32)
+        dd = np.maximum.accumulate(eq, axis=1) - eq
+        totals[done:done + cn] = eq[:, -1]
+        dds[done:done + cn] = dd.max(axis=1)
+        done += cn
+    return {
+        "median_r": round(float(np.median(totals)), 3),
+        "p05_worst_r": round(float(np.percentile(totals, 5)), 3),
+        "max_dd_95": round(float(np.percentile(dds, 95)), 3),
+    }
+
+
+def run_session_stable_profiles(df, now_th=None):
+    """Vectorized Grid + Bootstrap Monte Carlo 250,000 รอบ/ช่วงตลาด (รวม 1,000,000 รอบ)
+    คืน dict สำหรับบันทึกใน state.json คีย์ "session_stable_profiles" """
+    import zlib
+    t0 = time.time()
+    now_th = now_th or datetime.now(THAI_TZ)
+    grid_combos = len(STABLE_FORMULAS) * len(STABLE_GRID_SL_MULT) * len(STABLE_GRID_RR) * len(STABLE_BE_RULES)
+    result = {
+        "engine": "VECTOR_GRID_BOOTSTRAP_MC_V1",
+        "status": "OK",
+        "generated_at": now_th.strftime("%Y-%m-%d %H:%M:%S"),
+        "methodology": {
+            "sessions_bkk": [{"name": s, "window": w} for s, _a, _b, w in STABLE_SESSION_DEFS],
+            "forward_bars_mfe_mae": STABLE_FORWARD_BARS,
+            "formulas": list(STABLE_FORMULAS),
+            "sl_grid_atr_mult": list(STABLE_GRID_SL_MULT),
+            "rr_grid": list(STABLE_GRID_RR),
+            "be_rules": list(STABLE_BE_RULES),
+            "sl_clamp_usd": list(STABLE_SL_CLAMP),
+            "friction_model": "Spread+Slippage (USD/ไม้) = 0.40 x volatility_factor ของแต่ละช่วงตลาด (median ATR14 จริงจาก vault) หักทุกไม้ที่จำลอง",
+            "mc_method": "Bootstrap resample ลำดับ R ด้วย NumPy float32 + สุ่มความคลาดเคลื่อนสเปรด N(0, sigma_r) ต่อไม้",
+            "mc_iterations_requested_per_session": STABLE_MC_ITERS_PER_SESSION,
+            "mc_iterations_requested_total": STABLE_MC_ITERS_PER_SESSION * 4,
+            "mc_iterations_used_total": 0,
+            "stability_score_formula": "(p05_worst_r / max(max_dd_95, 0.5)) x win_rate",
+            "signal_logic": "พอร์ตจาก scanTrendSignals/scanReversalSignals ของ index.html (EMA21/50/200 M15, ADX proxy >= 24, micro-VP 16 แท่ง 18 bins, tol = clip0(ATR*0.25/0.22, 1.5, 4.5/4.0))",
+            "be_rules_detail": "NO_BE = ไม่มี BE | LOCK_HALF_0.8R = แตะ +0.8R แล้วเลื่อนสต็อปไปล็อก +0.4R | BE_AT_1R = แตะ +1R แล้วเลื่อนสต็อปไปทุน | TIME_EXIT_12B = ออกที่ราคาปิดแท่งที่ 12 ถ้ายังไม่โดน SL/TP",
+            "filter_policy": "เกณฑ์ขั้นต่ำลดหลั่น L1 >= 15 ไม้ และ WR >= 35% / L2 >= 10 ไม้ และ 30% / L3 >= 6 ไม้ และ 25% (ทุกชั้นต้อง net_r > 0 หลังหัก friction) + fallback เลือกชุดคะแนนนำสุด",
+            "mc_budget_policy": "250,000 รอบ/ช่วง แบ่งเท่ากันให้ผู้ผ่านเกณฑ์สูงสุด 125 ชุดแรกตามคะแนนคัดกรอง (ขั้นต่ำ 2,000 รอบ/ชุด)",
+            "anomaly_guard": f"ตัดสัญญาณที่หน้าต่าง 24 แท่งมีแท่งกระโดด >= ${STABLE_ANOMALY_JUMP_USD:.0f} (basis shift ของ vault)",
+        },
+        "sessions": {},
+        "runtime_sec": 0.0,
+    }
+    sim_df, minutes = _stable_clean_frame(df)
+    n = len(sim_df)
+    if minutes is None or len(minutes) != n or n < 400:
+        result["status"] = "INSUFFICIENT_DATA"
+        result["runtime_sec"] = round(time.time() - t0, 2)
+        return result
+    ind = _stable_site_indicators(sim_df)
+    vp_val, vp_vah, vp_poc, vp_vly = _stable_micro_vp_arrays(
+        ind["h"], ind["l"], ind["c"], sim_df["Volume"].fillna(1.0).to_numpy(dtype=np.float64), 18)
+    ind["vp_val"], ind["vp_vah"], ind["vp_poc"], ind["vp_vly"] = vp_val, vp_vah, vp_poc, vp_vly
+    sides = _stable_formula_signals(ind)
+    mats = _stable_path_matrices(ind["h"], ind["l"], ind["c"])
+    sid = _stable_session_ids(minutes)
+    m_rows = int(mats["m"])
+    atr = ind["atr"]
+    finite_atr = np.isfinite(atr) & (atr > 0.5)
+    atr_all = atr[np.isfinite(atr)]
+    glob_med = float(np.median(atr_all)) if atr_all.size else 7.5
+    total_used = 0
+    result["vault_bars"] = n
+    result["vault_last_bar_utc"] = sim_df.index[-1].strftime("%Y-%m-%d %H:%M")
+
+    for k_sess, (sname, _s0, _s1, wind) in enumerate(STABLE_SESSION_DEFS):
+        t_sess = time.time()
+        in_sess = sid[:m_rows] == k_sess
+        bars_in_sess = int((sid == k_sess).sum())
+        sel_atr = atr[:m_rows][in_sess & finite_atr[:m_rows] & mats["ok"]]
+        sess_atr_med = float(np.median(sel_atr)) if sel_atr.size >= 5 else glob_med
+        vf = float(np.clip(sess_atr_med / max(1e-9, glob_med), 0.6, 1.6))
+        spread_usd = round(STABLE_FRICTION_BASE_USD * 0.5 * vf, 3)
+        slip_usd = round(STABLE_FRICTION_BASE_USD * 0.5 * vf, 3)
+        friction_usd = round(spread_usd + slip_usd, 3)
+
+        candidates = []
+        for fname in STABLE_FORMULAS:
+            side_arr = sides[fname]
+            rows = np.flatnonzero((side_arr[:m_rows] != 0) & in_sess & finite_atr[:m_rows] & mats["ok"])
+            if rows.size < 4:
+                continue
+            side_f = side_arr[rows]
+            long_f = side_f > 0
+            atr_f = atr[rows].astype(np.float32)
+            UHi = mats["UHi"][rows]
+            ULo = mats["ULo"][rows]
+            FY = np.where(long_f[:, None], UHi, -ULo).astype(np.float32)
+            AD = np.where(long_f[:, None], -ULo, UHi).astype(np.float32)
+            C12s = (mats["C12u"][rows] * np.where(long_f, 1.0, -1.0)).astype(np.float32)
+            C24s = (mats["C24u"][rows] * np.where(long_f, 1.0, -1.0)).astype(np.float32)
+            for sl_mult in STABLE_GRID_SL_MULT:
+                for rr in STABLE_GRID_RR:
+                    for be_rule in STABLE_BE_RULES:
+                        gross, eo, sl_usd = _stable_simulate_combo(FY, AD, C12s, C24s, atr_f, sl_mult, rr, be_rule)
+                        keep = _stable_chain_keep(rows, eo)
+                        if keep is not None:
+                            rows_k = rows[keep]
+                            side_k = side_f[keep]
+                            r_net = (gross[keep] - (friction_usd / sl_usd)[keep]).astype(np.float32)
+                            sl_k = sl_usd[keep]
+                        else:
+                            rows_k = rows
+                            side_k = side_f
+                            r_net = (gross - friction_usd / sl_usd).astype(np.float32)
+                            sl_k = sl_usd
+                        trades = int(r_net.size)
+                        if trades < 4:
+                            continue
+                        wins = int(np.count_nonzero(r_net > 0))
+                        wr = wins / trades
+                        net_r = float(r_net.sum())
+                        eq = np.cumsum(r_net, dtype=np.float32)
+                        raw_dd = float((np.maximum.accumulate(eq) - eq).max())
+                        pos_sum = float(r_net[r_net > 0].sum())
+                        neg_sum = float(-r_net[r_net < 0].sum())
+                        pf = pos_sum / max(0.5, neg_sum)
+                        pre = (net_r / max(0.5, raw_dd)) * wr * min(1.0, trades / 30.0)
+                        candidates.append({
+                            "formula": fname,
+                            "sl_atr_mult": sl_mult,
+                            "rr": rr,
+                            "be_rule": be_rule,
+                            "trades": trades,
+                            "wins": wins,
+                            "win_rate": round(wr, 4),
+                            "net_r": round(net_r, 3),
+                            "expectancy_r": round(net_r / trades, 4),
+                            "profit_factor": round(pf, 3),
+                            "raw_max_dd_r": round(raw_dd, 3),
+                            "pre_score": round(pre, 4),
+                            "longs": int(np.count_nonzero(side_k > 0)),
+                            "shorts": int(np.count_nonzero(side_k < 0)),
+                            "sl_med_usd": round(float(np.median(sl_k)), 3),
+                            "r_net": r_net,
+                        })
+
+        # เกณฑ์ขั้นต่ำแบบลดหลั่น: L1/L2/L3 แล้วค่อย fallback L4 (ชุดคะแนนนำสุดเพียงชุดเดียว)
+        qual, filter_level = [], 4
+        for lvl, (min_tr, min_wr) in enumerate(((15, 0.35), (10, 0.30), (6, 0.25)), start=1):
+            q = [c for c in candidates if c["trades"] >= min_tr and c["win_rate"] >= min_wr and c["net_r"] > 0.0]
+            if len(q) >= 3 or (lvl == 3 and len(q) >= 1):
+                qual, filter_level = q, lvl
+                break
+        if not qual and candidates:
+            qual, filter_level = [max(candidates, key=lambda cc: cc["pre_score"])], 4
+        qual.sort(key=lambda cc: cc["pre_score"], reverse=True)
+        mc_list = qual[:STABLE_MC_MAX_CANDIDATES]
+        n_mc = len(mc_list)
+        used = 0
+        if n_mc:
+            base_iters = max(STABLE_MC_MIN_ITERS, STABLE_MC_ITERS_PER_SESSION // n_mc)
+            rem = max(0, STABLE_MC_ITERS_PER_SESSION - base_iters * n_mc)
+            for t_idx, cand in enumerate(mc_list):
+                iters = base_iters + (1 if t_idx < rem else 0)
+                seed_i = zlib.crc32(f"{sname}|{cand['formula']}|{cand['sl_atr_mult']}|{cand['rr']}|{cand['be_rule']}".encode("utf-8"))
+                sigma_r = STABLE_FRICTION_SIGMA_RATIO * friction_usd / max(3.0, cand["sl_med_usd"])
+                mc = _stable_bootstrap_mc(cand["r_net"], iters, sigma_r, seed_i)
+                cand.update(mc)
+                cand["sigma_spread_r"] = round(sigma_r, 4)
+                cand["mc_iterations"] = iters
+                cand["stability_score"] = round((mc["p05_worst_r"] / max(mc["max_dd_95"], 0.5)) * cand["win_rate"], 4)
+                used += iters
+        total_used += used
+
+        mc_list.sort(key=lambda cc: cc["stability_score"], reverse=True)
+        winner = None
+        if mc_list:
+            w = mc_list[0]
+            winner = {
+                "formula": w["formula"],
+                "sl_atr_mult": w["sl_atr_mult"],
+                "rr": w["rr"],
+                "be_rule": w["be_rule"],
+                "trades": w["trades"],
+                "longs": w["longs"],
+                "shorts": w["shorts"],
+                "win_rate": round(w["win_rate"], 4),
+                "win_rate_pct": round(w["win_rate"] * 100.0, 1),
+                "net_r": w["net_r"],
+                "expectancy_r": w["expectancy_r"],
+                "profit_factor": w["profit_factor"],
+                "raw_max_dd_r": w["raw_max_dd_r"],
+                "median_r": w["median_r"],
+                "p05_worst_r": w["p05_worst_r"],
+                "max_dd_95": w["max_dd_95"],
+                "stability_score": w["stability_score"],
+                "mc_iterations": w["mc_iterations"],
+                "sigma_spread_r": w["sigma_spread_r"],
+                "sl_median_usd": w["sl_med_usd"],
+            }
+        top_list = [{
+            "formula": w["formula"], "sl_atr_mult": w["sl_atr_mult"], "rr": w["rr"], "be_rule": w["be_rule"],
+            "trades": w["trades"], "win_rate_pct": round(w["win_rate"] * 100.0, 1), "net_r": w["net_r"],
+            "median_r": w["median_r"], "p05_worst_r": w["p05_worst_r"], "max_dd_95": w["max_dd_95"],
+            "stability_score": w["stability_score"], "mc_iterations": w["mc_iterations"],
+        } for w in mc_list[:5]]
+        result["sessions"][sname] = {
+            "session": sname,
+            "window_bkk": wind,
+            "bars_in_vault": bars_in_sess,
+            "volatility_factor": round(vf, 3),
+            "avg_atr_usd": round(sess_atr_med, 2),
+            "friction_usd": {"spread": spread_usd, "slippage": slip_usd, "total": friction_usd},
+            "grid_combos": grid_combos,
+            "candidates_evaluated": len(candidates),
+            "candidates_qualified": len(qual),
+            "filter_level_used": filter_level,
+            "candidates_mc_tested": n_mc,
+            "mc_iterations_used": used,
+            "winner": winner,
+            "top_stable_candidates": top_list,
+            "runtime_sec": round(time.time() - t_sess, 2),
+        }
+
+    result["methodology"]["mc_iterations_used_total"] = total_used
+    result["runtime_sec"] = round(time.time() - t0, 2)
+    print(f"[STABLE] session_stable_profiles OK | MC sims used: {total_used:,} | total {result['runtime_sec']}s")
+    for _sn, _sd in result["sessions"].items():
+        _w = _sd.get("winner")
+        if _w:
+            print(f"[STABLE] {_sn}: {_w['formula']} SL={_w['sl_atr_mult']}xATR RR={_w['rr']} {_w['be_rule']} | "
+                  f"score={_w['stability_score']} p05={_w['p05_worst_r']}R dd95={_w['max_dd_95']}R "
+                  f"wr={_w['win_rate_pct']}% trades={_w['trades']} ({_sd['mc_iterations_used']:,} sims)")
+    return result
+
+
 def generate_live_ai_strategist_brief(spot, vp_session, scalp_setup, trend_setup, order_flow, scalp_bt, trend_bt, mue_mem):
     fallback_brief = (
         f"**1. Session Micro-VP 8H & Live OrderFlow ({vp_session['title_th']}):**\n"
@@ -1131,6 +1770,14 @@ def run_cycle(send_summary_alert=True):
     scalp_bt = evolve_mue_x_genes(df, mue_mem)
     trend_bt = run_trend_walk_forward(df)
 
+    # === SESSION STABLE PROFILES: Vectorized Grid + Bootstrap Monte Carlo 1,000,000 รอบ ===
+    try:
+        session_stable = run_session_stable_profiles(df, now_th)
+    except Exception as e_srp:
+        _prev_ssp = load_json_safe(STATE_PATH, {})
+        session_stable = ((_prev_ssp or {}).get("session_stable_profiles") if isinstance(_prev_ssp, dict) else None) or {"status": "ERROR", "error": str(e_srp)}
+        print(f"[STABLE Warning] {e_srp}")
+
     active_gene = mue_mem["genes"][vp_session["shape"]]
     mode = active_gene["mode"]
     raw_tp_pts, tol_pts = int(active_gene["tp_points"]), int(active_gene["tol_points"])
@@ -1255,6 +1902,7 @@ def run_cycle(send_summary_alert=True):
         "scalp": {"anatomy": {**vp_session, "rule_th": active_gene["rule_th"]}, "setup": scalp_setup, "backtest": scalp_bt},
         "volume_profile": vp_5d,
         "backtest": trend_bt,
+        "session_stable_profiles": session_stable,
         "scalp_journal": sj,
         "journal": tj,
         "ai_engine_name": ai_model_name,
