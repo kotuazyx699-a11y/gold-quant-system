@@ -2,10 +2,23 @@
   "wins": 0,
   "losses": 0,
   "closed_trades": 0,
-  "open_trades": 0,
+  "open_trades": 1,
   "net_live_pnl": 0,
   "live_win_rate": 0.0,
-  "recent_trades": [],
+  "recent_trades": [
+    {
+      "opened_at_th": "25/11 15:24",
+      "factor": "DOUBLE_ZONE (POC_PU)",
+      "direction": "LONG",
+      "entry": 3526.16,
+      "sl": 3518.02,
+      "tp": 3536.34,
+      "lot_size": 0.01,
+      "risk_usd": 10.0,
+      "status": "OPEN",
+      "pnl": 0.0
+    }
+  ],
   "total_r": 0.0,
   "win_rate": 0.0,
   "active_trade": null
