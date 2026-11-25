@@ -1,4 +1,13 @@
 {
-  "status": "NONE",
-  "last_update_th": "25/11 15:24"
+  "opened_at_th": "25/11 15:24",
+  "factor": "DOUBLE_ZONE (POC_PU)",
+  "direction": "LONG",
+  "entry": 3526.16,
+  "sl": 3518.02,
+  "tp": 3536.34,
+  "lot_size": 0.01,
+  "risk_usd": 10.0,
+  "status": "OPEN",
+  "pnl": 0.0,
+  "last_update_th": "26/11 01:43"
 }
