@@ -1,10 +1,10 @@
 {
-  "wins": 0,
+  "wins": 1,
   "losses": 0,
-  "closed_trades": 0,
-  "open_trades": 1,
-  "net_live_pnl": 0,
-  "live_win_rate": 0.0,
+  "closed_trades": 1,
+  "open_trades": 0,
+  "net_live_pnl": 10.18,
+  "live_win_rate": 100.0,
   "recent_trades": [
     {
       "opened_at_th": "25/11 15:24",
@@ -15,8 +15,9 @@
       "tp": 3536.34,
       "lot_size": 0.01,
       "risk_usd": 10.0,
-      "status": "OPEN",
-      "pnl": 0.0
+      "status": "WIN",
+      "pnl": 10.18,
+      "closed_at_th": "26/11 08:58"
     }
   ],
   "total_r": 0.0,
