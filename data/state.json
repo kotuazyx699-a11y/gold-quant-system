@@ -1,6 +1,6 @@
 {
   "version": "14.1",
-  "updated_at": "2026-11-28T02:55:48.910254+07:00",
+  "updated_at": "2026-11-28T09:19:31.058523+07:00",
   "order_flow": {
     "source": "Binance XAUUSDT Perp L2",
     "mid_price": 3653.49,
@@ -28,7 +28,7 @@
     "sc_lot": 0.01,
     "tr_lot": 0.01,
     "spread_usd": 0.67,
-    "weekend_closed": false,
+    "weekend_closed": true,
     "daily_net_r": 0.0,
     "daily_loss_pause": false,
     "cooldown_rem_min": 0,
@@ -37,7 +37,7 @@
     "spread_pause": false,
     "can_scalp": false,
     "can_trend": false,
-    "status": "PAUSED: OUTSIDE_SESSION"
+    "status": "PAUSED: WEEKEND_MARKET_CLOSED (ปิดเสาร์ 05:00 น. – เปิดจันทร์ 06:00 น.)"
   },
   "mue_evolution": {
     "generation": 18,
